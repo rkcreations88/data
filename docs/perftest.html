@@ -1,0 +1,28 @@
+
+<html>
+<head>
+    <title>ECS Performance Test</title>
+</head>
+<body></body>
+    <h1>ECS Performance Test</h1>
+    <p>
+        This is the documentation for the Firefly Data API. The Firefly Data API is a RESTful API that allows you to interact with the Firefly Data service.
+    </p>
+    <p>
+        Performance tests running. View them in the developer console.
+    </p>
+    <script type="module">
+        function supportsHighResolutionPerformanceNow() {
+            // Check if the performance object and performance.now method exist
+            if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+                // Call performance.now and check if the result includes sub-millisecond precision
+                const result = performance.now();
+                return Math.floor(result) !== result;
+            }
+            return false;
+        }
+        console.log('supportsHighResolutionPerformanceNow:', supportsHighResolutionPerformanceNow());
+        import { run } from "../dist/perftest/index.js";
+        run();
+    </script>
+</html>
