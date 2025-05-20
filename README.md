@@ -1,5 +1,5 @@
-# firefly-data
-Firefly Data Oriented Programming Library
+# @adobe/data
+Adobe Data Oriented Programming Library
 
 ## Documentation
 
