@@ -1,7 +1,7 @@
 {
-  "name": "@adobe/firefly-data",
+  "name": "@adobe/data",
   "version": "0.1.0",
-  "description": "Firefly data oriented programming library",
+  "description": "Adobe data oriented programming library",
   "type": "module",
   "sideEffects": true,
   "packageManager": "pnpm@8.6.2+sha256.c6da9e00697e334b6193c034a5d1508e4c8605b12f249736b13f31139f4f0d73",
