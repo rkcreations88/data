@@ -1,0 +1,17 @@
+{
+    "entryPoints": [
+        "src/index.ts",
+        "src/cache/index.ts",
+        "src/ecs/index.ts",
+        "src/observables/index.ts",
+        "src/schemas/index.ts",
+    ],
+    "out": "docs/api",
+    "exclude": [
+        "**/__tests__/**",
+        "**/*.spec.ts"
+    ],
+    "excludePrivate": true,
+    "excludeProtected": true,
+    "includeVersion": true
+}
