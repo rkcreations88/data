@@ -1,4 +1,4 @@
-import { normalize } from "../../data.js";
+import { normalize } from "../../normalize.js";
 import { deepMerge } from "../../functions/deep-merge.js";
 import { Schema } from "../schema.js";
 import { enumeratePatches } from "./enumerate-patches.js";

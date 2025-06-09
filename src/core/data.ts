@@ -37,37 +37,4 @@ export type Data =
   | ReadonlyArray<Data>
   | { readonly [K in string]?: Data };
 
-/**
- * Compares two Data objects for deep equality.
- * Ordering of keys matters.
- * If order is not important then use normalize first.
- */
-export function equals(a?: unknown, b?: unknown) {
-  if (a === b) {
-    return true;
-  }
-  if (!a || !b) {
-    return false;
-  }
-  return JSON.stringify(a) === JSON.stringify(b);
-}
 
-/**
- * Returns a new normalized object of the same type by
- * recursively sorting any contained objects keys alphabetically.
- */
-export function normalize<D>(d: D): D {
-  //  we could structured clone but let's explicitly shed any keys with undefined values.
-  return JSON.parse(JSON.stringify(d), (_key: string, value: unknown) => {
-    if (value && !Array.isArray(value) && typeof value === "object") {
-      return Object.fromEntries(
-        Object.entries(value).sort(([a], [b]) =>
-          //  not using String.localeCompare
-          //  we want this consistent no matter locale
-          a < b ? -1 : a > b ? 1 : 0
-        )
-      );
-    }
-    return value;
-  });
-}

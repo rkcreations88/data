@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export function arrayEquals(a: unknown[], b: unknown[]): boolean {
+export function arrayEqualsShallow(a: unknown[], b: unknown[]): boolean {
   const length = a.length;
   if (length !== b.length) {
     return false;

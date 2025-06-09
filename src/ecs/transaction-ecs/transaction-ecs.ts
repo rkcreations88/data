@@ -43,7 +43,7 @@ import {
 } from "./transaction-types.js";
 import { createECSTransaction } from "./transactions.js";
 import { Observe } from "../../observe/types.js";
-import { arrayEquals } from "../../core/functions/array-equals.js";
+import { arrayEqualsShallow } from "../../core/functions/array-equals-shallow.js";
 
 //  we want to cache this a well on each array.
 function isASubsetOfB(a: readonly any[], b: readonly any[]) {
@@ -233,7 +233,7 @@ export function createTransactionECS<
       let lastValue: Entity[] | undefined;
       const notify = () => {
         const newValue = ecs.selectEntities(archetype, options);
-        if (!lastValue || !arrayEquals(lastValue, newValue)) {
+        if (!lastValue || !arrayEqualsShallow(lastValue, newValue)) {
           lastValue = newValue;
           callback(newValue);
         }

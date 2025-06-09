@@ -22,4 +22,6 @@ SOFTWARE.*/
 
 export * from "./data.js";
 export * from "./schema/index.js";
-export * from "./functions/index.js"
+export * from "./functions/index.js";
+export * from "./equals.js";
+export * from "./normalize.js";
