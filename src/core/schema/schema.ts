@@ -30,7 +30,7 @@ type JSONMergePatch = unknown;
  * and `match` is not present or validates against the root.
  * This is used for dynamic schemas which change in response to the value of the data.
  */
-type Conditional = {
+export type Conditional = {
   match?: Schema;
   // // root-anchored JSONPath
   path: JSONPath;
@@ -38,10 +38,11 @@ type Conditional = {
   value: JSONMergePatch;
 }
 
-type UIProperties = {
+export interface UIProperties {
   name?: string;
   icon?: string; // url? or icon name?
   summary?: string;
+  premium?: boolean;
   placeholder?: string;
   details?: string;
   visible?: boolean;
@@ -54,12 +55,14 @@ type UIProperties = {
   };
 }
 
-export type Schema = {
+export interface Schema {
   type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object';
   conditionals?: readonly Conditional[];
   ui?: UIProperties;
   default?: any;
   precision?: 1 | 2;
+  multipleOf?: number;
+  mediaType?: string; // media type such as image/jpeg, image/png, video/* etc.
   minimum?: number;
   maximum?: number;
   minLength?: number;
