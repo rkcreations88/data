@@ -407,14 +407,14 @@ export function createCoreECS<
   const selectEntities = (archetype: CoreArchetype) => {
     const tables = getTables(archetype, { mode: "read" });
     const entities: number[] = [];
-    const offset = 0;
+    let offset = 0;
     for (const table of tables) {
       // this native array will probably be longer than the actual size.
       const size = table.rows;
       const nativeArray = table.columns.id.native!;
       // copy from 0 .. size to entities
       for (let i = 0; i < size; i++) {
-        entities[offset + i] = nativeArray[i];
+        entities[offset++] = nativeArray[i];
       }
     }
     return entities;
