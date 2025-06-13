@@ -414,6 +414,33 @@ describe("Core ECS", () => {
     });
     expect(F).toEqual(e + 1);
   });
+
+  test("selectEntities returns all entities matching a subset of components", () => {
+    const ecs = createCoreECS()
+      .withComponents({
+        position: { type: "number" },
+        size: { type: "number" }
+      } as const);
+
+    const idPositionArchetype = ecs.getArchetype("id", "position");
+    const idPositionSizeArchetype = ecs.getArchetype("id", "position", "size");
+
+    // Create one entity with just position
+    const a = ecs.createEntity(idPositionArchetype, { position: 1 });
+
+    // Create two entities with position and size
+    const b = ecs.createEntity(idPositionSizeArchetype, { position: 2, size: 1 });
+    const c = ecs.createEntity(idPositionSizeArchetype, { position: 3, size: 2 });
+
+    // Query for all entities with position
+    const entities = ecs.selectEntities(idPositionArchetype);
+
+    // Should get all three entities
+    expect(entities.length).toEqual(3);
+    expect(entities).toContain(a);
+    expect(entities).toContain(b);
+    expect(entities).toContain(c);
+  });
 });
 
 

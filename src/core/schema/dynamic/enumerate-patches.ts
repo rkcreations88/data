@@ -17,6 +17,9 @@ export function* enumeratePatches(
     currentPath: PathComponent[] = ["$"],
     localPath: PathComponent[] = ["$"],
 ): Generator<EnumeratePatch> {
+    if (currentValue === undefined || currentValue === null) {
+        return;
+    }
     // local conditionals
     for (const c of currentSchema.conditionals ?? []) {
         // get the value of the current path
@@ -49,7 +52,7 @@ export function* enumeratePatches(
     }
 
     // properties
-    if (currentSchema.properties && typeof currentValue === "object" && currentValue !== null) {
+    if (currentSchema.properties && typeof currentValue === "object") {
         for (const [k, childSchema] of Object.entries(currentSchema.properties)) {
             yield* enumeratePatches(childSchema, (currentValue as any)[k], rootValue, rootSchema, [...currentPath, "properties", k], [...localPath, k]);
         }
