@@ -79,7 +79,7 @@ export interface Schema {
   oneOf?: readonly Schema[];
   const?: any;
   enum?: readonly any[];
-};
+}
 
 export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends 0
   ? any

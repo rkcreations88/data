@@ -23,9 +23,6 @@ import { Schema } from "../schema.js";
 import { validate } from "./validate.js";
 
 export function isValid(schema: Schema, data: any) {
-    if (data === undefined) {
-        debugger;
-    }
     try {
         return validate(schema, data ?? null).length === 0;
     } catch (error) {

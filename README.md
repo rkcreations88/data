@@ -71,7 +71,7 @@ An `Observable<T>` is a subscription function that you can pass a callback funct
 
 Your callback function *may* be called back synchronously (before the initial call returns) zero or one times and asynchronously later any number of times.
 
-For more information see the [Observable API documentation](./docs/api/modules/observables.html)
+For more information see the [Observable API documentation](./docs/api/modules/observe.html)
 
 ### Observable Types
 
@@ -198,7 +198,7 @@ This library provides three different high performance ECS interfaces. They each
 
 Sanders Mertens also covers this thoroughly in his ECS FAQ:
 
-[https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-is-ecs](what-is-ecs)
+[https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-is-ecs](https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-is-ecs)
 
 In addition to the Entity, Component and System definitions which are standard, we also use the term Resource. A Resource is just a value which is defined globally on the ECS itself and not attached to any specific Entity.
 

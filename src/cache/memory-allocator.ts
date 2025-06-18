@@ -45,7 +45,7 @@ export interface MemoryAllocator {
   /**
    * Release the memory associated with the given buffer.
    */
-  release(buffer: ArrayBuffer): void;
+  release(buffer: TypedArray): void;
 }
 
 export function createSimpleMemoryAllocator(): MemoryAllocator {
@@ -65,7 +65,7 @@ export function createSimpleMemoryAllocator(): MemoryAllocator {
     refresh<T extends TypedArrayConstructor>(typedArray: InstanceType<T>) {
       return typedArray;
     },
-    release(_buffer: ArrayBuffer): void {
+    release(_buffer: TypedArray): void {
       return;
     },
   };

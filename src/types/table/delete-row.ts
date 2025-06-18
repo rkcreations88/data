@@ -1,0 +1,42 @@
+/*MIT License
+
+© Copyright 2025 Adobe. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
+import { RowIndex } from "./row-index.js";
+import { Table } from "./table.js";
+
+/**
+ * Deletes a row from the Table, replacing it with the last row in the Table.
+ * @returns true if a row was moved into the deleted row's position, false if the row was the last row in the Table.
+ *  @param Table 
+ * @param rowIndex 
+ */
+export const deleteRow = <C>(table: Table<C>, rowIndex: RowIndex): boolean => {
+    const lastRowIndex = --table.rows;
+    if (rowIndex === lastRowIndex) {
+        return false;
+    }
+
+    for (const name in table.columns) {
+        const column = table.columns[name];
+        column.copyWithin(rowIndex, lastRowIndex, lastRowIndex + 1);
+    }
+    return true;
+}

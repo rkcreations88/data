@@ -3,8 +3,7 @@
         "src/index.ts",
         "src/cache/index.ts",
         "src/ecs/index.ts",
-        "src/observables/index.ts",
-        "src/schemas/index.ts",
+        "src/observe/index.ts"
     ],
     "out": "docs/api",
     "exclude": [

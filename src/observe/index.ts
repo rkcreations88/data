@@ -47,3 +47,5 @@ export * from "./with-map.js";
 export * from "./with-map-data.js";
 export * from "./with-optional.js";
 export * from "./with-unwrap.js";
+export * from "./with-lazy.js";
+export * from "./with-batch.js";
