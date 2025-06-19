@@ -31,8 +31,8 @@ import { mapEntries } from "../../types/object/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Observe, withMap } from "../../observe/index.js";
 import { createTransactionalStore } from "./transactional-store/create-transactional-store.js";
-import { isPromise } from "./is-promise.js";
-import { isAsyncGenerator } from "./is-async-provider.js";
+import { isPromise } from "../../core/functions/is-promise.js";
+import { isAsyncGenerator } from "../../core/functions/is-async-generator.js";
 
 export function createDatabase<
     C extends CoreComponents,

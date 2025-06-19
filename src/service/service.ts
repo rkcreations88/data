@@ -22,6 +22,7 @@ SOFTWARE.*/
 
 export interface Service {
   readonly serviceName: string;
+  dispose?(): void;
 }
 
 export function isService(value: unknown): value is Service {

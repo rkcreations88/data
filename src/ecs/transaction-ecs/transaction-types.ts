@@ -19,8 +19,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Data, FromSchema, Schema } from "../../core/index.js";
+import { Data } from "../../core/index.js";
 import { Observe } from "../../observe/types.js";
+import { FromSchema, Schema } from "../../schema/schema.js";
 import { Simplify } from "../../types/types.js";
 import {
   EntityCreateValues,
@@ -30,7 +31,7 @@ import {
   CoreComponents,
 } from "../core-ecs/core-ecs-types.js";
 import {
-  Archetype,
+  Archetable,
   ECS,
   ECSArchetypes,
   ECSComponents,
@@ -68,7 +69,7 @@ export interface TransactionECS<
     archetypes: S
   ): TransactionECS<
     C,
-    Simplify<A & { [AN in keyof S]: Archetype<{ [PN in S[AN][number]]: C[PN] }> }>,
+    Simplify<A & { [AN in keyof S]: Archetable<{ [PN in S[AN][number]]: C[PN] }> }>,
     R
   >;
   withResources<S extends { [K: string]: Data }>(
@@ -92,7 +93,7 @@ export interface TransactionObservables<
     [K in keyof R]: Observe<R[K]>;
   };
 
-  entityValues<A extends Archetype>(
+  entityValues<A extends Archetable>(
     id: Entity,
     archetype: A & Partial<EntityValues<C>>
   ): Observe<EntityValuesFor<A> | null | undefined>;
@@ -101,11 +102,11 @@ export interface TransactionObservables<
   entityChanges(entity: Entity): Observe<void>;
   componentChanges<K extends keyof C>(component: K): Observe<void>;
   archetypeChanges<A extends CoreComponents>(
-    archetype: Archetype<A>
+    archetype: Archetable<A>
   ): Observe<void>;
 
   archetypeEntities<A extends CoreComponents>(
-    archetype: Archetype<A>,
+    archetype: Archetable<A>,
     options?: Omit<SelectOptions<C, A>, "components">
   ): Observe<Entity[]>;
 }
@@ -219,7 +220,7 @@ export interface Transaction<
 export interface TransactionChanges<C extends ECSComponents> {
   readonly entities: Set<Entity>;
   readonly components: Set<keyof C>;
-  readonly archetypes: Set<Archetype>;
+  readonly archetypes: Set<Archetable>;
 }
 
 /**
@@ -242,6 +243,6 @@ export type TransactionFor<ECS> =
 export type EntityValuesFor<T> =
   T extends TransactionECS<infer C, infer A, infer R>
   ? EntityValues<C>
-  : T extends Archetype<infer E>
+  : T extends Archetable<infer E>
   ? E
   : never;

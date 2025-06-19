@@ -25,7 +25,7 @@ import { StringKeyof } from "../../types/types.js";
 import { CoreComponents } from "../core-components.js";
 import { Simplify } from "../../types/index.js";
 import { Store } from "./store.js";
-import { FromSchema, Schema } from "../../core/schema/schema.js";
+import { FromSchema, Schema } from "../../schema/schema.js";
 import { createCore } from "./core/create-core.js";
 import { Entity } from "../entity.js";
 import { Core, QueryOptions } from "./core/core.js";

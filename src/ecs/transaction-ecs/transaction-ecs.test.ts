@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { describe, expect, test } from "vitest";
 import { createTransactionECS } from "./transaction-ecs.js";
 import { EntityValuesFor, TransactionCommitFor, TransactionECS } from "./transaction-types.js";
-import { Archetype, Entity } from "../index.js";
+import { Archetable, Entity } from "../index.js";
 import { EquivalentTypes, True } from "../../types/types.js";
 
 const createECSWithMassAndSize = () => {
@@ -718,8 +718,8 @@ describe("TransactionECS", () => {
 
   type Archetypes = typeof ecs extends TransactionECS<any, infer A, any> ? A : never;
   type CheckArchetypes = True<EquivalentTypes<Archetypes, {
-    position_size: Archetype<{ size: number; id: number; position: string; }>;
-    position: Archetype<{ id: number; position: string; }>;
+    position_size: Archetable<{ size: number; id: number; position: string; }>;
+    position: Archetable<{ id: number; position: string; }>;
   }>>;
 
 }

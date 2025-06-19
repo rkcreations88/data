@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../index.js";
+import { Schema } from "./schema.js";
 
 export function Nullable<T extends Schema>(
   schema: T
@@ -29,44 +29,4 @@ export function Nullable<T extends Schema>(
   };
 }
 
-export function Tuple<T extends Schema, N extends number>(items: T, length: N) {
-  return { type: "array", items, minItems: length, maxItems: length } as const satisfies Schema;
-}
 
-export const TrueSchema = {
-  const: true,
-} as const satisfies Schema;
-
-export const BooleanSchema = {
-  type: "boolean",
-} as const satisfies Schema;
-
-export const Float32Schema = {
-  type: "number",
-  precision: 1,
-} as const satisfies Schema;
-
-export const Float64Schema = {
-  type: "number",
-  precision: 2,
-} as const satisfies Schema;
-
-export const TimeSchema = Float64Schema;
-
-export const Uint8Schema = {
-  type: "integer",
-  minimum: 0,
-  maximum: 0xff,
-} as const satisfies Schema;
-
-export const Uint16Schema = {
-  type: "integer",
-  minimum: 0,
-  maximum: 0xffff,
-} as const satisfies Schema;
-
-export const Uint32Schema = {
-  type: "integer",
-  minimum: 0,
-  maximum: 0xffffffff,
-} as const satisfies Schema;

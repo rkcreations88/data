@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 export * from "./data.js";
-export * from "./schema/index.js";
+export * from "../schema/index.js";
 export * from "./functions/index.js";
 export * from "./equals.js";
 export * from "./normalize.js";

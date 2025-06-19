@@ -22,8 +22,8 @@ SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createTransactionalStore } from "./create-transactional-store.js";
 import { createStore } from "../../store/create-store.js";
-import { F32Schema } from "../../../types/f32.js";
-import { Schema } from "../../../core/schema/schema.js";
+import { F32Schema } from "../../../schema/f32.js";
+import { Schema } from "../../../schema/schema.js";
 
 // Test schemas
 const positionSchema = {

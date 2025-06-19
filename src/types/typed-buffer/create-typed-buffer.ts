@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../../core/schema/schema.js";
+import { FromSchema, Schema } from "../../schema/schema.js";
 import { createStructBuffer } from "./create-struct-buffer.js";
 import { getStructLayout } from "./structs/get-struct-layout.js";
 import { TypedBuffer } from "./typed-buffer.js";

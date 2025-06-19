@@ -20,7 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Data, FromSchema, Schema } from "../../core/index.js";
+import { Data } from "../../core/index.js";
+import { FromSchema, Schema } from "../../schema/schema.js";
 import { Simplify } from "../../types/types.js";
 import { CoreComponents, ECSJSON, Table } from "../core-ecs/core-ecs-types.js";
 import {
@@ -37,7 +38,7 @@ export type ECSComponents = CoreComponents;
  * An archetype represents a set of components that are required to be present on an entity.
  * These instances cannot be created directly or persisted but are returned from the ECS API.
  */
-export interface Archetype<EntityType = any> {
+export interface Archetable<EntityType = any> {
   readonly components: readonly (keyof EntityType)[];
 }
 
@@ -121,7 +122,7 @@ export interface ECS<
     archetypes: S
   ): ECS<
     C,
-    Simplify<A & { -readonly [AN in keyof S]: Archetype<{ [PN in S[AN][number]]: C[PN] }> }>,
+    Simplify<A & { -readonly [AN in keyof S]: Archetable<{ [PN in S[AN][number]]: C[PN] }> }>,
     R
   >;
   withResources<S extends { [K: string]: Data }>(
@@ -134,32 +135,32 @@ export interface ECS<
   ): C[Name] | undefined;
   getArchetype<AC extends (keyof C)[]>(
     ...components: AC
-  ): Archetype<TypeFromComponents<C, AC>>;
-  getEntityArchetype(id: Entity): Archetype;
+  ): Archetable<TypeFromComponents<C, AC>>;
+  getEntityArchetype(id: Entity): Archetable;
   /**
    * @returns
    *  The entity values if this entity contains all of the archetype components.
    *  Null if the entity exists but does not contain all of the archetype components.
    *  Undefined if the entity does not exist.
    */
-  getEntityValues<A>(id: Entity, archetype: Archetype<A>): A & Partial<EntityValues<C>> | null | undefined;
+  getEntityValues<A>(id: Entity, archetype: Archetable<A>): A & Partial<EntityValues<C>> | null | undefined;
   /**
    * @returns The entity values if this entity exists otherwise undefined.
    */
   getEntityValues(id: Entity): EntityValues<C> | undefined;
 
-  countEntities<T extends CoreComponents>(archetype: Archetype<T>): number;
-  selectEntities<T extends CoreComponents, P extends Partial<T>>(archetype: Archetype<T>, options?: Omit<SelectOptions<C, T>, "components">): Entity[];
+  countEntities<T extends CoreComponents>(archetype: Archetable<T>): number;
+  selectEntities<T extends CoreComponents, P extends Partial<T>>(archetype: Archetable<T>, options?: Omit<SelectOptions<C, T>, "components">): Entity[];
   getTables(): Table[];
   getTables<T>(
-    archetype: Archetype<T>,
+    archetype: Archetable<T>,
     options: { mode: "read" | "write"; exact?: boolean }
   ): Table<T>[];
 
-  selectEntityValues<T extends CoreComponents, P extends Partial<T>>(archetype: Archetype<T>, options: SelectOptions<C, T>): P[];
-  selectEntityValues<T extends CoreComponents>(archetype: Archetype<T>): Simplify<T & EntityValues<C>>[];
+  selectEntityValues<T extends CoreComponents, P extends Partial<T>>(archetype: Archetable<T>, options: SelectOptions<C, T>): P[];
+  selectEntityValues<T extends CoreComponents>(archetype: Archetable<T>): Simplify<T & EntityValues<C>>[];
 
-  createBatch<T>(archetype: Archetype<T>, count: number): Table<T>;
+  createBatch<T>(archetype: Archetable<T>, count: number): Table<T>;
 
   toJSON(): ECSJSON;
 }
@@ -180,7 +181,7 @@ export interface ECSWrite<
   ): void;
   createEntity(): Entity;
   createEntity<T>(
-    archetype: Archetype<T>,
+    archetype: Archetable<T>,
     values: EntityCreateValues<T>
   ): Entity;
   updateEntity(id: Entity, values: EntityUpdateValues<C>): void;

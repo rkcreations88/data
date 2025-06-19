@@ -172,7 +172,7 @@ export type ServiceActionMessages<T> = Extract<ServiceActionMessagesWithPrefix<T
     child: ChildService;
   }
 
-  type MyServiceActionMessages = ServiceActionMessagesWithPrefix<MyService>;
+  type MyServiceActionMessages = ServiceActionMessages<MyService>;
 
   type ExpectedActionMessages =
     | {

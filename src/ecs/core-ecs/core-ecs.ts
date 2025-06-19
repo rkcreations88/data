@@ -22,11 +22,13 @@ SOFTWARE.*/
 
 import {
   Data,
-  FromSchema,
-  Schema,
   equals,
   normalize,
 } from "../../core/index.js";
+import {
+  FromSchema,
+  Schema,
+} from "../../schema/index.js";
 import {
   ManagedArray,
   createManagedArray,
@@ -45,7 +47,7 @@ import {
   ECSJSON,
   CoreResources,
 } from "./core-ecs-types.js";
-import { Uint32Schema } from "../../core/schema/schemas.js";
+import { U32Schema } from "../../schema/u32.js";
 
 //  This is a sentinel value used to indicate a component should be deleted.
 export const DELETE: unknown = "_@_DELETE_@_";
@@ -80,7 +82,7 @@ export function createCoreECS<
   const DELETED_ARCHETYPE = 0xff;
 
   const componentSchemas = {
-    id: Uint32Schema,
+    id: U32Schema,
   } as { [K in keyof C]: Schema };
   const getSchema = (name: Component) => {
     const schema = componentSchemas[name];

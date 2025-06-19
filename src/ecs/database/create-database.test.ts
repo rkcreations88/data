@@ -22,9 +22,9 @@ SOFTWARE.*/
 import { describe, it, expect, vi } from "vitest";
 import { createDatabase } from "./create-database.js";
 import { createStore } from "../store/create-store.js";
-import { FromSchema, Schema } from "../../core/schema/schema.js";
+import { FromSchema, Schema } from "../../schema/schema.js";
 import { Entity } from "../entity.js";
-import { F32Schema } from "../../types/f32.js";
+import { F32Schema } from "../../schema/f32.js";
 
 // Test schemas
 const positionSchema = {

@@ -41,9 +41,9 @@
       "import": "./cache/index.js",
       "types": "./cache/index.d.ts"
     },
-    "./schemas": {
-      "import": "./schemas/index.js",
-      "types": "./schemas/index.d.ts"
+    "./schema": {
+      "import": "./schema/index.js",
+      "types": "./schema/index.d.ts"
     },
     "./types": {
       "import": "./types/index.js",
@@ -104,6 +104,8 @@
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
-    "jsonpath": "^1.1.1"
+    "@lit/context": "^1.1.5",
+    "jsonpath": "^1.1.1",
+    "lit": "^3.3.0"
   }
 }

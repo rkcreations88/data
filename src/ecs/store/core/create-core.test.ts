@@ -21,9 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createCore } from "./create-core.js";
-import { Schema } from "../../../core/schema/schema.js";
+import { Schema } from "../../../schema/schema.js";
 import type { Entity } from "../../entity.js";
-import { F32Schema } from "../../../types/f32.js";
+import { F32Schema } from "../../../schema/f32.js";
 
 // Shared test schemas
 export const positionSchema = {

@@ -22,5 +22,5 @@ SOFTWARE.*/
 
 export * from './service.js';
 export * from './add-observable-actions.js';
-export * from './sequential-action.js';
+export * from '../ecs/action-ecs/sequential-action.js';
 export * from './progressive-result.js';

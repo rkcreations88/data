@@ -26,3 +26,4 @@ export {
   type ActionSequence,
   type ActionFor,
 } from "./action-types.js";
+export * from "./sequential-action.js";

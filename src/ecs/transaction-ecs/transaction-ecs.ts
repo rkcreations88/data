@@ -19,9 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Data, FromSchema, Schema } from "../../core/index.js";
+import { Data } from "../../core/index.js";
+import { FromSchema, Schema } from "../../schema/schema.js";
 import {
-  Archetype,
+  Archetable,
   ECS,
   ECSArchetypes,
   ECSComponents,
@@ -43,7 +44,7 @@ import {
 } from "./transaction-types.js";
 import { createECSTransaction } from "./transactions.js";
 import { Observe } from "../../observe/types.js";
-import { arrayEqualsShallow } from "../../core/functions/array-equals-shallow.js";
+import { equalsShallow } from "../../types/array/index.js";
 
 //  we want to cache this a well on each array.
 function isASubsetOfB(a: readonly any[], b: readonly any[]) {
@@ -166,14 +167,14 @@ export function createTransactionECS<
   };
   function observeEntityValues<K extends keyof A>(
     id: Entity,
-    archetype: Archetype<K> & Partial<EntityValues<C>>
+    archetype: Archetable<K> & Partial<EntityValues<C>>
   ): Observe<A[K] | null | undefined>;
   function observeEntityValues(
     id: Entity
   ): Observe<EntityValues<C> | undefined>;
   function observeEntityValues<A>(
     id: Entity,
-    archetype?: Archetype<A> & Partial<EntityValues<C>>
+    archetype?: Archetable<A> & Partial<EntityValues<C>>
   ) {
     return (callback: (value: A | null | undefined) => void) => {
       const notify = () => {
@@ -218,22 +219,22 @@ export function createTransactionECS<
       (callback: () => void) => {
         return addToMapSet(component, componentObservers, callback);
       };
-  const archetypeObservers = new Map<Archetype<unknown>, Set<() => void>>();
+  const archetypeObservers = new Map<Archetable<unknown>, Set<() => void>>();
   const observeArchetypeChanges =
-    <A extends CoreComponents>(archetype: Archetype<A>) =>
+    <A extends CoreComponents>(archetype: Archetable<A>) =>
       (callback: () => void) => {
         return addToMapSet(archetype, archetypeObservers, callback);
       };
 
   const observeArchetypeEntities = <A extends CoreComponents>(
-    archetype: Archetype<A>,
+    archetype: Archetable<A>,
     options?: Omit<SelectOptions<C, A>, "components">
   ): Observe<Entity[]> => {
     return (callback) => {
       let lastValue: Entity[] | undefined;
       const notify = () => {
         const newValue = ecs.selectEntities(archetype, options);
-        if (!lastValue || !arrayEqualsShallow(lastValue, newValue)) {
+        if (!lastValue || !equalsShallow(lastValue, newValue)) {
           lastValue = newValue;
           callback(newValue);
         }

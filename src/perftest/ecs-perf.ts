@@ -20,11 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Column, createECS } from "../ecs/index.js";
-import { Float32Schema, TrueSchema, Uint32Schema } from "../core/schema/schemas.js";
+import { F32Schema, TrueSchema, U32Schema } from "../schema/index.js";
 import { PerformanceTest } from "./perf-test.js";
 import * as assembly from "../../dist/assembly/index.js";
 import { createWasmMemoryAllocator } from "../cache/memory-allocator.js";
-import { TypedArray } from "../types/types.js";
+import { TypedArray } from "../types/index.js";
 
 // const COUNT = 1_000_000;
 // const SIZEOF_F32 = 4;
@@ -38,15 +38,15 @@ function createECSWithParticles(count: number, batch = true) {
     allocator: createWasmMemoryAllocator(assembly.memory),
   })
     .withComponents({
-      color: Uint32Schema,
+      color: U32Schema,
       enabled: TrueSchema,
-      mass: Float32Schema,
-      positionX: Float32Schema,
-      positionY: Float32Schema,
-      positionZ: Float32Schema,
-      velocityX: Float32Schema,
-      velocityY: Float32Schema,
-      velocityZ: Float32Schema,
+      mass: F32Schema,
+      positionX: F32Schema,
+      positionY: F32Schema,
+      positionZ: F32Schema,
+      velocityX: F32Schema,
+      velocityY: F32Schema,
+      velocityZ: F32Schema,
       visible: TrueSchema,
     })
     .withArchetypes({

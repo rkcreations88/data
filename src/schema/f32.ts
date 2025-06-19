@@ -19,13 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import type { Schema } from "../core/schema/schema.js";
+import type { Schema } from "./schema.js";
 
-export const I32Schema = {
-    type: 'integer',
-    minimum: -2147483648,
-    maximum: 2147483647,
+export const F32Schema = {
+    type: 'number',
+    precision: 1,
     default: 0 as number,
 } as const satisfies Schema;
 
-export type I32 = number;
+export type F32 = number;

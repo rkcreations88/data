@@ -23,7 +23,7 @@ import { describe, it, expect } from 'vitest';
 import { createEntityLocationTable } from '../entity-location-table/index.js';
 import { createArchetype, deleteRow } from './index.js';
 import { EntitySchema } from '../entity.js';
-import { U32Schema } from '../../types/u32.js';
+import { U32Schema } from '../../schema/u32.js';
 
 describe('Archetype_deleteRow', () => {
     it('should delete a row from the middle and update moved entity location', () => {

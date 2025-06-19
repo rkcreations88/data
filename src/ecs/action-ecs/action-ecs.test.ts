@@ -25,8 +25,9 @@ import { createActionECS } from "./action-ecs.js";
 import { ActionECS, ActionFor } from "./action-types.js";
 import { EquivalentTypes, True } from "../../types/types.js";
 import { Transaction } from "../transaction-ecs/transaction-types.js";
-import { Float32Schema, Tuple } from "../../core/schema/schemas.js";
-import { Archetype } from "../index.js";
+import { F32Schema } from "../../schema/f32.js";
+import { Tuple } from "../../schema/tuple.js";
+import { Archetable } from "../index.js";
 import { FromSchema } from "../../index.js";
 
 const user = "test";
@@ -317,8 +318,8 @@ describe("ActionECS", () => {
 });
 
 // sample ECS creation
-const Vector3Schema = Tuple(Float32Schema, 3);
-const Vector4Schema = Tuple(Float32Schema, 4);
+const Vector3Schema = Tuple(F32Schema, 3);
+const Vector4Schema = Tuple(F32Schema, 4);
 type Vector3 = FromSchema<typeof Vector3Schema>;
 type Vector4 = FromSchema<typeof Vector4Schema>;
 
@@ -412,8 +413,8 @@ ecs.observe.archetypeEntities(ecs.archetypes.player)((playerEntities) => {
 
   type Archetypes = typeof ecs extends ActionECS<any, infer A, any> ? A : never;
   type CheckArchetypes = True<EquivalentTypes<Archetypes, {
-    position_size: Archetype<{ size: number; id: number; position: string; }>;
-    position: Archetype<{ id: number; position: string; }>;
+    position_size: Archetable<{ size: number; id: number; position: string; }>;
+    position: Archetable<{ id: number; position: string; }>;
   }>>;
 
 }

@@ -23,6 +23,7 @@ SOFTWARE.*/
 import { describe, expect, test } from "vitest";
 import { ECSJSON } from "./core-ecs-types.js";
 import { createCoreECS } from "./core-ecs.js";
+import { U32Schema } from "../../schema/u32.js";
 
 const createEcsWithMassAndSize = (data?: ECSJSON, precision: 1 | 2 = 2) => {
   return createCoreECS({ data })
@@ -62,7 +63,7 @@ describe("ecs-functions", () => {
       ecs: true,
       version: 4,
       components: {
-        id: { type: "integer", minimum: +0, maximum: 4294967295 },
+        id: U32Schema,
         mass: { type: "number", minimum: +0, precision: 2 },
         size: { enum: ["small", "medium", "large"] },
         gravity: {},
@@ -112,7 +113,7 @@ describe("ecs-functions", () => {
       ecs: true,
       version: 4,
       components: {
-        id: { type: "integer", minimum: +0, maximum: 4294967295 },
+        id: U32Schema,
         mass: { type: "number", minimum: +0, precision: 1 },
         size: { enum: ["small", "medium", "large"] },
         gravity: {},

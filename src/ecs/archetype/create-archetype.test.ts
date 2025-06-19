@@ -23,7 +23,7 @@ import { describe, it, expect } from 'vitest';
 import { createArchetype } from '../archetype/index.js';
 import { createEntityLocationTable } from '../entity-location-table/index.js';
 import { EntitySchema } from '../entity.js';
-import { U32Schema } from '../../types/u32.js';
+import { U32Schema } from '../../schema/u32.js';
 
 describe('createArchetype', () => {
     it('should create an archetype with basic components', () => {

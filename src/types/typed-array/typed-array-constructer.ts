@@ -21,4 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import type { TypedArray } from "./typed-array.js";
 
-export type TypedArrayConstructor = (new (lengthOrArrayBuffer: number | ArrayBufferLike) => TypedArray) & { BYTES_PER_ELEMENT: number };
+/**
+ * Type signature for typed array constructors.
+ */
+export type TypedArrayConstructor = { BYTES_PER_ELEMENT: number } & (new (
+    arrayBuffer?: ArrayBufferLike,
+    byteOffset?: number,
+    length?: number
+  ) => TypedArray);
+  

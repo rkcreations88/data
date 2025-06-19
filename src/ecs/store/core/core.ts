@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Entity } from "../../entity.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
-import { Schema } from "../../../core/schema/schema.js";
+import { Schema } from "../../../schema/schema.js";
 import { EntityLocation } from "../../entity-location-table/entity-location.js";
 import { CoreComponents } from "../../core-components.js";
 import { StringKeyof } from "../../../types/index.js";

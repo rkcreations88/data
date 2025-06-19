@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { isAsyncGenerator } from "../../core/functions/is-async-generator.js";
 import { createObservableEvent } from "../../observe/create-observable-event.js";
-import { SequentialActionResult } from "../../service/sequential-action.js";
+import { SequentialActionResult } from "./sequential-action.js";
 import {
   ECSArchetypes,
   ECSComponents,
