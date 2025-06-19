@@ -26,6 +26,7 @@ SOFTWARE.*/
 export * from "./create-observable-event.js";
 export * from "./create-observable-state.js";
 export * from "./create-persisted-state.js";
+export * from "./create-query-state.js";
 export * from "./from-constant.js";
 export * from "./from-element-id.js";
 export * from "./from-element-properties-and-events.js";

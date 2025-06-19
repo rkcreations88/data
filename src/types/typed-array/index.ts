@@ -22,3 +22,4 @@ SOFTWARE.*/
 export * from "./typed-array.js";
 export * from "./typed-array-constructer.js";
 export * from "./get-byte-size.js";
+export * from "./copy-to-gpu-buffer.js";

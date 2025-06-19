@@ -56,6 +56,14 @@
     "./ecs": {
       "import": "./ecs/index.js",
       "types": "./ecs/index.d.ts"
+    },
+    "./lit": {
+      "import": "./lit/index.js",
+      "types": "./lit/index.d.ts"
+    },
+    "./service": {
+      "import": "./service/index.js",
+      "types": "./service/index.d.ts"
     }
   },
   "devDependencies": {
