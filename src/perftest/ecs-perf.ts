@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Column, createECS } from "../ecs/index.js";
+import { Column, createECS } from "../old-ecs/index.js";
 import { F32Schema, TrueSchema, U32Schema } from "../schema/index.js";
 import { PerformanceTest } from "./perf-test.js";
 import * as assembly from "../../dist/assembly/index.js";

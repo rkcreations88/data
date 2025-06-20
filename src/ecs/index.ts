@@ -19,10 +19,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from "./core-ecs/index.js";
-export * from "./ecs/index.js";
-export * from "./transaction-ecs/index.js";
-export * from "./action-ecs/index.js";
 export * from "./database/index.js";
 export * from "./store/index.js";
 export * from "./archetype/index.js";

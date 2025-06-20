@@ -27,7 +27,7 @@ import { EquivalentTypes, True } from "../../types/types.js";
 import { Transaction } from "../transaction-ecs/transaction-types.js";
 import { F32Schema } from "../../schema/f32.js";
 import { Tuple } from "../../schema/tuple.js";
-import { Archetable } from "../index.js";
+import { Archetable } from "../../old-ecs/index.js";
 import { FromSchema } from "../../index.js";
 
 const user = "test";

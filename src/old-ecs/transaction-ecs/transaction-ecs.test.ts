@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { describe, expect, test } from "vitest";
 import { createTransactionECS } from "./transaction-ecs.js";
 import { EntityValuesFor, TransactionCommitFor, TransactionECS } from "./transaction-types.js";
-import { Archetable, Entity } from "../index.js";
+import { Archetable, Entity } from "../../old-ecs/index.js";
 import { EquivalentTypes, True } from "../../types/types.js";
 
 const createECSWithMassAndSize = () => {

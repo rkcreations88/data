@@ -28,7 +28,7 @@ import {
   ECSComponents,
   ECSResources,
 } from "../ecs/ecs-types.js";
-import { Entity } from "../index.js";
+import { Entity } from "../entity.js";
 import {
   Transaction,
   TransactionECS,

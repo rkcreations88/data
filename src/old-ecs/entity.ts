@@ -19,15 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-/**
- * Binds all functions to the object containing them.
- * @param obj
- * @returns
- */
-export function bindFunctions<T extends object>(obj: T) {
-  type AnyFunction = (...args: unknown[]) => unknown;
-  for (const key in obj) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- need to bind functions
-    obj[key] = (obj[key] as AnyFunction).bind(obj) as any;
-  }
-}
+import { FromSchema } from "../schema/schema.js";
+import { U32Schema } from "../schema/u32.js";
+
+export const EntitySchema = U32Schema;
+export type Entity = FromSchema<typeof EntitySchema>;

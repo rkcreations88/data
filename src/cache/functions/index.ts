@@ -21,9 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 export * from "./hashing/index.js";
-// export * from './bind-functions.js';
 export * from "./memoize.js";
-// export * from './omit.js';
 export * from "./prevent-parallel-execution.js";
-export * from "./types.js";
+export * from "./async-data-function.js";
 export * from "./get-cached.js";
