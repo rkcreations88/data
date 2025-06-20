@@ -44,7 +44,7 @@ import {
 } from "./transaction-types.js";
 import { createECSTransaction } from "./transactions.js";
 import { Observe } from "../../observe/types.js";
-import { equalsShallow } from "../../types/array/index.js";
+import { equalsShallow } from "../../equals-shallow.js";
 
 //  we want to cache this a well on each array.
 function isASubsetOfB(a: readonly any[], b: readonly any[]) {

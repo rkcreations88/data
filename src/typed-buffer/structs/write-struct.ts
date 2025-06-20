@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from "./typed-array.js";
-export * from "./typed-array-constructer.js";
-export * from "./get-byte-size.js";
-export * from "./copy-to-gpu-buffer.js";
+import type { DataView32 } from "../../internal/data-view-32/data-view-32.js";
+
+export type WriteStruct<T> = (data: DataView32, index: number, value: T) => void;
+

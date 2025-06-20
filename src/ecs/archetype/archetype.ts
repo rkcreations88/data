@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { CoreComponents } from "../core-components.js";
 import { Entity } from "../entity.js";
-import { Table, ReadonlyTable } from "../../types/table/index.js";
+import { Table, ReadonlyTable } from "../../table/index.js";
 
 export type EntityInsertValues<C> = Omit<C, "id">;
 export type ArchetypeId = number;

@@ -19,15 +19,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { grow } from "../array-buffer-like/grow.js";
-import { DataView32 } from "../data-view-32/data-view-32.js";
-import { createDataView32 } from "../data-view-32/create-data-view-32.js";
-import { FromSchema, Schema } from "../../schema/schema.js";
+import { grow } from "../internal/array-buffer-like/grow.js";
+import { DataView32 } from "../internal/data-view-32/data-view-32.js";
+import { createDataView32 } from "../internal/data-view-32/create-data-view-32.js";
+import { FromSchema, Schema } from "../schema/schema.js";
 import { createReadStruct } from "./structs/create-read-struct.js";
 import { createWriteStruct } from "./structs/create-write-struct.js";
 import { getStructLayout } from "./structs/get-struct-layout.js";
 import { TypedBuffer } from "./typed-buffer.js";
-import { TypedArray } from "../typed-array/typed-array.js";
+import { TypedArray } from "../internal/typed-array/index.js";
 
 export const createStructBuffer = <S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     args: {

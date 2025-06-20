@@ -21,10 +21,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { getStructLayout } from "./get-struct-layout.js";
-import type { Schema } from "../../../schema/schema.js";
-import { F32Schema } from "../../../schema/f32.js";
-import { U32Schema } from "../../../schema/u32.js";
-import { I32Schema } from "../../../schema/i32.js";
+import type { Schema } from "../../schema/schema.js";
+import { F32Schema } from "../../schema/f32.js";
+import { U32Schema } from "../../schema/u32.js";
+import { I32Schema } from "../../schema/i32.js";
 
 describe("getStructLayout", () => {
     it("should handle primitive types", () => {

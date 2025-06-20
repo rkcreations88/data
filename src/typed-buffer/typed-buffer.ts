@@ -19,7 +19,23 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import type { DataView32 } from "../../data-view-32/data-view-32.js";
+import { TypedArray } from "../internal/typed-array/index.js";
 
-export type WriteStruct<T> = (data: DataView32, index: number, value: T) => void;
+export interface ReadonlyTypedBuffer<T> {
+    readonly size: number;
+    get(index: number): T;
+    [Symbol.iterator](): IterableIterator<T>;
+}
+
+export interface TypedBuffer<T> extends ReadonlyTypedBuffer<T> {
+    size: number;                 // drops `readonly`
+    set(index: number, value: T): void;
+    copyWithin(target: number, start: number, end: number): void;
+
+    /**
+     * Returns the typed array of the buffer.
+     * @throws If the buffer is not backed by a typed array.
+     */
+    getTypedArray(): TypedArray;
+}
 

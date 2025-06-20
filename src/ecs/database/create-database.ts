@@ -27,7 +27,7 @@ import { Database, ToTransactionFunctions, TransactionDeclarations } from "./dat
 import { Entity } from "../entity.js";
 import { EntityValues } from "../store/core/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
-import { mapEntries } from "../../types/object/index.js";
+import { mapEntries } from "../../internal/object/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Observe, withMap } from "../../observe/index.js";
 import { createTransactionalStore } from "./transactional-store/create-transactional-store.js";

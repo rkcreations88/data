@@ -57,6 +57,10 @@
       "import": "./ecs/index.js",
       "types": "./ecs/index.d.ts"
     },
+    "./old-ecs": {
+      "import": "./old-ecs/index.js",
+      "types": "./old-ecs/index.d.ts"
+    },
     "./lit": {
       "import": "./lit/index.js",
       "types": "./lit/index.d.ts"
@@ -64,6 +68,14 @@
     "./service": {
       "import": "./service/index.js",
       "types": "./service/index.d.ts"
+    },
+    "./table": {
+      "import": "./table/index.js",
+      "types": "./table/index.d.ts"
+    },
+    "./typed-buffer": {
+      "import": "./typed-buffer/index.js",
+      "types": "./typed-buffer/index.d.ts"
     }
   },
   "devDependencies": {

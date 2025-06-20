@@ -19,11 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { grow } from "../array-buffer-like/grow.js";
-import { I32Schema } from "../../schema/i32.js";
-import { Schema } from "../../schema/schema.js";
-import { TypedArrayConstructor } from "../typed-array/typed-array-constructer.js";
-import { U32Schema } from "../../schema/u32.js";
+import { grow } from "../internal/array-buffer-like/grow.js";
+import { I32Schema } from "../schema/i32.js";
+import { Schema } from "../schema/schema.js";
+import { TypedArrayConstructor } from "../internal/typed-array/index.js";
+import { U32Schema } from "../schema/u32.js";
 import { TypedBuffer } from "./typed-buffer.js";
 
 const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {

@@ -19,19 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Schema } from "../../../schema/schema.js";
-import { getStructLayout } from "./get-struct-layout.js";
+import type { DataView32 } from "../../internal/data-view-32/data-view-32.js";
 
-/**
- * Asserts that the schema is a valid struct schema.
- * @param schema - The schema to assert.
- * @returns The schema.
- * @throws An error if the schema is not a valid struct schema.
- */
-export const assertStruct = <S extends Schema>(schema: S): S => {
-    const layout = getStructLayout(schema);
-    if (!layout) {
-        throw new Error("Invalid structure schema");
-    }
-    return schema;
-};
+export type ReadStruct<T> = (data: DataView32, index: number) => T;
+

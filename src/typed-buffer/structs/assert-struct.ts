@@ -19,31 +19,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../../schema/schema.js";
-import { createStructBuffer } from "./create-struct-buffer.js";
-import { getStructLayout } from "./structs/get-struct-layout.js";
-import { TypedBuffer } from "./typed-buffer.js";
-import { createNumberBuffer } from "./create-number-buffer.js";
-import { createArrayBuffer } from "./create-array-buffer.js";
+import { Schema } from "../../schema/schema.js";
+import { getStructLayout } from "./get-struct-layout.js";
 
-export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
-    args: {
-        schema: S,
-        length?: number,
-        maxLength?: number,
+/**
+ * Asserts that the schema is a valid struct schema.
+ * @param schema - The schema to assert.
+ * @returns The schema.
+ * @throws An error if the schema is not a valid struct schema.
+ */
+export const assertStruct = <S extends Schema>(schema: S): S => {
+    const layout = getStructLayout(schema);
+    if (!layout) {
+        throw new Error("Invalid structure schema");
     }
-): TypedBuffer<FromSchema<S>> => {
-    const { schema } = args;
-    args.maxLength ??= 10_0000_000;
-
-    if (schema.type === 'number' || schema.type === 'integer') {
-        return createNumberBuffer(args) as TypedBuffer<FromSchema<S>>;
-    }
-
-    const structLayout = getStructLayout(schema, false);
-    if (structLayout) {
-        return createStructBuffer(args);
-    }
-
-    return createArrayBuffer<FromSchema<S>>(args);
-}
+    return schema;
+};

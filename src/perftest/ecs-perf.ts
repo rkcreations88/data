@@ -24,7 +24,7 @@ import { F32Schema, TrueSchema, U32Schema } from "../schema/index.js";
 import { PerformanceTest } from "./perf-test.js";
 import * as assembly from "../../dist/assembly/index.js";
 import { createWasmMemoryAllocator } from "../cache/memory-allocator.js";
-import { TypedArray } from "../types/index.js";
+import { TypedArray } from "../internal/typed-array/index.js";
 
 // const COUNT = 1_000_000;
 // const SIZEOF_F32 = 4;

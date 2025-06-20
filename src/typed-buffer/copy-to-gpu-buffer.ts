@@ -1,4 +1,4 @@
-import { TypedBuffer } from "../typed-buffer/typed-buffer.js";
+import { TypedBuffer } from "./typed-buffer.js";
 
 export const copyToGPUBuffer = <T>(
     typedBuffer: TypedBuffer<T>,

@@ -19,18 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { createTypedBuffer, TypedBuffer } from "../typed-buffer/index.js";
-import { FromSchema, Schema } from "../../schema/schema.js";
-import { Table } from "./table.js";
+import { FromSchema } from "../schema/schema.js";
+import { U32Schema } from "../schema/u32.js";
 
-export const createTable = <C extends Record<string, Schema>>(schemas: C) : Table<{ [K in keyof C]: FromSchema<C[K]> }> => {
-    const columns = {} as { [K in keyof C]: TypedBuffer<FromSchema<C[K]>> };
-    for (const name in schemas) {
-        columns[name] = createTypedBuffer({schema: schemas[name]});
-    }
-
-    return {
-        columns,
-        rows: 0,
-    };
-}
+export const RowIndexSchema = U32Schema;
+export type RowIndex = FromSchema<typeof RowIndexSchema>;

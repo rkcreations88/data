@@ -19,19 +19,31 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import * as TABLE from "../../table/index.js";
-import { Archetype } from "./archetype.js";
-import { CoreComponents } from "../core-components.js";
-import { EntityLocationTable } from "../entity-location-table/entity-location-table.js";
+import { FromSchema, Schema } from "../schema/schema.js";
+import { createStructBuffer } from "./create-struct-buffer.js";
+import { getStructLayout } from "./structs/get-struct-layout.js";
+import { TypedBuffer } from "./typed-buffer.js";
+import { createNumberBuffer } from "./create-number-buffer.js";
+import { createArrayBuffer } from "./create-array-buffer.js";
 
-/**
- * Deletes a row from the archetype and updates the entity location table for any row which may have been moved into it's position.
- * Does NOT modify the deleted row's entity location.
- */
-export const deleteRow = <C extends CoreComponents>(archetype: Archetype<C>, row: number, entityLocationTable: EntityLocationTable): void => {
-    const movedARowToFillHole = TABLE.deleteRow(archetype, row);
-    if (movedARowToFillHole) {
-        const movedId = archetype.columns.id.get(row);
-        entityLocationTable.update(movedId, { archetype: archetype.id, row });
+export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
+    args: {
+        schema: S,
+        length?: number,
+        maxLength?: number,
     }
+): TypedBuffer<FromSchema<S>> => {
+    const { schema } = args;
+    args.maxLength ??= 10_0000_000;
+
+    if (schema.type === 'number' || schema.type === 'integer') {
+        return createNumberBuffer(args) as TypedBuffer<FromSchema<S>>;
+    }
+
+    const structLayout = getStructLayout(schema, false);
+    if (structLayout) {
+        return createStructBuffer(args);
+    }
+
+    return createArrayBuffer<FromSchema<S>>(args);
 }

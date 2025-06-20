@@ -22,14 +22,13 @@ SOFTWARE.*/
 import { FromSchema, Schema } from "../../../schema/schema.js";
 import { createEntityLocationTable } from "../../entity-location-table/index.js";
 import * as ARCHETYPE from "../../archetype/index.js";
-import * as TABLE from "../../../types/table/index.js";
+import * as TABLE from "../../../table/index.js";
 import { Archetype } from "../../archetype/archetype.js";
 import { CoreComponents } from "../../core-components.js";
 import { Entity, EntitySchema } from "../../entity.js";
 import { Core, EntityUpdateValues, EntityValues, QueryOptions } from "./core.js";
-import { Assert, Equal, Simplify } from "../../../types/index.js";
+import { Assert, Equal, Simplify, StringKeyof } from "../../../types/index.js";
 import { ComponentSchemas } from "../../component-schemas.js";
-import { StringKeyof } from "../../../types/index.js";
 
 export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC): Core<Simplify<CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>> {
     type C = CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };

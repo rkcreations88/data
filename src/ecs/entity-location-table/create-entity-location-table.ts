@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { grow } from "../../types/array-buffer-like/grow.js";
+import { grow } from "../../internal/array-buffer-like/grow.js";
 import { EntityLocationTable } from "./entity-location-table.js";
 import { EntityLocation } from "./entity-location.js";
 import { Entity } from "../entity.js";

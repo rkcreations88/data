@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { FromSchema } from "../../schema/schema.js";
-import * as TABLE from "../../types/table/index.js";
+import * as TABLE from "../../table/index.js";
 import { Archetype } from "./archetype.js";
 import { CoreComponents } from "../core-components.js";
 import { EntityLocationTable } from "../entity-location-table/entity-location-table.js";

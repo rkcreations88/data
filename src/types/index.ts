@@ -19,14 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 export * from "./types.js";
 export * from "./assert.js";
 export * from "./equal.js";
-export * from "./array/index.js";
-export * from "./object/index.js";
-export * from "./array-buffer-like/index.js";
-export * from "./data-view-32/index.js";
-export * from "./table/index.js";
-export * from "./typed-array/index.js";
-export * from "./typed-buffer/index.js";
-
