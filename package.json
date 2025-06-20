@@ -1,6 +1,6 @@
 {
   "name": "@adobe/data",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Adobe data oriented programming library",
   "type": "module",
   "sideEffects": true,
@@ -33,6 +33,21 @@
     "asbuild:debug": "asc assembly/index.ts -o dist/assembly/index.wasm --target debug --enable simd && echo built dist/assembly/index.wasm",
     "asbuild:release": "asc assembly/index.ts -o dist/assembly/index.wasm --target release --enable simd --optimize && echo built dist/assembly/index.wasm",
     "start": "npx serve ."
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./dist/index.d.ts"],
+      "observe": ["./dist/observe/index.d.ts"],
+      "cache": ["./dist/cache/index.d.ts"],
+      "schema": ["./dist/schema/index.d.ts"],
+      "types": ["./dist/types/index.d.ts"],
+      "ecs": ["./dist/ecs/index.d.ts"],
+      "old-ecs": ["./dist/old-ecs/index.d.ts"],
+      "lit": ["./dist/lit/index.d.ts"],
+      "service": ["./dist/service/index.d.ts"],
+      "table": ["./dist/table/index.d.ts"],
+      "typed-buffer": ["./dist/typed-buffer/index.d.ts"]
+    }
   },
   "exports": {
     ".": {
