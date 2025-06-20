@@ -34,8 +34,8 @@
   },
   "exports": {
     ".": {
-      "import": "./core/index.js",
-      "types": "./core/index.d.ts"
+      "import": "./index.js",
+      "types": "./index.d.ts"
     },
     "./cache": {
       "import": "./cache/index.js",

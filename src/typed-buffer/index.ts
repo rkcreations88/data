@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 export * from './typed-buffer.js';
 export * from './create-typed-buffer.js';
-export * from './create-number-buffer.js';
-export * from './create-array-buffer.js';
 export * from './create-struct-buffer.js';
-export * from './structs/index.js';
+export { getStructLayout } from './structs/index.js';
+export { copyToGPUBuffer } from './copy-to-gpu-buffer.js';

@@ -1,3 +1,4 @@
+
 /*MIT License
 
 © Copyright 2025 Adobe. All rights reserved.
@@ -19,9 +20,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+type Mutable<T> = {
+    -readonly [P in keyof T]: T[P] extends object ? Mutable<T[P]> : T[P];
+};
 
-export { type Data } from "./data.js";
-export { type IsData } from "./is-data.js";
-export { equals } from "./equals.js";
-export { normalize} from "./normalize.js";
-export { mutableClone } from "./mutable-clone.js";
+export const mutableClone = <T extends object>(obj: T): Mutable<T> => {
+    return structuredClone(obj) as Mutable<T>;
+};
