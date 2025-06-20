@@ -25,7 +25,7 @@
     "bump": "pnpm version patch --no-git-tag-version && git commit -am 'bumped patch version' && pnpm run publish",
     "pre-commit": "lint-staged",
     "prepublish": "echo DO NOT PUBLISH FROM ROOT, use pnpm run publish instead. && exit 1",
-    "publish": "pnpm build && cd dist && pnpm publish --no-git-checks --access public",
+    "publish": "pnpm build && pnpm publish --no-git-checks --access public",
     "perftest": "node dist/perftest/index.js",
     "test": "vitest",
     "asbuild:debug": "asc assembly/index.ts -o dist/assembly/index.wasm --target debug --enable simd && echo built dist/assembly/index.wasm",
