@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { Service, isService } from './service.js';
 import { Observe, createObservableEvent } from '../observe/index.js';
 import { EquivalentTypes, Expand, IsVoid, NoNever, True } from '../types/index.js';
-import { isPromise } from '../core/functions/is-promise.js';
+import { isPromise } from '../internal/promise/is-promise.js';
 
 const NESTED_SERVICE_SEPARATOR = '_';
 

@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { MemoryAllocator } from "../../cache/memory-allocator.js";
-import { Data } from "../../core/index.js";
+import { Data } from "../../index.js";
 import { FromSchema, Schema } from "../../schema/schema.js";
 import { whereClauseToPredicate } from "./ecs-where-functions.js";
 import {

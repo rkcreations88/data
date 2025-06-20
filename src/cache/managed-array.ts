@@ -22,7 +22,7 @@ SOFTWARE.*/
 import { MemoryAllocator } from "./memory-allocator.js";
 import { FromSchema, Schema } from "../schema/index.js";
 import { TypedArray, TypedArrayConstructor } from "../types/index.js";
-import { Data } from "../core/index.js";
+import { Data } from "../index.js";
 
 export interface NativeArray<T> {
   readonly length: number;

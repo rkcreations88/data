@@ -1,4 +1,4 @@
-import { Data } from "../core/data.js";
+import { Data } from "../data.js";
 import { createObservableState } from "./create-observable-state.js";
 import { Observe } from "./types.js"; 
 

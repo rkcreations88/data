@@ -24,7 +24,7 @@ import {
   Data,
   equals,
   normalize,
-} from "../../core/index.js";
+} from "../../index.js";
 import {
   FromSchema,
   Schema,

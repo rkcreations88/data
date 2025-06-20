@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { memoizeFactory } from "../../../core/functions/memoize-factory.js";
+import { memoizeFactory } from "../../../internal/function/memoize-factory.js";
 import type { StructLayout } from "./struct-layout.js";
 import type { WriteStruct } from "./write-struct.js";
 import { getFieldOffset } from "./get-field-offset.js";

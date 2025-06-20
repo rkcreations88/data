@@ -23,7 +23,7 @@ import { type AsyncCache } from "./async-cache.js";
 import { type BlobRef, BlobStore, isBlobRef, blobStore } from "./blob-store.js";
 import { getManagedPersistentCache } from "./get-persistent-cache.js";
 
-import { type Data } from "../core/data.js";
+import { type Data } from "../data.js";
 import { createExpiringDataCache } from "./expiring-data-cache.js";
 
 export type DataCacheInternal<K extends Data, V extends Data> = AsyncCache<

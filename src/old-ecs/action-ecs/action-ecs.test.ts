@@ -28,7 +28,7 @@ import { Transaction } from "../transaction-ecs/transaction-types.js";
 import { F32Schema } from "../../schema/f32.js";
 import { Tuple } from "../../schema/tuple.js";
 import { Archetable } from "../../old-ecs/index.js";
-import { FromSchema } from "../../index.js";
+import { FromSchema } from "../../schema/index.js";
 
 const user = "test";
 const createECSWithMassAndSize = () => {
