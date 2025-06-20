@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { describe, expect, test } from "vitest";
 import { createECS } from "./ecs.js";
 import { TrueSchema } from "../../schema/index.js";
-import { Archetable, ECS } from "./ecs-types.js";
+import { Archetype, ECS } from "./ecs-types.js";
 import { EquivalentTypes, True } from "../../types/types.js";
 
 const createEcsWithMassAndSize = () => {
@@ -454,8 +454,8 @@ describe("ECS", () => {
 
   type Archetypes = typeof ecs extends ECS<any, infer A, any> ? A : never;
   type CheckArchetypes = True<EquivalentTypes<Archetypes, {
-    position_size: Archetable<{ size: number; id: number; position: string; }>;
-    position: Archetable<{ id: number; position: string; }>;
+    position_size: Archetype<{ size: number; id: number; position: string; }>;
+    position: Archetype<{ id: number; position: string; }>;
   }>>;
 
 }

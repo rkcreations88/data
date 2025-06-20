@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { DELETE } from "../core-ecs/core-ecs.js";
 import {
-  Archetable,
+  Archetype,
   ECS,
   ECSArchetypes,
   ECSComponents,
@@ -67,16 +67,16 @@ export function createECSTransaction<
   const changed = {
     entities: new Set<Entity>(),
     components: new Set<keyof C>(),
-    archetypes: new Set<Archetable>(),
+    archetypes: new Set<Archetype>(),
   };
 
   function createEntity(): Entity;
   function createEntity<T>(
-    archetype: Archetable<T>,
+    archetype: Archetype<T>,
     values: EntityCreateValues<T>
   ): Entity;
   function createEntity<T>(
-    archetype?: Archetable<T>,
+    archetype?: Archetype<T>,
     values?: EntityCreateValues<T>
   ): Entity {
     const entity =

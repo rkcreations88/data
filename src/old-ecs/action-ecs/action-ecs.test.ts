@@ -27,7 +27,7 @@ import { EquivalentTypes, True } from "../../types/types.js";
 import { Transaction } from "../transaction-ecs/transaction-types.js";
 import { F32Schema } from "../../schema/f32.js";
 import { Tuple } from "../../schema/tuple.js";
-import { Archetable } from "../../old-ecs/index.js";
+import { Archetype } from "../../old-ecs/index.js";
 import { FromSchema } from "../../schema/index.js";
 
 const user = "test";
@@ -413,8 +413,8 @@ ecs.observe.archetypeEntities(ecs.archetypes.player)((playerEntities) => {
 
   type Archetypes = typeof ecs extends ActionECS<any, infer A, any> ? A : never;
   type CheckArchetypes = True<EquivalentTypes<Archetypes, {
-    position_size: Archetable<{ size: number; id: number; position: string; }>;
-    position: Archetable<{ id: number; position: string; }>;
+    position_size: Archetype<{ size: number; id: number; position: string; }>;
+    position: Archetype<{ id: number; position: string; }>;
   }>>;
 
 }

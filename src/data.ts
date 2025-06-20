@@ -33,5 +33,6 @@ export type Data =
   | number
   | boolean
   | null
+  | undefined
   | ReadonlyArray<Data>
   | { readonly [K in string]?: Data };

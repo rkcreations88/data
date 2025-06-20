@@ -21,10 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 export type { Schema, FromSchema } from "./schema.js";
-export type { Nullable } from "./nullable.js";
+export { Nullable } from "./nullable.js";
 export type { getDynamicSchema } from "./dynamic/index.js";
 export { withValidation } from "./validation/with-validation.js";
 export { type F32, F32Schema } from "./f32.js";
 export { type I32, I32Schema } from "./i32.js";
 export { type U32, U32Schema } from "./u32.js";
 export { type True, TrueSchema } from "./true.js";
+export { BooleanSchema } from "./boolean.js";
+export { type Time, TimeSchema } from "./time.js";

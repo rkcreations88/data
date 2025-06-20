@@ -31,7 +31,7 @@ import {
   CoreComponents,
 } from "../core-ecs/core-ecs-types.js";
 import {
-  Archetable,
+  Archetype,
   ECS,
   ECSArchetypes,
   ECSComponents,
@@ -69,7 +69,7 @@ export interface TransactionECS<
     archetypes: S
   ): TransactionECS<
     C,
-    Simplify<A & { [AN in keyof S]: Archetable<{ [PN in S[AN][number]]: C[PN] }> }>,
+    Simplify<A & { [AN in keyof S]: Archetype<{ [PN in S[AN][number]]: C[PN] }> }>,
     R
   >;
   withResources<S extends { [K: string]: Data }>(
@@ -93,7 +93,7 @@ export interface TransactionObservables<
     [K in keyof R]: Observe<R[K]>;
   };
 
-  entityValues<A extends Archetable>(
+  entityValues<A extends Archetype>(
     id: Entity,
     archetype: A & Partial<EntityValues<C>>
   ): Observe<EntityValuesFor<A> | null | undefined>;
@@ -102,11 +102,11 @@ export interface TransactionObservables<
   entityChanges(entity: Entity): Observe<void>;
   componentChanges<K extends keyof C>(component: K): Observe<void>;
   archetypeChanges<A extends CoreComponents>(
-    archetype: Archetable<A>
+    archetype: Archetype<A>
   ): Observe<void>;
 
   archetypeEntities<A extends CoreComponents>(
-    archetype: Archetable<A>,
+    archetype: Archetype<A>,
     options?: Omit<SelectOptions<C, A>, "components">
   ): Observe<Entity[]>;
 }
@@ -220,7 +220,7 @@ export interface Transaction<
 export interface TransactionChanges<C extends ECSComponents> {
   readonly entities: Set<Entity>;
   readonly components: Set<keyof C>;
-  readonly archetypes: Set<Archetable>;
+  readonly archetypes: Set<Archetype>;
 }
 
 /**
@@ -243,6 +243,6 @@ export type TransactionFor<ECS> =
 export type EntityValuesFor<T> =
   T extends TransactionECS<infer C, infer A, infer R>
   ? EntityValues<C>
-  : T extends Archetable<infer E>
+  : T extends Archetype<infer E>
   ? E
   : never;

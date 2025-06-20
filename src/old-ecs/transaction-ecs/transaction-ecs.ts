@@ -22,7 +22,7 @@ SOFTWARE.*/
 import { Data } from "../../index.js";
 import { FromSchema, Schema } from "../../schema/schema.js";
 import {
-  Archetable,
+  Archetype,
   ECS,
   ECSArchetypes,
   ECSComponents,
@@ -167,14 +167,14 @@ export function createTransactionECS<
   };
   function observeEntityValues<K extends keyof A>(
     id: Entity,
-    archetype: Archetable<K> & Partial<EntityValues<C>>
+    archetype: Archetype<K> & Partial<EntityValues<C>>
   ): Observe<A[K] | null | undefined>;
   function observeEntityValues(
     id: Entity
   ): Observe<EntityValues<C> | undefined>;
   function observeEntityValues<A>(
     id: Entity,
-    archetype?: Archetable<A> & Partial<EntityValues<C>>
+    archetype?: Archetype<A> & Partial<EntityValues<C>>
   ) {
     return (callback: (value: A | null | undefined) => void) => {
       const notify = () => {
@@ -219,15 +219,15 @@ export function createTransactionECS<
       (callback: () => void) => {
         return addToMapSet(component, componentObservers, callback);
       };
-  const archetypeObservers = new Map<Archetable<unknown>, Set<() => void>>();
+  const archetypeObservers = new Map<Archetype<unknown>, Set<() => void>>();
   const observeArchetypeChanges =
-    <A extends CoreComponents>(archetype: Archetable<A>) =>
+    <A extends CoreComponents>(archetype: Archetype<A>) =>
       (callback: () => void) => {
         return addToMapSet(archetype, archetypeObservers, callback);
       };
 
   const observeArchetypeEntities = <A extends CoreComponents>(
-    archetype: Archetable<A>,
+    archetype: Archetype<A>,
     options?: Omit<SelectOptions<C, A>, "components">
   ): Observe<Entity[]> => {
     return (callback) => {

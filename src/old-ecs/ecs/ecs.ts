@@ -33,7 +33,7 @@ import {
 } from "../core-ecs/core-ecs-types.js";
 import { createCoreECS } from "../core-ecs/core-ecs.js";
 import {
-  Archetable,
+  Archetype,
   ECS,
   ECSArchetypes,
   ECSComponents,
@@ -67,12 +67,12 @@ export function createECS<
 
   function getEntityValues<K extends keyof A>(
     id: Entity,
-    archetype: Archetable<K>
+    archetype: Archetype<K>
   ): A[K] & Partial<EntityValues<C>> | null | undefined;
   function getEntityValues(id: Entity): EntityValues<C> | undefined;
   function getEntityValues<K extends keyof A>(
     id: Entity,
-    archetype?: Archetable<K>
+    archetype?: Archetype<K>
   ): A[K] & Partial<EntityValues<C>> | EntityValues<C> | null | undefined {
     const entityValues = core.getEntityValues(id) as
       | EntityValues<C>
@@ -94,7 +94,7 @@ export function createECS<
    * This is a shared function used by both selectEntityValuesWithoutCache and selectEntityValues
    */
   function collectEntitiesFromTables<T extends CoreComponents>(
-    archetype: Archetable<T>,
+    archetype: Archetype<T>,
     options?: SelectOptions<C, T>
   ): (T & EntityValues<C>)[] {
     const entities: any[] = [];
@@ -147,13 +147,13 @@ export function createECS<
 
   // Select entity values without using cache (internal use)
   function selectEntityValuesWithoutCache<T extends CoreComponents>(
-    archetype: Archetable<T>
+    archetype: Archetype<T>
   ): (T & EntityValues<C>)[] {
     return collectEntitiesFromTables(archetype);
   }
 
   const selectEntityValues = <T extends CoreComponents, P extends Partial<T>>(
-    archetype: Archetable<T>,
+    archetype: Archetype<T>,
     options?: SelectOptions<C, T>
   ): (T & EntityValues<C>)[] => {
     // Fast path: if no options are provided, just return all entities
@@ -202,7 +202,7 @@ export function createECS<
   };
 
   const selectEntities = <C extends CoreComponents, T extends CoreComponents>(
-    archetype: Archetable<T> & CoreArchetype<CoreComponents>,
+    archetype: Archetype<T> & CoreArchetype<CoreComponents>,
     options?: SelectOptions<C, T>
   ) => {
     // Fast path: if no filtering options are provided, use core implementation
