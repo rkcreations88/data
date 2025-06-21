@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export * from './service.js';
-export * from './add-observable-actions.js';
-export * from './sequential-action.js';
+export { type Service } from './service.js';
+export { isService } from './is-service.js';
+export { type WithObservableActions, type ServiceActionMessages, addObservableActions } from './add-observable-actions.js';
 export * from './progressive-result.js';

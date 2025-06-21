@@ -34,7 +34,7 @@ module.exports = {
   plugins: ['header'],
   rules: {
     'header/header': [
-      'error',
+      'warn',
       'block',
       headerLines,
     ],

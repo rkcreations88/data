@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { getManagedPersistentCache } from "./get-persistent-cache.js";
-import { type FromSchema, type Schema } from "../core/schema/schema.js";
+import { type FromSchema, type Schema } from "../schema/index.js";
 import { blobToHash } from "./functions/hashing/blob-to-hash.js";
 import { preventParallelExecution } from "./functions/prevent-parallel-execution.js";
 
@@ -136,8 +136,8 @@ export interface BlobStore {
 /**
  * Creates a new blob store instance.
  */
-export async function createBlobStore() {
-  const cache = await getManagedPersistentCache("blobstore", {
+export function createBlobStore() {
+  const cachePromise = getManagedPersistentCache("blobstore", {
     maximumMemoryEntries: 10,
     maximumStorageEntries: 1000,
   });
@@ -148,6 +148,7 @@ export async function createBlobStore() {
   const urlToKey = new Map<string, string>();
 
   async function getRef(blob: Blob | string): Promise<BlobRef> {
+    const cache = await cachePromise;
     if (typeof blob === "string") {
       //  if this is not a remote url, then we can assume it is a data url and fetch the blob from it.
       blob = await (await fetch(blob)).blob();
@@ -167,6 +168,7 @@ export async function createBlobStore() {
     if (isRemoteBlobRef(r)) {
       return true;
     }
+    const cache = await cachePromise;
     const response = await cache.match(toRequest(r));
     return response !== undefined;
   }
@@ -177,7 +179,7 @@ export async function createBlobStore() {
     }
     const response = await (isRemoteBlobRef(r)
       ? fetch(r.remoteBlobRef)
-      : cache.match(toRequest(r)));
+      : (await cachePromise).match(toRequest(r)));
     if (!response) {
       return null;
     }
@@ -190,6 +192,7 @@ export async function createBlobStore() {
 
   async function releaseBlob(r: BlobRef): Promise<void> {
     if (isLocalBlobRef(r)) {
+      const cache = await cachePromise;
       cache.delete(toRequest(r));
     }
   }
@@ -272,4 +275,4 @@ export async function createBlobStore() {
 /**
  * The global blob store that can be used to store and retrieve blobs.
  */
-export const blobStore: BlobStore = await createBlobStore();
+export const blobStore: BlobStore = createBlobStore();

@@ -19,10 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { preventParallelExecution } from "./prevent-parallel-execution.js";
-import { AsyncDataFunction } from "./types.js";
 
-import { type Data } from "../../core/data.js";
+import { preventParallelExecution } from "./prevent-parallel-execution.js";
+import { AsyncDataFunction } from "./async-data-function.js";
+
+import { type Data } from "../../data.js";
 import { getDataCache } from "../index.js";
 
 /**

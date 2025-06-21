@@ -22,9 +22,6 @@ SOFTWARE.*/
 
 export interface Service {
   readonly serviceName: string;
+  dispose?(): void;
 }
 
-export function isService(value: unknown): value is Service {
-  const maybeService = value as null | undefined | Partial<Service>;
-  return typeof maybeService?.serviceName === 'string';
-}

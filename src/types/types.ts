@@ -45,31 +45,12 @@ export type VoidFunctions<T> = NoNever<{
   : never
   : never;
 }>;
-/**
- * Type signature for typed array constructors.
- */
-export type TypedArrayConstructor = { BYTES_PER_ELEMENT: number } & (new (
-  arrayBuffer: ArrayBuffer,
-  byteOffset: number,
-  length: number
-) => TypedArray);
 
 /**
  * @internal
  */
 export type Primitive = string | number | boolean | null | undefined;
-/**
- * Shared type for all Typed Arrays such as Uint8Array, Int8Array, etc.
- */
-export type TypedArray =
-  | Uint8Array
-  | Int8Array
-  | Uint16Array
-  | Int16Array
-  | Uint32Array
-  | Int32Array
-  | Float32Array
-  | Float64Array;
+
 
 /* eslint-disable @typescript-eslint/no-unused-vars -- we have many compile time checks which are unused */
 
@@ -77,10 +58,7 @@ export type KeysWithValueType<T, U> = {
   [K in keyof T]: T[K] extends U ? K : never;
 }[keyof T];
 
-export type StringKeyof<T> =
-  T extends ReadonlyArray<unknown>
-  ? Exclude<keyof T, keyof [] | symbol | number>
-  : Exclude<keyof T, symbol | number>;
+export type StringKeyof<T> = Extract<keyof T, string>;
 
 export type IsVoid<T> = [void] extends [T]
   ? T extends void
@@ -186,14 +164,3 @@ export type NoUnion<Key> = [Key] extends [UnionToIntersection<Key>]
   ? Key
   : never;
 
-type OmitNever<T> = {
-  [K in keyof T as T[K] extends never ? never : K]: T[K];
-};
-type OmitNeverOrUndefined<T> = {
-  [K in keyof T as T[K] extends never | undefined ? never : K]: T[K];
-};
-
-//  extracts values from an array by key array preserving ordering.
-type OrderedKeysToValues<T, K> = {
-  [P in keyof K]: K[P] extends keyof T ? T[K[P]] : never;
-};

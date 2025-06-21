@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "composite": true,
-    "target": "ES2021",
+    "target": "ESNext",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["@webgpu/types"],
     "skipLibCheck": true,
     "rootDir": "src",
     "outDir": "dist",

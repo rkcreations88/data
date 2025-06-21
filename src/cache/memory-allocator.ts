@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { TypedArray, TypedArrayConstructor } from "../types/types.js";
+import { TypedArray, TypedArrayConstructor } from "../internal/typed-array/index.js";
 import { createObservableEvent } from "../observe/create-observable-event.js";
 import { Observe } from "../observe/types.js";
 
@@ -45,7 +45,7 @@ export interface MemoryAllocator {
   /**
    * Release the memory associated with the given buffer.
    */
-  release(buffer: ArrayBuffer): void;
+  release(buffer: TypedArray): void;
 }
 
 export function createSimpleMemoryAllocator(): MemoryAllocator {
@@ -65,7 +65,7 @@ export function createSimpleMemoryAllocator(): MemoryAllocator {
     refresh<T extends TypedArrayConstructor>(typedArray: InstanceType<T>) {
       return typedArray;
     },
-    release(_buffer: ArrayBuffer): void {
+    release(_buffer: TypedArray): void {
       return;
     },
   };

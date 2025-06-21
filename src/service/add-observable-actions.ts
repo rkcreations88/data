@@ -20,10 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Service, isService } from './service.js';
+import { Service } from './service.js';
+import { isService } from "./is-service.js";
 import { Observe, createObservableEvent } from '../observe/index.js';
 import { EquivalentTypes, Expand, IsVoid, NoNever, True } from '../types/index.js';
-import { isPromise } from '../core/functions/is-promise.js';
+import { isPromise } from '../internal/promise/is-promise.js';
 
 const NESTED_SERVICE_SEPARATOR = '_';
 
@@ -133,9 +134,9 @@ type SubServiceActionMessages<T, ParentPrefix extends string = ''> = {
   [K in keyof T]: K extends string ? ServiceActionMessagesWithPrefix<T[K], `${ParentPrefix}${K}${typeof NESTED_SERVICE_SEPARATOR}`> : never;
 };
 
-export type IsPromiseOrVoid<T> = T extends Promise<unknown> ? true : IsVoid<T>;
+type IsPromiseOrVoid<T> = T extends Promise<unknown> ? true : IsVoid<T>;
 
-export type PromiseOrVoidFunctions<T> = NoNever<{
+type PromiseOrVoidFunctions<T> = NoNever<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- needed for the infer R pattern to work correctly with IsPromiseOrVoid
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? (IsPromiseOrVoid<R> extends true ? T[K] : never) : never;
 }>;
@@ -172,7 +173,7 @@ export type ServiceActionMessages<T> = Extract<ServiceActionMessagesWithPrefix<T
     child: ChildService;
   }
 
-  type MyServiceActionMessages = ServiceActionMessagesWithPrefix<MyService>;
+  type MyServiceActionMessages = ServiceActionMessages<MyService>;
 
   type ExpectedActionMessages =
     | {

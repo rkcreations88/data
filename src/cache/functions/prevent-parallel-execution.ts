@@ -19,9 +19,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { type AsyncDataFunction } from "./types.js";
+import { type AsyncDataFunction } from "./async-data-function.js";
 
-import { type Data } from "../../core/data.js";
+import { type Data } from "../../data.js";
 
 /**
  * Returns an async function which can NOT be executed simultaneously with the same arguments.
