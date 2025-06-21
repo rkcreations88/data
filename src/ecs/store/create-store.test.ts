@@ -293,7 +293,7 @@ describe("createStore", () => {
                 position: positionSchema,
                 health: healthSchema,
             }, {
-                time: { delta: 0.016, elapsed: 0 }
+                time: { default: { delta: 0.016, elapsed: 0 } }
             });
 
             // Create some entities
@@ -332,8 +332,8 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    time: { delta: 0.016, elapsed: 0 },
-                    config: { debug: false, volume: 1.0 }
+                    time: { default: { delta: 0.016, elapsed: 0 } },
+                    config: { default: { debug: false, volume: 1.0 } }
                 }
             );
 
@@ -350,8 +350,8 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    time: defaultTime,
-                    config: defaultConfig
+                    time: { default: defaultTime },
+                    config: { default: defaultConfig }
                 }
             );
 
@@ -363,8 +363,8 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    time: { delta: 0.016, elapsed: 0 },
-                    config: { debug: false, volume: 1.0 }
+                    time: { default: { delta: 0.016, elapsed: 0 } },
+                    config: { default: { debug: false, volume: 1.0 } }
                 }
             );
 
@@ -378,8 +378,8 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    time: { delta: 0.016, elapsed: 0 },
-                    config: { debug: false, volume: 1.0 }
+                    time: { default: { delta: 0.016, elapsed: 0 } },
+                    config: { default: { debug: false, volume: 1.0 } }
                 }
             );
 
@@ -398,8 +398,8 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    time: { delta: 0.016, elapsed: 0 },
-                    config: { debug: false, volume: 1.0 }
+                    time: { default: { delta: 0.016, elapsed: 0 } },
+                    config: { default: { debug: false, volume: 1.0 } }
                 }
             );
 
@@ -417,7 +417,7 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    time: { delta: 0.016, elapsed: 0 }
+                    time: { default: { delta: 0.016, elapsed: 0 } }
                 }
             );
 
@@ -443,9 +443,9 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    time: { delta: 0.016, elapsed: 0 },
-                    config: { debug: false, volume: 1.0 },
-                    score: 0
+                    time: { default: { delta: 0.016, elapsed: 0 } },
+                    config: { default: { debug: false, volume: 1.0 } },
+                    score: { default: 0 }
                 }
             );
 
@@ -467,7 +467,7 @@ describe("createStore", () => {
                     time: timeSchema
                 },
                 { 
-                    time: { delta: 0.016, elapsed: 0 }
+                    time: { default: { delta: 0.016, elapsed: 0 } }
                 }
             );
 
@@ -484,7 +484,7 @@ describe("createStore", () => {
                     time: timeSchema
                 },
                 { 
-                    time: { delta: 0.016, elapsed: 0 }
+                    time: { default: { delta: 0.016, elapsed: 0 } }
                 }
             );
 
@@ -504,9 +504,9 @@ describe("createStore", () => {
             const store = createStore(
                 { position: positionSchema },
                 { 
-                    score: 0,
-                    name: "Player1",
-                    active: true
+                    score: { default: 0 },
+                    name: { default: "Player1" },
+                    active: { default: true }
                 }
             );
 
@@ -538,7 +538,7 @@ describe("createStore", () => {
 
             const store = createStore(
                 { position: positionSchema },
-                { complex: complexResource }
+                { complex: { default: complexResource } }
             );
 
             expect(store.resources.complex).toEqual(complexResource);

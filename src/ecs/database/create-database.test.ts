@@ -55,7 +55,7 @@ type Name = FromSchema<typeof nameSchema>;
 function createTestObservableStore() {
     const baseStore = createStore(
         { position: positionSchema, health: healthSchema, name: nameSchema },
-        { time: { delta: 0.016, elapsed: 0 } }
+        { time: { default: { delta: 0.016, elapsed: 0 } } }
     );
     
     return createDatabase(baseStore, {

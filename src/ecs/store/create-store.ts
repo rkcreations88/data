@@ -19,7 +19,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { ResourceComponents } from "./resource-components.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { StringKeyof } from "../../types/types.js";
 import { CoreComponents } from "../core-components.js";
@@ -29,31 +28,34 @@ import { FromSchema, Schema } from "../../schema/schema.js";
 import { createCore } from "./core/create-core.js";
 import { Entity } from "../entity.js";
 import { Core, QueryOptions } from "./core/core.js";
+import { ResourceSchemas } from "../resource-schemas.js";
 
-export function createStore<NC extends ComponentSchemas, R extends ResourceComponents>(
+export function createStore<NC extends ComponentSchemas, NR extends ResourceSchemas>(
     newComponentSchemas: NC,
-    resourceDefaults: R,
-): Store<Simplify<CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>, { -readonly [K in StringKeyof<R>]: R[K] }> {
+    resourceSchemas: NR,
+): Store<
+    Simplify<CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>,
+    { -readonly [K in StringKeyof<NR>]: FromSchema<NR[K]> }
+> {
     type C = CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
+    type R = { [K in StringKeyof<NR>]: FromSchema<NR[K]> };
     const resources = {} as R;
-    type S = StringKeyof<C>;
 
-    const resourceSchema = {} as const satisfies Schema;
     const componentAndResourceSchemas: { [K in StringKeyof<C | R>]: Schema } = { ...newComponentSchemas };
     // Resources are stored in the core as components, so we need to add them to the componentSchemas
-    for (const name of Object.keys(resourceDefaults)) {
+    for (const name of Object.keys(resourceSchemas)) {
         const resourceId = name as StringKeyof<C | R>;
-        componentAndResourceSchemas[resourceId] = resourceSchema;
+        componentAndResourceSchemas[resourceId] = resourceSchemas[name];
     }
 
     const core = createCore(componentAndResourceSchemas) as unknown as Core<C>;
 
     // Each resource will be stored as the only entity in an archetype of [id, <resourceName>]
     // The resource component we added above will contain the resource value
-    for (const [name, resource] of Object.entries(resourceDefaults)) {
+    for (const [name, resourceSchema] of Object.entries(resourceSchemas)) {
         const resourceId = name as StringKeyof<C>;
         const archetype = core.ensureArchetype(["id", resourceId]);
-        archetype.insert({ [resourceId]: resource } as any);
+        archetype.insert({ [resourceId]: resourceSchema.default } as any);
         const row = 0;
         Object.defineProperty(resources, name, {
             get: () => archetype.columns[resourceId]!.get(row),

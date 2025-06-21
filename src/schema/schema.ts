@@ -59,6 +59,7 @@ export interface Schema {
   type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object';
   conditionals?: readonly Conditional[];
   ui?: UIProperties;
+  transient?: boolean;
   default?: any;
   precision?: 1 | 2;
   multipleOf?: number;
