@@ -24,6 +24,7 @@ import { createStore } from "./create-store.js";
 import { createCoreTestSuite, positionSchema, healthSchema, nameSchema } from "./core/create-core.test.js";
 import { Schema } from "../../schema/schema.js";
 import { F32Schema } from "../../schema/f32.js";
+import { ComponentSchemas } from "../component-schemas.js";
 
 describe("createStore", () => {
     // Test that store passes all core functionality tests

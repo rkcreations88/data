@@ -22,5 +22,7 @@ SOFTWARE.*/
 export * from "./database/index.js";
 export * from "./store/index.js";
 export * from "./archetype/index.js";
-
-
+export * from "./entity.js";
+export * from "./core-components.js";
+export * from "./component-schemas.js";
+export * from "./resource-schemas.js";
