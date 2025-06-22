@@ -33,7 +33,9 @@ const positionSchema = {
         x: F32Schema,
         y: F32Schema,
         z: F32Schema,
-    }
+    },
+    required: ["x", "y", "z"],
+    additionalProperties: false,
 } as const satisfies Schema;
 type Position = FromSchema<typeof positionSchema>;
 
@@ -42,7 +44,9 @@ const healthSchema = {
     properties: {
         current: F32Schema,
         max: F32Schema,
-    }
+    },
+    required: ["current", "max"],
+    additionalProperties: false,
 } as const satisfies Schema;
 type Health = FromSchema<typeof healthSchema>;
 

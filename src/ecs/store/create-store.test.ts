@@ -29,7 +29,7 @@ import { ComponentSchemas } from "../component-schemas.js";
 describe("createStore", () => {
     // Test that store passes all core functionality tests
     createCoreTestSuite("Store core functionality", (componentSchemas) => 
-        createStore(componentSchemas, {})
+        createStore(componentSchemas, {}) as any
     );
 
     // Select function tests

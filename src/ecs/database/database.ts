@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { ArchetypeId } from "../archetype/index.js";
-import { CoreComponents } from "../core-components.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { ReadonlyStore, Store } from "../store/index.js";
 import { Entity } from "../entity.js";
@@ -28,15 +27,16 @@ import { EntityValues } from "../store/core/index.js";
 import { Observe } from "../../observe/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
 import { StringKeyof } from "../../types/types.js";
+import { Components } from "../store/components.js";
 
 export type TransactionDeclaration<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
     R extends ResourceComponents = never,
     Input extends any | void = any
 > = (db: Store<C, R>, input: Input) => void | Entity
 
 export type TransactionDeclarations<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
     R extends ResourceComponents = never,
 > = {
     readonly [name: string]: TransactionDeclaration<C, R>
@@ -61,7 +61,7 @@ export type ToTransactionFunctions<T> = {
 export type TransactionFunctions = { readonly [K: string]: (args?: any) => void | Entity };
 
 export interface Database<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
     R extends ResourceComponents = never,
     T extends TransactionFunctions = never,
 > extends ReadonlyStore<C, R> {

@@ -33,9 +33,10 @@ import { Observe, withMap } from "../../observe/index.js";
 import { createTransactionalStore } from "./transactional-store/create-transactional-store.js";
 import { isPromise } from "../../internal/promise/is-promise.js";
 import { isAsyncGenerator } from "../../internal/async-generator/is-async-generator.js";
+import { Components } from "../store/components.js";
 
 export function createDatabase<
-    C extends CoreComponents,
+    C extends Components,
     R extends ResourceComponents,
     TD extends TransactionDeclarations<C, R>
 >(

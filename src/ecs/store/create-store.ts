@@ -34,7 +34,7 @@ export function createStore<NC extends ComponentSchemas, NR extends ResourceSche
     newComponentSchemas: NC,
     resourceSchemas: NR,
 ): Store<
-    Simplify<CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>,
+    { [K in StringKeyof<NC>]: FromSchema<NC[K]> },
     { -readonly [K in StringKeyof<NR>]: FromSchema<NR[K]> }
 > {
     type C = CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };

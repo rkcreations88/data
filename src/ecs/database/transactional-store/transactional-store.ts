@@ -20,14 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { ArchetypeId, EntityInsertValues } from "../../archetype/index.js";
-import { CoreComponents } from "../../core-components.js";
 import { ResourceComponents } from "../../store/resource-components.js";
 import { ReadonlyStore, Store } from "../../store/index.js";
 import { Entity } from "../../entity.js";
 import { EntityUpdateValues } from "../../store/core/index.js";
+import { Components } from "../../store/components.js";
 
 export interface TransactionalStore<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
     R extends ResourceComponents = never
 > extends ReadonlyStore<C, R> {
     /**

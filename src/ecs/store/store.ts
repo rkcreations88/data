@@ -24,10 +24,11 @@ import { ResourceComponents } from "./resource-components.js";
 import { Core, QueryOptions, ReadonlyCore } from "./core/core.js";
 import { Entity } from "../entity.js";
 import { StringKeyof } from "../../types/types.js";
+import { Components } from "./components.js";
 
-interface BaseStore<C extends CoreComponents> {
+interface BaseStore<C extends object = never> {
     select<
-        Include extends StringKeyof<C>,
+        Include extends StringKeyof<C & CoreComponents>,
         Exclude extends StringKeyof<C> = never
     >(
         include: Include[],
@@ -36,7 +37,7 @@ interface BaseStore<C extends CoreComponents> {
 }
 
 export interface ReadonlyStore<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
     R extends ResourceComponents = never
 > extends BaseStore<C>, ReadonlyCore<C> {
     readonly resources: { readonly [K in StringKeyof<R>]: R[K] };
@@ -48,7 +49,7 @@ export type ToReadonlyStore<T extends Store<any, any>> = T extends Store<infer C
  * Store is the main interface for storing components, entities and resources.
  */
 export interface Store<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
     R extends ResourceComponents = never
 > extends BaseStore<C>, Core<C> {
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };

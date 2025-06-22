@@ -19,12 +19,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { Entity } from "../../entity.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { Schema } from "../../../schema/schema.js";
 import { EntityLocation } from "../../entity-location-table/entity-location.js";
 import { CoreComponents } from "../../core-components.js";
 import { StringKeyof } from "../../../types/index.js";
+import { Components } from "../components.js";
 
 export type EntityValues<C> = CoreComponents & { readonly [K in StringKeyof<C>]?: C[K] }
 export type EntityUpdateValues<C> = Partial<Omit<C, "id">>;
@@ -35,19 +37,19 @@ export type QueryOptions<Include, Exclude> =
         : { exclude?: never };
 
 export interface ReadonlyCore<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
 > {
     readonly componentSchemas: { readonly [K in StringKeyof<C>]: Schema };
 
     queryArchetypes<
-        Include extends StringKeyof<C>,
+        Include extends StringKeyof<C & CoreComponents>,
         Exclude extends StringKeyof<C> = never
     >(
         include: readonly Include[],
         options?: QueryOptions<Include, Exclude>
-    ): readonly ReadonlyArchetype<CoreComponents & Pick<C, Include>>[];
+    ): readonly ReadonlyArchetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
 
-    ensureArchetype: <const CC extends StringKeyof<C>>(components: readonly CC[]) => ReadonlyArchetype<CoreComponents & { [K in CC]: C[K]}>;
+    ensureArchetype: <const CC extends StringKeyof<C | CoreComponents>>(components: readonly CC[]) => ReadonlyArchetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K]}>;
     locate: (entity: Entity) => EntityLocation | null;
     read: (entity: Entity) => EntityValues<C> | null;
 }
@@ -56,16 +58,16 @@ export interface ReadonlyCore<
  * This is the main interface for the low level ECS Core.
  */
 export interface Core<
-    C extends CoreComponents = CoreComponents,
+    C extends Components = never,
 > extends ReadonlyCore<C> {
     queryArchetypes<
-        Include extends StringKeyof<C>,
+        Include extends StringKeyof<C & CoreComponents>,
         Exclude extends StringKeyof<C> = never
     >(
         include: Include[],
         options?: QueryOptions<Include, Exclude>
-    ): readonly Archetype<CoreComponents & Pick<C, Include>>[];
-    ensureArchetype: <const CC extends StringKeyof<C>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: C[K]}>;
+    ): readonly Archetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
+    ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K]}>;
     delete: (entity: Entity) => void;
     update: (entity: Entity, values: EntityUpdateValues<C>) => void;
 }

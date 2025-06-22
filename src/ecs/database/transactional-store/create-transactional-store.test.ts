@@ -32,7 +32,9 @@ const positionSchema = {
         x: F32Schema,
         y: F32Schema,
         z: F32Schema,
-    }
+    },
+    required: ["x", "y", "z"],
+    additionalProperties: false,
 } as const satisfies Schema;
 
 const healthSchema = {
@@ -40,7 +42,7 @@ const healthSchema = {
     properties: {
         current: F32Schema,
         max: F32Schema,
-    }
+    },
 } as const satisfies Schema;
 
 describe("createTransactionalStore", () => {

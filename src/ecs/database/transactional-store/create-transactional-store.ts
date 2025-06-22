@@ -27,11 +27,12 @@ import { Entity } from "../../entity.js";
 import { EntityUpdateValues } from "../../store/core/index.js";
 import { TransactionalStore, TransactionResult, TransactionWriteOperation } from "./transactional-store.js";
 import { StringKeyof } from "../../../types/types.js";
+import { Components } from "../../store/components.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
 
-export function createTransactionalStore<C extends CoreComponents, R extends ResourceComponents>(
+export function createTransactionalStore<C extends Components, R extends ResourceComponents>(
     store: Store<C, R>,
 ): TransactionalStore<C, R> {
 
@@ -258,7 +259,7 @@ function addUpdateOperationsMaybeCombineLast<C>(
 }
 
 // Helper function to apply write operations for rollback
-function applyWriteOperations<C extends CoreComponents, R extends ResourceComponents>(
+function applyWriteOperations<C extends Components, R extends ResourceComponents>(
     store: Store<C, R>, 
     operations: TransactionWriteOperation<C>[]
 ): void {
@@ -267,7 +268,7 @@ function applyWriteOperations<C extends CoreComponents, R extends ResourceCompon
             case "insert": {
                 const componentNames = ["id", ...Object.keys(operation.values)] as StringKeyof<C>[];
                 const archetype = store.ensureArchetype(componentNames);
-                archetype.insert(operation.values);
+                archetype.insert(operation.values as any);
                 break;
             }
             case "update":
