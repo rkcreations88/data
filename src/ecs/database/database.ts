@@ -29,19 +29,8 @@ import { TransactionResult } from "./transactional-store/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
 
-export type TransactionDeclaration<
-    C extends Components = never,
-    R extends ResourceComponents = never,
-    Input extends any | void = any
-> = (db: Store<C, R>, input: Input) => void | Entity
-
-export type TransactionDeclarations<
-    C extends Components = never,
-    R extends ResourceComponents = never,
-> = {
-    readonly [name: string]: TransactionDeclaration<C, R>
-}
-
+export type TransactionDeclaration<Input extends any | void = any> = (input: Input) => void | Entity
+export type TransactionDeclarations = object
 export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
 
 /**
@@ -49,23 +38,25 @@ export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
  */
 export type ToTransactionFunctions<T> = {
     [K in keyof T]:
-      T[K] extends (db: Store<any, any>, ...rest: infer R) => infer Rtn
-        ? R extends []               // only the db param → no args
-          ? () => Rtn
-          : R extends [infer A]      // db + one extra → widen extra to A | string
-            ? (arg: A | AsyncArgsProvider<A>) => Rtn
-            : never                  // more than one extra arg – not covered here
+      T[K] extends () => infer R
+        ? R extends void | Entity
+          ? () => R
+          : never
+      : T[K] extends (input: infer Input) => infer R
+        ? R extends void | Entity
+          ? (arg: Input | AsyncArgsProvider<Input>) => R
+          : never
         : never;
-  };
+  };  
 
 export type TransactionFunctions = { readonly [K: string]: (args?: any) => void | Entity };
 
 export interface Database<
     C extends Components = never,
     R extends ResourceComponents = never,
-    T extends TransactionFunctions = never,
+    T extends TransactionDeclarations = never,
 > extends ReadonlyStore<C, R> {
-    readonly transactions: T;
+    readonly transactions: ToTransactionFunctions<T>;
     readonly observe: {
         readonly component: { readonly [K in StringKeyof<C>]: Observe<void> };
         readonly resource: { readonly [K in StringKeyof<R>]: Observe<R[K]> };

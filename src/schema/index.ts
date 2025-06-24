@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export type { Schema, FromSchema } from "./schema.js";
+export type { Schema, FromSchema, FromSchemas } from "./schema.js";
 export { Nullable } from "./nullable.js";
 export type { getDynamicSchema } from "./dynamic/index.js";
 export { withValidation } from "./validation/with-validation.js";

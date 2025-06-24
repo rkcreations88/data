@@ -1,14 +1,21 @@
-import { Schema } from "@adobe/data/schema";
-import { TransactionDeclaration, TransactionFunctions } from "../database.js";
-import { CoreComponents } from "../../core-components.js";
-import { ResourceComponents } from "../../store/resource-components.js";
+import { FromSchemas } from "@adobe/data/schema";
+import { Database, TransactionDeclarations } from "../database.js";
+import { ComponentSchemas } from "../../component-schemas.js";
+import { ResourceSchemas } from "../../resource-schemas.js";
+import { Store } from "../../store/store.js";
 
 export type DatabaseSchema<
-    C extends CoreComponents = CoreComponents,
-    R extends ResourceComponents = never,
-    T extends TransactionFunctions = never,
+    CS extends ComponentSchemas = ComponentSchemas,
+    RS extends ResourceSchemas = ResourceSchemas,
+    TD = TransactionDeclarations
 > = {
-    readonly components: Record<string, Schema>;
-    readonly resources: Record<string, Schema>;
-    readonly transactions: Record<string, TransactionDeclaration<C, R>>;
+    readonly components: CS;
+    readonly resources: RS;
+    readonly transactions: (store: Store<any, any>) => TD;
 };
+
+export type DatabaseFromSchema<DS extends DatabaseSchema<any, any, any>> = Database<
+    FromSchemas<DS["components"]>,
+    FromSchemas<DS["resources"]>,
+    DS["transactions"]
+>;

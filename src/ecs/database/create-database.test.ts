@@ -62,29 +62,29 @@ function createTestObservableStore() {
         { time: { default: { delta: 0.016, elapsed: 0 } } }
     );
     
-    return createDatabase(baseStore, {
-        createPositionEntity(db, args: { position: { x: number, y: number, z: number } }) {
+    return createDatabase(baseStore, db => ({
+        createPositionEntity(args: { position: { x: number, y: number, z: number } }) {
             const archetype = db.ensureArchetype(["id", "position"]);
             return archetype.insert(args);
         },
-        createPositionHealthEntity(db, args: { position: { x: number, y: number, z: number }, health: { current: number, max: number } }) {
+        createPositionHealthEntity(args: { position: { x: number, y: number, z: number }, health: { current: number, max: number } }) {
             const archetype = db.ensureArchetype(["id", "position", "health"]);
             return archetype.insert(args);
         },
-        createPositionNameEntity(db, args: { position: { x: number, y: number, z: number }, name: string }) {
+        createPositionNameEntity(args: { position: { x: number, y: number, z: number }, name: string }) {
             const archetype = db.ensureArchetype(["id", "position", "name"]);
             return archetype.insert(args);
         },
-        createFullEntity(db, args: { position: { x: number, y: number, z: number }, health: { current: number, max: number }, name: string }) {
+        createFullEntity(args: { position: { x: number, y: number, z: number }, health: { current: number, max: number }, name: string }) {
             const archetype = db.ensureArchetype(["id", "position", "health", "name"]);
             return archetype.insert(args);
         },
-        createEntityAndReturn(db, args: { position: Position, name: Name }) {
+        createEntityAndReturn(args: { position: Position, name: Name }) {
             const archetype = db.ensureArchetype(["id", "position", "name"]);
             const entity = archetype.insert(args);
             return entity;
         },
-        updateEntity(db, args: { 
+        updateEntity(args: { 
             entity: Entity, 
             values: Partial<{
                 position: { x: number, y: number, z: number },
@@ -94,13 +94,13 @@ function createTestObservableStore() {
         }) {
             db.update(args.entity, args.values);
         },
-        deleteEntity(db, args: { entity: Entity }) {
+        deleteEntity(args: { entity: Entity }) {
             db.delete(args.entity);
         },
-        updateTime(db, args: { delta: number, elapsed: number }) {
+        updateTime(args: { delta: number, elapsed: number }) {
             db.resources.time = args;
         }
-    });
+    }));
 }
 
 describe("createDatabase", () => {

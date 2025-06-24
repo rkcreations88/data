@@ -156,7 +156,7 @@ export type OptionalKeys<T extends object> = Exclude<
 >;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- needed for dynamic type
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   k: infer I
 ) => void
   ? I

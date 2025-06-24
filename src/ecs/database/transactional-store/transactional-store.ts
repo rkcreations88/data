@@ -43,6 +43,8 @@ export interface TransactionalStore<
             transient?: boolean;
         }
     ): TransactionResult<C>;
+
+    transactionStore: Store<C, R>;
 }
 
 export type TransactionInsertOperation<C> = {
