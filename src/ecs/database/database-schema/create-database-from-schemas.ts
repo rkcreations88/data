@@ -29,13 +29,19 @@ type DatabaseFromSchemas<DS extends DatabaseSchema[]> =
         AllTransactions<DS>
     >;
 
-export const createDatabaseFromSchemas = <DS extends DatabaseSchema[]>(schemas: DS): DatabaseFromSchemas<DS> => {
+type StoreFromSchemas<DS extends DatabaseSchema[]> =
+    Store<
+        AllComponents<DS>,
+        AllResources<DS>
+    >;
+
+export const createDatabaseFromSchemas = <DS extends DatabaseSchema[]>(...schemas: DS): { database: DatabaseFromSchemas<DS>, store: StoreFromSchemas<DS> } => {
     const componentSchemas = Object.assign({}, ...schemas.map(s => s.components));
     const resourceSchemas = Object.assign({}, ...schemas.map(s => s.resources));
     const transactionDeclarations = (store: Store<any, any>) => Object.assign({}, ...schemas.map(s => s.transactions(store)));
     const store = createStore(componentSchemas, resourceSchemas);
     const database = createDatabase(store, transactionDeclarations);
-    return database as any;
+    return { database, store} as any;
 }
 
 (
@@ -59,7 +65,7 @@ export const createDatabaseFromSchemas = <DS extends DatabaseSchema[]>(schemas: 
                 }
             })
         )
-        const combinedSchema = createDatabaseFromSchemas([alphaSchema, betaSchema]);
+        const combinedSchema = createDatabaseFromSchemas(alphaSchema, betaSchema).database;
         combinedSchema.transactions.updateAlpha({ entity: 1, alpha: 1 });
         combinedSchema.transactions.updateBeta({ entity: 2, beta: 2 });
         combinedSchema.queryArchetypes(["alpha", "beta"]);

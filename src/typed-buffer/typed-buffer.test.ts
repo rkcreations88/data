@@ -24,6 +24,7 @@ import { createTypedBuffer } from './create-typed-buffer.js';
 import { createNumberBuffer } from './create-number-buffer.js';
 import { createArrayBuffer } from './create-array-buffer.js';
 import { createStructBuffer } from './create-struct-buffer.js';
+import { createConstBuffer } from './create-const-buffer.js';
 
 describe('TypedBuffer copyWithin', () => {
     describe('NumberBuffer', () => {
@@ -217,6 +218,7 @@ describe('TypedBuffer copyWithin', () => {
             const numberBuffer = createTypedBuffer({
                 schema: { type: 'number', precision: 1 }
             });
+            expect(numberBuffer.type).toBe('number-buffer');
             numberBuffer.set(0, 1);
             numberBuffer.set(1, 2);
             numberBuffer.copyWithin(2, 0, 2);
@@ -227,6 +229,7 @@ describe('TypedBuffer copyWithin', () => {
             const arrayBuffer = createTypedBuffer({
                 schema: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 2 } as const
             });
+            expect(arrayBuffer.type).toBe('array-buffer');
             arrayBuffer.set(0, ['a', 'b']);
             arrayBuffer.set(1, ['c', 'd']);
             arrayBuffer.copyWithin(2, 0, 2);
@@ -243,6 +246,7 @@ describe('TypedBuffer copyWithin', () => {
                     }
                 }
             });
+            expect(structBuffer.type).toBe('struct-buffer');
             structBuffer.set(0, { x: 1, y: 2 });
             structBuffer.set(1, { x: 3, y: 4 });
             structBuffer.copyWithin(2, 0, 2);

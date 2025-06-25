@@ -54,6 +54,7 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
     let typedArray: TypedArray = dataView[arrayType];
 
     const buffer: TypedBuffer<FromSchema<S>> = {
+        type: 'struct-buffer',
         getTypedArray() {
             return typedArray;
         },

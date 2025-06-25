@@ -64,6 +64,7 @@ export const createNumberBuffer = (args: {
     } = args;
     const array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {
+        type: 'number-buffer',
         getTypedArray() {
             return array;
         },

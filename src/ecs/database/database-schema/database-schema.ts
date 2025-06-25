@@ -1,5 +1,5 @@
 import { FromSchemas } from "@adobe/data/schema";
-import { Database, TransactionDeclarations } from "../database.js";
+import { Database, TransactionDeclaration } from "../database.js";
 import { ComponentSchemas } from "../../component-schemas.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
 import { Store } from "../../store/store.js";
@@ -7,7 +7,7 @@ import { Store } from "../../store/store.js";
 export type DatabaseSchema<
     CS extends ComponentSchemas = ComponentSchemas,
     RS extends ResourceSchemas = ResourceSchemas,
-    TD = TransactionDeclarations
+    TD extends Record<string, TransactionDeclaration> = Record<string, TransactionDeclaration>
 > = {
     readonly components: CS;
     readonly resources: RS;

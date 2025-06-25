@@ -21,36 +21,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { TypedBuffer } from "./typed-buffer.js";
 
-export const createArrayBuffer = <T>(args: {
-    length?: number,
-}): TypedBuffer<T> => {
-    const {
-        length = 16,
-    } = args;
-    const array = new Array<T>(length);
-    const typedBuffer = {
-        type: 'array-buffer',
+export const createConstBuffer = <T>(
+    value: T
+): TypedBuffer<T> => {    
+    let size = 0;
+    const typedBuffer: TypedBuffer<T> = {
+        type: 'const-buffer',
         getTypedArray() {
-            throw new Error("Typed array not supported");
+            throw new Error("Const buffer does not support getTypedArray");
         },
         get size(): number {
-            return array.length;
+            return size;
         },
         set size(value: number) {
-            array.length = value;
+            size = value;
         },
         get(index: number): T {
-            return array[index];
+            return value;
         },
         set(index: number, value: T): void {
-            array[index] = value;
+            // No-op: const buffer ignores set calls
         },
         copyWithin(target: number, start: number, end: number): void {
-            array.copyWithin(target, start, end);
+            // No-op: const buffer copyWithin is a no-op
         },
         [Symbol.iterator](): IterableIterator<T> {
-            return array[Symbol.iterator]();
+            let index = 0;
+            return {
+                next(): IteratorResult<T> {
+                    if (index < size) {
+                        index++;
+                        return { value, done: false };
+                    }
+                    return { value: undefined, done: true };
+                },
+                [Symbol.iterator]() {
+                    return this;
+                }
+            };
         },
-    } as const satisfies TypedBuffer<T>;
+    };
+    
     return typedBuffer;
-}
+}; 

@@ -22,12 +22,14 @@ SOFTWARE.*/
 import { TypedArray } from "../internal/typed-array/index.js";
 
 export interface ReadonlyTypedBuffer<T> {
+    readonly type: string;
     readonly size: number;
     get(index: number): T;
     [Symbol.iterator](): IterableIterator<T>;
 }
 
 export interface TypedBuffer<T> extends ReadonlyTypedBuffer<T> {
+    readonly type: string;
     size: number;                 // drops `readonly`
     set(index: number, value: T): void;
     copyWithin(target: number, start: number, end: number): void;
