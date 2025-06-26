@@ -19,3 +19,8 @@ export type DatabaseFromSchema<DS extends DatabaseSchema<any, any, any>> = Datab
     FromSchemas<DS["resources"]>,
     DS["transactions"]
 >;
+
+export type StoreFromSchema<DS extends DatabaseSchema<any, any, any>> = Store<
+    FromSchemas<DS["components"]>,
+    FromSchemas<DS["resources"]>
+>;

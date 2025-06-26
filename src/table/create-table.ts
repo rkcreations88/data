@@ -28,9 +28,17 @@ export const createTable = <C extends Record<string, Schema>>(schemas: C) : Tabl
     for (const name in schemas) {
         columns[name] = createTypedBuffer({schema: schemas[name]});
     }
+    const read = (row: number, recycle?: any) => {
+        const entityValues = recycle ?? {};
+        for (const name in schemas) {
+            entityValues[name] = columns[name].get(row);
+        }
+        return entityValues;
+    }
 
     return {
         columns,
         rows: 0,
+        read,
     };
 }
