@@ -11,8 +11,9 @@ export class ServiceElement<S extends Service> extends LitElement {
     @property({type: Object})
     protected service!: S;
 
-    override connectedCallback() {
-        super.connectedCallback();
+    constructor() {
+        super();
         applyServiceDecorators(this);
     }
+
 }

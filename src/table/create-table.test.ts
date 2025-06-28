@@ -43,40 +43,4 @@ describe("createTable", () => {
         expect(table.rows).toBe(0);
     });
 
-    it("should read values from all columns", () => {
-        const schemas = {
-            a: { type: "number" },
-            b: { type: "string" },
-        } as const;
-
-        const table = createTable(schemas);
-        const testData = { a: 42, b: "test" };
-        const rowIndex = addRow(table, testData);
-
-        const result = table.read(rowIndex);
-        expect(result).toEqual(testData);
-    });
-
-    it("should handle empty schemas object", () => {
-        const schemas = {} as const;
-        const table = createTable(schemas);
-        
-        expect(table.columns).toEqual({});
-        expect(table.rows).toBe(0);
-        expect(table.read(0)).toEqual({});
-    });
-
-    it("should recycle the provided object in read", () => {
-        const schemas = {
-            a: { type: "number" },
-            b: { type: "string" },
-        } as const;
-        const table = createTable(schemas);
-        const testData = { a: 7, b: "foo" };
-        const rowIndex = addRow(table, testData);
-        const recycled = { a: 0, b: "" };
-        const result = table.read(rowIndex, recycled);
-        expect(result).toBe(recycled);
-        expect(result).toEqual(testData);
-    });
 }); 

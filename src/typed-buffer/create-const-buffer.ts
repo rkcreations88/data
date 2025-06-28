@@ -27,6 +27,7 @@ export const createConstBuffer = <T>(
     let size = 0;
     const typedBuffer: TypedBuffer<T> = {
         type: 'const-buffer',
+        typedArrayElementSizeInBytes: 0,
         getTypedArray() {
             throw new Error("Const buffer does not support getTypedArray");
         },
@@ -45,20 +46,8 @@ export const createConstBuffer = <T>(
         copyWithin(target: number, start: number, end: number): void {
             // No-op: const buffer copyWithin is a no-op
         },
-        [Symbol.iterator](): IterableIterator<T> {
-            let index = 0;
-            return {
-                next(): IteratorResult<T> {
-                    if (index < size) {
-                        index++;
-                        return { value, done: false };
-                    }
-                    return { value: undefined, done: true };
-                },
-                [Symbol.iterator]() {
-                    return this;
-                }
-            };
+        slice(start = 0, end = size): ArrayLike<T> {
+            return Array(Math.max(0, end - start)).fill(value);
         },
     };
     

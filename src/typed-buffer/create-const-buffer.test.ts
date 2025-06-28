@@ -92,12 +92,29 @@ describe('createConstBuffer', () => {
         }).toThrow('Const buffer does not support getTypedArray');
     });
 
-    it('should be iterable', () => {
-        const buffer = createConstBuffer('iterable');
-        buffer.size = 3;
+    it('should support slicing', () => {
+        const buffer = createConstBuffer('sliceable');
+        buffer.size = 5;
         
-        const values = Array.from(buffer);
-        expect(values).toEqual(['iterable', 'iterable', 'iterable']);
+        const values = Array.from(buffer.slice());
+        expect(values).toEqual(['sliceable', 'sliceable', 'sliceable', 'sliceable', 'sliceable']);
+    });
+
+    it('should support partial slicing', () => {
+        const buffer = createConstBuffer('partial');
+        buffer.size = 4;
+        
+        // Slice first 2 elements
+        const firstSlice = Array.from(buffer.slice(0, 2));
+        expect(firstSlice).toEqual(['partial', 'partial']);
+        
+        // Slice last 2 elements
+        const lastSlice = Array.from(buffer.slice(2, 4));
+        expect(lastSlice).toEqual(['partial', 'partial']);
+        
+        // Slice with default end
+        const defaultEndSlice = Array.from(buffer.slice(1));
+        expect(defaultEndSlice).toEqual(['partial', 'partial', 'partial']);
     });
 
     it('should work with default size of 0', () => {

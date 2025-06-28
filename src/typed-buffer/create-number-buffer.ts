@@ -65,6 +65,7 @@ export const createNumberBuffer = (args: {
     const array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {
         type: 'number-buffer',
+        typedArrayElementSizeInBytes: stride,
         getTypedArray() {
             return array;
         },
@@ -83,8 +84,8 @@ export const createNumberBuffer = (args: {
         copyWithin(target: number, start: number, end: number): void {
             array.copyWithin(target, start, end);
         },
-        [Symbol.iterator](): IterableIterator<number> {
-            return array[Symbol.iterator]();
+        slice(start = 0, end = array.length): ArrayLike<number> {
+            return array.subarray(start, end);
         },
     } as const satisfies TypedBuffer<number>;
     return typedBuffer;

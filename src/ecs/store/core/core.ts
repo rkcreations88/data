@@ -64,7 +64,7 @@ export interface Core<
         Include extends StringKeyof<C & CoreComponents>,
         Exclude extends StringKeyof<C> = never
     >(
-        include: Include[],
+        include: readonly Include[],
         options?: QueryOptions<Include, Exclude>
     ): readonly Archetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
     ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K]}>;

@@ -20,12 +20,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { ReadonlyTypedBuffer, TypedBuffer } from "../typed-buffer/index.js";
-import { StringKeyof } from "../types/index.js";
 
 export interface ReadonlyTable<C> {
     readonly columns: { readonly [K in keyof C]: ReadonlyTypedBuffer<C[K]> }
     readonly rows: number;
-    readonly read: (row: number, recycle?: { readonly [K in StringKeyof<C>]: C[K] }) => { readonly [K in StringKeyof<C>]: C[K] };
 }
 
 export interface Table<C> extends ReadonlyTable<C> {

@@ -254,4 +254,126 @@ describe('TypedBuffer copyWithin', () => {
             expect(structBuffer.get(3)).toEqual({ x: 3, y: 4 });
         });
     });
+});
+
+describe('TypedBuffer slice', () => {
+    describe('NumberBuffer', () => {
+        it('should support full slice', () => {
+            const buffer = createNumberBuffer({
+                schema: { type: 'number', precision: 1 },
+                length: 5
+            });
+            
+            // Initialize with values
+            for (let i = 0; i < 5; i++) {
+                buffer.set(i, i + 1);
+            }
+            
+            const values = Array.from(buffer.slice());
+            expect(values).toEqual([1, 2, 3, 4, 5]);
+        });
+
+        it('should support partial slicing', () => {
+            const buffer = createNumberBuffer({
+                schema: { type: 'number', precision: 1 },
+                length: 5
+            });
+            
+            // Initialize with values
+            for (let i = 0; i < 5; i++) {
+                buffer.set(i, i + 1);
+            }
+            
+            // Slice first 3 elements
+            const firstSlice = Array.from(buffer.slice(0, 3));
+            expect(firstSlice).toEqual([1, 2, 3]);
+            
+            // Slice last 2 elements
+            const lastSlice = Array.from(buffer.slice(3, 5));
+            expect(lastSlice).toEqual([4, 5]);
+            
+            // Slice with default end
+            const defaultEndSlice = Array.from(buffer.slice(2));
+            expect(defaultEndSlice).toEqual([3, 4, 5]);
+        });
+    });
+
+    describe('ArrayBuffer', () => {
+        it('should support full slice', () => {
+            const buffer = createArrayBuffer<string>({ length: 3 });
+            
+            // Initialize with values
+            for (let i = 0; i < 3; i++) {
+                buffer.set(i, `value${i + 1}`);
+            }
+            
+            const values = Array.from(buffer.slice());
+            expect(values).toEqual(['value1', 'value2', 'value3']);
+        });
+
+        it('should support partial slicing', () => {
+            const buffer = createArrayBuffer<string>({ length: 4 });
+            
+            // Initialize with values
+            for (let i = 0; i < 4; i++) {
+                buffer.set(i, `value${i + 1}`);
+            }
+            
+            // Slice first 2 elements
+            const firstSlice = Array.from(buffer.slice(0, 2));
+            expect(firstSlice).toEqual(['value1', 'value2']);
+            
+            // Slice last 2 elements
+            const lastSlice = Array.from(buffer.slice(2, 4));
+            expect(lastSlice).toEqual(['value3', 'value4']);
+        });
+    });
+
+    describe('StructBuffer', () => {
+        const vec2Schema = {
+            type: 'object',
+            properties: {
+                x: { type: 'number', precision: 1 },
+                y: { type: 'number', precision: 1 }
+            }
+        } as const;
+
+        it('should support full slice', () => {
+            const buffer = createStructBuffer({
+                schema: vec2Schema,
+                length: 3
+            });
+            
+            // Initialize with values
+            for (let i = 0; i < 3; i++) {
+                buffer.set(i, { x: i + 1, y: i + 2 });
+            }
+            
+            const values = Array.from(buffer.slice());
+            expect(values).toEqual([
+                { x: 1, y: 2 },
+                { x: 2, y: 3 },
+                { x: 3, y: 4 }
+            ]);
+        });
+
+        it('should support partial slicing', () => {
+            const buffer = createStructBuffer({
+                schema: vec2Schema,
+                length: 4
+            });
+            
+            // Initialize with values
+            for (let i = 0; i < 4; i++) {
+                buffer.set(i, { x: i + 1, y: i + 2 });
+            }
+            
+            // Slice middle elements
+            const middleSlice = Array.from(buffer.slice(1, 3));
+            expect(middleSlice).toEqual([
+                { x: 2, y: 3 },
+                { x: 3, y: 4 }
+            ]);
+        });
+    });
 }); 

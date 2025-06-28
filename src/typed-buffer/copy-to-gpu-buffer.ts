@@ -18,6 +18,6 @@ export const copyToGPUBuffer = <T>(
             mappedAtCreation: false,
         });
     }
-    device.queue.writeBuffer(gpuBuffer, 0, array.buffer, offset, byteLength);
+    device.queue.writeBuffer(gpuBuffer, offset, array.buffer, 0, byteLength);
     return gpuBuffer;
 }

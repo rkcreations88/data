@@ -30,6 +30,7 @@ export const createArrayBuffer = <T>(args: {
     const array = new Array<T>(length);
     const typedBuffer = {
         type: 'array-buffer',
+        typedArrayElementSizeInBytes: 0,
         getTypedArray() {
             throw new Error("Typed array not supported");
         },
@@ -48,8 +49,11 @@ export const createArrayBuffer = <T>(args: {
         copyWithin(target: number, start: number, end: number): void {
             array.copyWithin(target, start, end);
         },
-        [Symbol.iterator](): IterableIterator<T> {
-            return array[Symbol.iterator]();
+        slice(start = 0, end = array.length): ArrayLike<T> {
+            if (start === 0 && end === array.length) {
+                return array;
+            }
+            return array.slice(start, end);
         },
     } as const satisfies TypedBuffer<T>;
     return typedBuffer;
