@@ -34,6 +34,8 @@ export type NoNever<T> = {
  */
 export type Expand<T> = T extends {} ? T extends infer O ? { [K in keyof O]: O[K] } : T : T;
 
+export type Branded = { __brand: any };
+
 /**
  * Extracts all function properties that return void.
  */
@@ -121,7 +123,7 @@ export type IsUnknown<T> = unknown extends T
   : false;
 
 
-export type DeepReadonly<T> = T extends Function
+export type DeepReadonly<T> = T extends Function | Branded | Element
   ? T
   : T extends Array<infer U>
   ? IsTuple<T> extends true
@@ -154,7 +156,7 @@ export type OptionalKeys<T extends object> = Exclude<
 >;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- needed for dynamic type
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   k: infer I
 ) => void
   ? I

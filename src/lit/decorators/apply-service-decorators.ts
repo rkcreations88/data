@@ -4,7 +4,7 @@ import { TemplateResult } from "lit";
 
 export function applyServiceDecorators(target: any) {
     const prototype = Object.getPrototypeOf(target);
-    const originalRender = prototype.render;
+    const originalRender = target.render ?? prototype.render;
     const withService = requireService()(target, 'render', {
         value: originalRender
     });

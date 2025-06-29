@@ -54,6 +54,8 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
     let typedArray: TypedArray = dataView[arrayType];
 
     const buffer: TypedBuffer<FromSchema<S>> = {
+        type: 'struct-buffer',
+        typedArrayElementSizeInBytes: layout.size,
         getTypedArray() {
             return typedArray;
         },
@@ -71,22 +73,12 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
         copyWithin: (target: number, start: number, end: number) => {
             dataView[arrayType].copyWithin(target * sizeInQuads, start * sizeInQuads, end * sizeInQuads);
         },
-        [Symbol.iterator](): IterableIterator<FromSchema<S>> {
-            let index = 0;
-            const length = buffer.size;
-            return {
-                next(): IteratorResult<FromSchema<S>> {
-                    if (index < length) {
-                        const value = read(dataView, index);
-                        index++;
-                        return { value, done: false };
-                    }
-                    return { value: undefined, done: true };
-                },
-                [Symbol.iterator]() {
-                    return this;
-                }
-            };
+        slice(start = 0, end = buffer.size): ArrayLike<FromSchema<S>> {
+            const result = new Array<FromSchema<S>>(Math.max(0, end - start));
+            for (let i = start; i < end && i < buffer.size; i++) {
+                result[i - start] = read(dataView, i);
+            }
+            return result;
         },
     };
     return buffer;

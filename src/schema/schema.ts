@@ -59,6 +59,7 @@ export interface Schema {
   type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object';
   conditionals?: readonly Conditional[];
   ui?: UIProperties;
+  transient?: boolean;
   default?: any;
   precision?: 1 | 2;
   multipleOf?: number;
@@ -81,8 +82,14 @@ export interface Schema {
   enum?: readonly any[];
 }
 
+export type FromSchemas<T extends Record<string, Schema>> = {
+  [K in keyof T]: FromSchema<T[K]>;
+};
+
 export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends 0
   ? any
+  : T extends { default: infer D }
+  ? D
   : T extends { const: infer Const }
   ? Const
   : T extends { enum: infer Enum }
@@ -227,3 +234,6 @@ type TestAdditionalProps = FromSchema<{
   additionalProperties: { type: 'number' }
 }>; // { [key: string]: number }
 type CheckTestAdditionalProps = True<EquivalentTypes<TestAdditionalProps, { readonly [x: string]: number; }>>;
+
+type TestDefault = FromSchema<{ default: 42 }>; // 42
+type CheckDefault = True<EquivalentTypes<TestDefault, 42>>;

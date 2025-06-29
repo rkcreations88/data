@@ -19,10 +19,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from "./database/index.js";
-export * from "./store/index.js";
-export * from "./archetype/index.js";
-export * from "./entity.js";
-export * from "./core-components.js";
-export * from "./component-schemas.js";
-export * from "./resource-schemas.js";
+import { Schema } from "../schema/schema.js";
+
+export type ResourceSchemas = { readonly [K: string]: Schema & { default: unknown } };

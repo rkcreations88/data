@@ -20,11 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { TypedArray } from "../internal/typed-array/index.js";
+import { Schema } from "../schema/schema.js";
 
 export interface ReadonlyTypedBuffer<T> {
+    readonly type: string;
     readonly size: number;
+    readonly typedArrayElementSizeInBytes: number;
     get(index: number): T;
-    [Symbol.iterator](): IterableIterator<T>;
+    slice(start?: number, end?: number): ArrayLike<T>;
 }
 
 export interface TypedBuffer<T> extends ReadonlyTypedBuffer<T> {

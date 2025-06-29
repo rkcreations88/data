@@ -23,7 +23,7 @@ import { ArchetypeId } from "../archetype/index.js";
 import { CoreComponents } from "../core-components.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { Store } from "../store/index.js";
-import { Database, ToTransactionFunctions, TransactionDeclarations } from "./database.js";
+import { Database, ToTransactionFunctions, TransactionDeclaration } from "./database.js";
 import { Entity } from "../entity.js";
 import { EntityValues } from "../store/core/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
@@ -33,18 +33,19 @@ import { Observe, withMap } from "../../observe/index.js";
 import { createTransactionalStore } from "./transactional-store/create-transactional-store.js";
 import { isPromise } from "../../internal/promise/is-promise.js";
 import { isAsyncGenerator } from "../../internal/async-generator/is-async-generator.js";
+import { Components } from "../store/components.js";
 
 export function createDatabase<
-    C extends CoreComponents,
+    C extends Components,
     R extends ResourceComponents,
-    TD extends TransactionDeclarations<C, R>
+    TD extends Record<string, TransactionDeclaration>
 >(
-    ds: Store<C, R>,
-    transactionDeclarations: TD,
+    store: Store<C, R>,
+    transactionDeclarationFactory: (store: Store<C, R>) => TD,
 ): Database<C, R, ToTransactionFunctions<TD>> {
     type T = ToTransactionFunctions<TD>;
 
-    const transactionalStore = createTransactionalStore(ds);
+    const transactionalStore = createTransactionalStore(store);
 
     //  variables to track the observers
     const componentObservers = new Map<StringKeyof<C>, Set<() => void>>();
@@ -55,17 +56,17 @@ export function createDatabase<
     //  observation interface
     const observeEntity = (entity: Entity) => (observer: (values: EntityValues<C> | null) => void) => {
         // Call immediately with current values
-        observer(ds.read(entity));
+        observer(store.read(entity));
         // Add to observers for future changes
         return addToMapSet(entity, entityObservers)(observer);
     };
     const observeArchetype = (archetype: ArchetypeId) => addToMapSet(archetype, archetypeObservers);
-    const observeComponent = mapEntries(ds.componentSchemas, ([component]) => addToMapSet(component, componentObservers));
+    const observeComponent = mapEntries(store.componentSchemas, ([component]) => addToMapSet(component, componentObservers));
     
     // Resource observation - resources are stored as entities with specific archetypes
     const observeResource = Object.fromEntries(
-        Object.entries(ds.resources).map(([resource]) => {
-            const archetype = ds.ensureArchetype(["id" as StringKeyof<C>, resource as unknown as StringKeyof<C>]);
+        Object.entries(store.resources).map(([resource]) => {
+            const archetype = store.ensureArchetype(["id" as StringKeyof<C>, resource as unknown as StringKeyof<C>]);
             const resourceId = archetype.columns.id.get(0);
             return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>])];
         })
@@ -118,7 +119,7 @@ export function createDatabase<
         for (const changedEntity of result.changedEntities) {
             const observers = entityObservers.get(changedEntity);
             if (observers) {
-                const values = ds.read(changedEntity);
+                const values = store.read(changedEntity);
                 for (const observer of observers) {
                     observer(values);
                 }
@@ -132,13 +133,13 @@ export function createDatabase<
 
     function handleNext(
         asyncArgs: AsyncGenerator<any>,
-        transaction: (db: Store<C, R>, args: any) => void,
+        transaction: (args: any) => void,
         execute: (handler: (db: Store<C, R>) => void) => any
     ) {
         asyncArgs.next().then((result: IteratorResult<any>) => {
             const { value, done } = result;
             if (!done || value !== undefined) {
-                execute((db: Store<C, R>) => transaction(db, value));
+                execute((_db) => transaction(value));
             }
             if (done) {
                 return;
@@ -148,8 +149,10 @@ export function createDatabase<
             console.error('AsyncGenerator error:', error);
         });
     }
+
+    const transactionDeclarations = transactionDeclarationFactory(transactionalStore.transactionStore);
     for (const [name, transactionUntyped] of Object.entries(transactionDeclarations)) {
-        const transaction = transactionUntyped as (db: Store<C, R>, args: any) => void;
+        const transaction = transactionUntyped as (args: any) => void;
         Object.defineProperty(transactions, name, {
             value: (args: unknown) => {
                 // Check if args is an AsyncArgsProvider function
@@ -162,19 +165,19 @@ export function createDatabase<
                         handleNext(asyncArgs, transaction, execute);
                     }
                     else if (isPromise(asyncResult)) {
-                        asyncResult.then(asyncArgs => execute((db) => transaction(db, asyncArgs)))
+                        asyncResult.then(asyncArgs => execute((_db) => transaction(asyncArgs)))
                             .catch(error => {
                                 console.error('Promise error:', error);
                             });
                     }
                     else {
                         // Function returned a synchronous value
-                        execute((db) => transaction(db, asyncResult));
+                        execute((_db) => transaction(asyncResult));
                     }
                 }
                 else {
                     // Synchronous argument
-                    return execute((db) => transaction(db, args));
+                    return execute((_db) => transaction(args));
                 }
             },
             writable: false,

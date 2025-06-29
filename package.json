@@ -37,6 +37,7 @@
   "typesVersions": {
     "*": {
       "*": ["./dist/index.d.ts"],
+      "functions": ["./dist/functions/index.d.ts"],
       "observe": ["./dist/observe/index.d.ts"],
       "cache": ["./dist/cache/index.d.ts"],
       "schema": ["./dist/schema/index.d.ts"],
@@ -53,6 +54,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./functions": {
+      "import": "./dist/functions/index.js",
+      "types": "./dist/functions/index.d.ts"
     },
     "./cache": {
       "import": "./dist/cache/index.js",

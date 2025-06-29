@@ -20,18 +20,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { ArchetypeId, EntityInsertValues } from "../../archetype/index.js";
-import { CoreComponents } from "../../core-components.js";
 import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
 import { Entity } from "../../entity.js";
 import { EntityUpdateValues } from "../../store/core/index.js";
 import { TransactionalStore, TransactionResult, TransactionWriteOperation } from "./transactional-store.js";
 import { StringKeyof } from "../../../types/types.js";
+import { Components } from "../../store/components.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
 
-export function createTransactionalStore<C extends CoreComponents, R extends ResourceComponents>(
+export function createTransactionalStore<C extends Components, R extends ResourceComponents>(
     store: Store<C, R>,
 ): TransactionalStore<C, R> {
 
@@ -217,6 +217,7 @@ export function createTransactionalStore<C extends CoreComponents, R extends Res
     const transactionalStore: TransactionalStore<C, R> = {
         ...store,
         execute,
+        transactionStore,
     };
 
     return transactionalStore as any;
@@ -258,7 +259,7 @@ function addUpdateOperationsMaybeCombineLast<C>(
 }
 
 // Helper function to apply write operations for rollback
-function applyWriteOperations<C extends CoreComponents, R extends ResourceComponents>(
+function applyWriteOperations<C extends Components, R extends ResourceComponents>(
     store: Store<C, R>, 
     operations: TransactionWriteOperation<C>[]
 ): void {
@@ -267,7 +268,7 @@ function applyWriteOperations<C extends CoreComponents, R extends ResourceCompon
             case "insert": {
                 const componentNames = ["id", ...Object.keys(operation.values)] as StringKeyof<C>[];
                 const archetype = store.ensureArchetype(componentNames);
-                archetype.insert(operation.values);
+                archetype.insert(operation.values as any);
                 break;
             }
             case "update":

@@ -32,7 +32,9 @@ const positionSchema = {
         x: F32Schema,
         y: F32Schema,
         z: F32Schema,
-    }
+    },
+    required: ["x", "y", "z"],
+    additionalProperties: false,
 } as const satisfies Schema;
 
 const healthSchema = {
@@ -40,14 +42,14 @@ const healthSchema = {
     properties: {
         current: F32Schema,
         max: F32Schema,
-    }
+    },
 } as const satisfies Schema;
 
 describe("createTransactionalStore", () => {
     it("should create transactional store with basic components", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },
-            { time: { delta: 0.016, elapsed: 0 } }
+            { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
         
         const store = createTransactionalStore(baseStore);
@@ -62,7 +64,7 @@ describe("createTransactionalStore", () => {
     it("should execute transactions successfully", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },
-            { time: { delta: 0.016, elapsed: 0 } }
+            { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
         
         const store = createTransactionalStore(baseStore);
@@ -90,7 +92,7 @@ describe("createTransactionalStore", () => {
     it("should rollback on error", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },
-            { time: { delta: 0.016, elapsed: 0 } }
+            { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
         
         const store = createTransactionalStore(baseStore);
@@ -125,7 +127,7 @@ describe("createTransactionalStore", () => {
     it("should combine multiple updates to the same entity", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },
-            { time: { delta: 0.016, elapsed: 0 } }
+            { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
         
         const store = createTransactionalStore(baseStore);
@@ -157,7 +159,7 @@ describe("createTransactionalStore", () => {
     it("should track changed entities, components, and archetypes", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },
-            { time: { delta: 0.016, elapsed: 0 } }
+            { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
         
         const store = createTransactionalStore(baseStore);
@@ -182,7 +184,7 @@ describe("createTransactionalStore", () => {
     it("should preserve base store functionality", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },
-            { time: { delta: 0.016, elapsed: 0 } }
+            { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
         
         const store = createTransactionalStore(baseStore);
@@ -211,7 +213,7 @@ describe("createTransactionalStore", () => {
     it("should support transient transactions", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },
-            { time: { delta: 0.016, elapsed: 0 } }
+            { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
         
         const store = createTransactionalStore(baseStore);

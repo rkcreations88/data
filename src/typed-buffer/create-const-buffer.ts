@@ -19,10 +19,37 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from "./database/index.js";
-export * from "./store/index.js";
-export * from "./archetype/index.js";
-export * from "./entity.js";
-export * from "./core-components.js";
-export * from "./component-schemas.js";
-export * from "./resource-schemas.js";
+import { TypedBuffer } from "./typed-buffer.js";
+
+export const createConstBuffer = <T>(
+    value: T
+): TypedBuffer<T> => {    
+    let size = 0;
+    const typedBuffer: TypedBuffer<T> = {
+        type: 'const-buffer',
+        typedArrayElementSizeInBytes: 0,
+        getTypedArray() {
+            throw new Error("Const buffer does not support getTypedArray");
+        },
+        get size(): number {
+            return size;
+        },
+        set size(value: number) {
+            size = value;
+        },
+        get(index: number): T {
+            return value;
+        },
+        set(index: number, value: T): void {
+            // No-op: const buffer ignores set calls
+        },
+        copyWithin(target: number, start: number, end: number): void {
+            // No-op: const buffer copyWithin is a no-op
+        },
+        slice(start = 0, end = size): ArrayLike<T> {
+            return Array(Math.max(0, end - start)).fill(value);
+        },
+    };
+    
+    return typedBuffer;
+}; 

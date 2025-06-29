@@ -25,6 +25,7 @@ import { getStructLayout } from "./structs/get-struct-layout.js";
 import { TypedBuffer } from "./typed-buffer.js";
 import { createNumberBuffer } from "./create-number-buffer.js";
 import { createArrayBuffer } from "./create-array-buffer.js";
+import { createConstBuffer } from "./create-const-buffer.js";
 
 export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
     args: {
@@ -36,9 +37,14 @@ export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
     const { schema } = args;
     args.maxLength ??= 10_0000_000;
 
+    if (schema.const !== undefined) {
+        return createConstBuffer(schema.const) as TypedBuffer<FromSchema<S>>;
+    }
+
     if (schema.type === 'number' || schema.type === 'integer') {
         return createNumberBuffer(args) as TypedBuffer<FromSchema<S>>;
     }
+
 
     const structLayout = getStructLayout(schema, false);
     if (structLayout) {

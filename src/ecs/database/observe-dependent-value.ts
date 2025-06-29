@@ -49,7 +49,7 @@ export function observeDependentValue<
     });
 }
 
-function determineResourcesUsed<D extends Database<any, any, any>>(db: D, compute: (db: D extends Database<infer C, infer R, any> ? Store<C, R> : never) => any): string[] {
+function determineResourcesUsed<D extends Database<any, any, any>>(db: D, compute: (db: D extends Database<infer C, infer R, any> ? ReadonlyStore<C, R> : never) => any): string[] {
     const accessedResources = new Set<string>();
     
     // Create a proxy that tracks which resource properties are accessed
