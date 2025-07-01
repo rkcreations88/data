@@ -30,7 +30,7 @@ import { Core, EntityUpdateValues, EntityValues, QueryOptions } from "./core.js"
 import { Assert, Equal, Simplify, StringKeyof } from "../../../types/index.js";
 import { ComponentSchemas } from "../../component-schemas.js";
 
-export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC): Core<Simplify<CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>> {
+export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC): Core<Simplify<{ [K in StringKeyof<NC>]: FromSchema<NC[K]> }>> {
     type C = CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
 
     const componentSchemas: { readonly [K in StringKeyof<C>]: Schema } = { id: EntitySchema, ...newComponentSchemas };
@@ -156,7 +156,6 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
 type TestType = ReturnType<typeof createCore<{ position: { type: "number"}, health: { type: "string"} }>>
 type CheckTestType = Assert<Equal<TestType, Core<{
-    id: number;
     position: number;
     health: string;
 }>>>

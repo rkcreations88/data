@@ -39,7 +39,7 @@ export type QueryOptions<Include, Exclude> =
 export interface ReadonlyCore<
     C extends Components = never,
 > {
-    readonly componentSchemas: { readonly [K in StringKeyof<C>]: Schema };
+    readonly componentSchemas: { readonly [K in StringKeyof<C & CoreComponents>]: Schema };
 
     queryArchetypes<
         Include extends StringKeyof<C & CoreComponents>,
