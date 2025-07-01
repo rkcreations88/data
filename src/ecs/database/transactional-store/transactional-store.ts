@@ -25,11 +25,14 @@ import { ReadonlyStore, Store } from "../../store/index.js";
 import { Entity } from "../../entity.js";
 import { EntityUpdateValues } from "../../store/core/index.js";
 import { Components } from "../../store/components.js";
+import { StringKeyof } from "../../../types/types.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
 
 export interface TransactionalStore<
     C extends Components = never,
-    R extends ResourceComponents = never
-> extends ReadonlyStore<C, R> {
+    R extends ResourceComponents = never,
+    A extends ArchetypeComponents<StringKeyof<C>> = never,
+> extends ReadonlyStore<C, R, A> {
     /**
      * Execute a transaction on the store.
      * The transactionFunction must NOT directly mutate archetype rows as those changes would not be captured.
@@ -38,13 +41,13 @@ export interface TransactionalStore<
      * @returns A promise that resolves when the transaction is complete.
      */
     execute(
-        transactionFunction: (store: Store<C, R>) => Entity | void,
+        transactionFunction: (store: Store<C, R, A>) => Entity | void,
         options?: {
             transient?: boolean;
         }
     ): TransactionResult<C>;
 
-    transactionStore: Store<C, R>;
+    transactionStore: Store<C, R, A>;
 }
 
 export type TransactionInsertOperation<C> = {

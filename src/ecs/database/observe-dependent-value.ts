@@ -27,15 +27,15 @@ import { ReadonlyStore, Store } from "../store/index.js";
  * Creates an observe function that is computed based on the stores resources.
  */
 export function observeDependentValue<
-    D extends Database<any, any, any>,
+    D extends Database<any, any, any, any>,
     T,
->(db: D, compute: (store: D extends Database<infer C, infer R, any> ? ReadonlyStore<C, R> : never) => T): Observe<T> {
+>(db: D, compute: (store: D extends Database<infer C, infer R, infer A, any> ? ReadonlyStore<C, R, A> : never) => T): Observe<T> {
     return withLazy(() => {
         const resourcesUsed = determineResourcesUsed(db, compute);
         
         // Create observables for only the resources that are actually used
         const resourceObservables = 
-            resourcesUsed.map(resource => (db.observe.resource as any)[resource]);
+            resourcesUsed.map(resource => (db.observe.resources as any)[resource]);
         
         // Use fromArray to combine the resource observables, batch notifications, then map and deduplicate
         return withDeduplicate(
@@ -49,7 +49,7 @@ export function observeDependentValue<
     });
 }
 
-function determineResourcesUsed<D extends Database<any, any, any>>(db: D, compute: (db: D extends Database<infer C, infer R, any> ? ReadonlyStore<C, R> : never) => any): string[] {
+function determineResourcesUsed<D extends Database<any, any, any, any>>(db: D, compute: (db: D extends Database<infer C, infer R, infer A, any> ? ReadonlyStore<C, R, A> : never) => any): string[] {
     const accessedResources = new Set<string>();
     
     // Create a proxy that tracks which resource properties are accessed

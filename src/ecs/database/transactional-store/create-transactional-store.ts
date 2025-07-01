@@ -27,13 +27,18 @@ import { EntityUpdateValues } from "../../store/core/index.js";
 import { TransactionalStore, TransactionResult, TransactionWriteOperation } from "./transactional-store.js";
 import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
 
-export function createTransactionalStore<C extends Components, R extends ResourceComponents>(
-    store: Store<C, R>,
-): TransactionalStore<C, R> {
+export function createTransactionalStore<
+    C extends Components,
+    R extends ResourceComponents,
+    A extends ArchetypeComponents<StringKeyof<C>> = never,
+>(
+    store: Store<C, R, A>,
+): TransactionalStore<C, R, A> {
 
     // Transaction state (mutable during transaction execution)
     let undoOperationsInReverseOrder: TransactionWriteOperation<C>[] = [];
@@ -157,7 +162,7 @@ export function createTransactionalStore<C extends Components, R extends Resourc
 
 
     // Create transaction-aware store
-    const transactionStore: Store<C, R> = {
+    const transactionStore: Store<C, R, A> = {
         ...store,
         resources,
         ensureArchetype: (componentNames) => {
@@ -170,7 +175,7 @@ export function createTransactionalStore<C extends Components, R extends Resourc
 
     // Execute transaction function
     const execute = (
-        transactionFunction: (store: Store<C, R>) => Entity | void,
+        transactionFunction: (store: Store<C, R, A>) => Entity | void,
         options?: {
             transient?: boolean;
         }
@@ -214,7 +219,7 @@ export function createTransactionalStore<C extends Components, R extends Resourc
     };
 
     // Create the transactional store interface
-    const transactionalStore: TransactionalStore<C, R> = {
+    const transactionalStore: TransactionalStore<C, R, A> = {
         ...store,
         execute,
         transactionStore,
@@ -259,8 +264,8 @@ function addUpdateOperationsMaybeCombineLast<C>(
 }
 
 // Helper function to apply write operations for rollback
-function applyWriteOperations<C extends Components, R extends ResourceComponents>(
-    store: Store<C, R>, 
+function applyWriteOperations<C extends Components, R extends ResourceComponents, A extends ArchetypeComponents<StringKeyof<C>>>(
+    store: Store<C, R, A>, 
     operations: TransactionWriteOperation<C>[]
 ): void {
     for (const operation of operations) {

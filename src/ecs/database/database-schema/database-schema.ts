@@ -3,24 +3,21 @@ import { Database, TransactionDeclaration } from "../database.js";
 import { ComponentSchemas } from "../../component-schemas.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
 import { Store } from "../../store/store.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { StringKeyof } from "../../../types/types.js";
 
 export type DatabaseSchema<
-    CS extends ComponentSchemas = ComponentSchemas,
-    RS extends ResourceSchemas = ResourceSchemas,
-    TD extends Record<string, TransactionDeclaration> = Record<string, TransactionDeclaration>
+    CS extends ComponentSchemas,
+    RS extends ResourceSchemas,
+    A extends ArchetypeComponents<StringKeyof<CS>>,
+    TD extends Record<string, TransactionDeclaration>
 > = {
     readonly components: CS;
     readonly resources: RS;
-    readonly transactions: (store: Store<any, any>) => TD;
+    readonly archetypes: A;
+    readonly transactions: (store: Store<FromSchemas<CS>, FromSchemas<RS>, A>) => TD;
 };
 
-export type DatabaseFromSchema<DS extends DatabaseSchema<any, any, any>> = Database<
-    FromSchemas<DS["components"]>,
-    FromSchemas<DS["resources"]>,
-    DS["transactions"]
->;
+export type DatabaseFromSchema<T> = T extends DatabaseSchema<infer CS, infer RS, infer A, infer TD> ? Database<FromSchemas<CS>, FromSchemas<RS>, A, TD> : never;
 
-export type StoreFromSchema<DS extends DatabaseSchema<any, any, any>> = Store<
-    FromSchemas<DS["components"]>,
-    FromSchemas<DS["resources"]>
->;
+export type StoreFromSchema<T> = T extends DatabaseSchema<infer CS, infer RS, infer A, infer TD> ? Store<FromSchemas<CS>, FromSchemas<RS>, A> : never;

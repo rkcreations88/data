@@ -82,7 +82,7 @@ export interface Schema {
   enum?: readonly any[];
 }
 
-export type FromSchemas<T extends Record<string, Schema>> = {
+export type FromSchemas<T> = {
   [K in keyof T]: FromSchema<T[K]>;
 };
 

@@ -24,7 +24,6 @@ import { createStore } from "./create-store.js";
 import { createCoreTestSuite, positionSchema, healthSchema, nameSchema } from "./core/create-core.test.js";
 import { Schema } from "../../schema/schema.js";
 import { F32Schema } from "../../schema/f32.js";
-import { ComponentSchemas } from "../component-schemas.js";
 
 describe("createStore", () => {
     // Test that store passes all core functionality tests
@@ -321,14 +320,6 @@ describe("createStore", () => {
             }
         } as const satisfies Schema;
 
-        const configSchema = {
-            type: "object",
-            properties: {
-                debug: { type: "boolean" },
-                volume: F32Schema,
-            }
-        } as const satisfies Schema;
-
         it("should create store with resources", () => {
             const store = createStore(
                 { position: positionSchema },
@@ -558,6 +549,30 @@ describe("createStore", () => {
 
             store.resources.complex = updatedComplex;
             expect(store.resources.complex).toEqual(updatedComplex);
+        });
+    });
+
+    describe("Archetype functionality", () => {
+        it("should create store with archetypes", () => {
+            const store = createStore(
+                {
+                    name: { type: "string" },
+                    health: { type: "number" },
+                    enabled: { type: "boolean" },
+                },
+                {},
+                {
+                    Player: ["name", "health"] as const,
+                }
+            );
+
+            const entity = store.archetypes.Player.insert({
+                name: "test",
+                health: 100,
+            });
+
+            expect(store.archetypes.Player.columns.name.get(entity)).toEqual("test");
+            expect(store.archetypes.Player.columns.health.get(entity)).toEqual(100);
         });
     });
 }); 

@@ -110,8 +110,8 @@ describe("createDatabase", () => {
         const nameObserver = vi.fn();
         
         // Subscribe to component changes
-        const unsubscribePosition = store.observe.component.position(positionObserver);
-        const unsubscribeName = store.observe.component.name(nameObserver);
+        const unsubscribePosition = store.observe.components.position(positionObserver);
+        const unsubscribeName = store.observe.components.name(nameObserver);
 
         // Create an entity that affects both components
         const testEntity = store.transactions.createFullEntity({
@@ -255,7 +255,7 @@ describe("createDatabase", () => {
         const timeObserver = vi.fn();
 
         // Subscribe to resource changes
-        const unsubscribeTime = store.observe.resource.time(timeObserver);
+        const unsubscribeTime = store.observe.resources.time(timeObserver);
 
         // Observer should be notified immediately with initial value
         expect(timeObserver).toHaveBeenCalledWith({ delta: 0.016, elapsed: 0 });
@@ -275,9 +275,9 @@ describe("createDatabase", () => {
         const observer3 = vi.fn();
 
         // Subscribe multiple observers to the same component
-        const unsubscribe1 = store.observe.component.position(observer1);
-        const unsubscribe2 = store.observe.component.position(observer2);
-        const unsubscribe3 = store.observe.component.position(observer3);
+        const unsubscribe1 = store.observe.components.position(observer1);
+        const unsubscribe2 = store.observe.components.position(observer2);
+        const unsubscribe3 = store.observe.components.position(observer3);
 
         // Create entity with position
         const entity = store.transactions.createPositionEntity({
@@ -311,7 +311,7 @@ describe("createDatabase", () => {
         const store = createTestObservableStore();
         
         const observer = vi.fn();
-        const unsubscribe = store.observe.component.position(observer);
+        const unsubscribe = store.observe.components.position(observer);
 
         // Create entity
         const entity = store.transactions.createPositionEntity({
@@ -354,8 +354,8 @@ describe("createDatabase", () => {
         const entityObserver = vi.fn();
 
         // Subscribe to various observers
-        const unsubscribePosition = store.observe.component.position(positionObserver);
-        const unsubscribeHealth = store.observe.component.health(healthObserver);
+        const unsubscribePosition = store.observe.components.position(positionObserver);
+        const unsubscribeHealth = store.observe.components.health(healthObserver);
         const unsubscribeTransaction = store.observe.transactions(transactionObserver);
 
         // Create entity
@@ -403,7 +403,7 @@ describe("createDatabase", () => {
         const store = createTestObservableStore();
         
         const observer = vi.fn();
-        const unsubscribe = store.observe.component.position(observer);
+        const unsubscribe = store.observe.components.position(observer);
 
         // Create entity
         const entity = store.transactions.createPositionEntity({
@@ -452,7 +452,7 @@ describe("createDatabase", () => {
         it("should handle Promise-based async arguments", async () => {
             const store = createTestObservableStore();
             const observer = vi.fn();
-            const unsubscribe = store.observe.component.position(observer);
+            const unsubscribe = store.observe.components.position(observer);
 
             // Create a promise that resolves to entity data
             const entityDataPromise = Promise.resolve({
@@ -487,7 +487,7 @@ describe("createDatabase", () => {
         it("should handle AsyncGenerator streaming arguments", async () => {
             const store = createTestObservableStore();
             const observer = vi.fn();
-            const unsubscribe = store.observe.component.position(observer);
+            const unsubscribe = store.observe.components.position(observer);
 
             // Create an async generator that yields multiple entity data
             async function* entityDataStream() {
@@ -532,7 +532,7 @@ describe("createDatabase", () => {
         it("should handle AsyncGenerator with delays", async () => {
             const store = createTestObservableStore();
             const observer = vi.fn();
-            const unsubscribe = store.observe.component.position(observer);
+            const unsubscribe = store.observe.components.position(observer);
 
             // Create an async generator with delays
             async function* delayedEntityStream() {
@@ -565,7 +565,7 @@ describe("createDatabase", () => {
         it("should handle mixed sync and async arguments in the same transaction", async () => {
             const store = createTestObservableStore();
             const observer = vi.fn();
-            const unsubscribe = store.observe.component.position(observer);
+            const unsubscribe = store.observe.components.position(observer);
 
             // Create entities with different argument types
             store.transactions.createPositionNameEntity({
@@ -614,7 +614,7 @@ describe("createDatabase", () => {
         it("should handle AsyncGenerator that yields no values", async () => {
             const store = createTestObservableStore();
             const observer = vi.fn();
-            const unsubscribe = store.observe.component.position(observer);
+            const unsubscribe = store.observe.components.position(observer);
 
             // Create an empty async generator
             async function* emptyStream() {
@@ -638,7 +638,7 @@ describe("createDatabase", () => {
         it("should handle AsyncGenerator with error handling", async () => {
             const store = createTestObservableStore();
             const observer = vi.fn();
-            const unsubscribe = store.observe.component.position(observer);
+            const unsubscribe = store.observe.components.position(observer);
 
             // Create an async generator that throws an error
             async function* errorStream() {
@@ -668,7 +668,7 @@ describe("createDatabase", () => {
         it("should handle complex AsyncGenerator with conditional yielding", async () => {
             const store = createTestObservableStore();
             const observer = vi.fn();
-            const unsubscribe = store.observe.component.position(observer);
+            const unsubscribe = store.observe.components.position(observer);
 
             // Create a complex async generator with conditional logic
             async function* conditionalStream() {

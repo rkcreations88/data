@@ -28,6 +28,7 @@ import { Observe } from "../../observe/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
+import { ArchetypeComponents } from "../store/archetype-components.js";
 
 export type TransactionDeclaration<Input extends any | void = any> = (input: Input) => void | Entity
 export type TransactionDeclarations = object
@@ -54,12 +55,13 @@ export type TransactionFunctions = { readonly [K: string]: (args?: any) => void 
 export interface Database<
     C extends Components = never,
     R extends ResourceComponents = never,
+    A extends ArchetypeComponents<StringKeyof<C>> = never,
     T extends TransactionDeclarations = never,
-> extends ReadonlyStore<C, R> {
+> extends ReadonlyStore<C, R, A> {
     readonly transactions: ToTransactionFunctions<T>;
     readonly observe: {
-        readonly component: { readonly [K in StringKeyof<C>]: Observe<void> };
-        readonly resource: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
+        readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
+        readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
         readonly transactions: Observe<TransactionResult<C>>;
         entity(id: Entity): Observe<EntityValues<C> | null>;
         archetype(id: ArchetypeId): Observe<void>;
