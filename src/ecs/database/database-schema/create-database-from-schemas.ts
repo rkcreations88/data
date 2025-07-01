@@ -1,5 +1,5 @@
 import { FromSchemas } from "../../../schema/schema.js";
-import { UnionToIntersection } from "../../../types/types.js";
+import { Simplify, UnionToIntersection } from "../../../types/types.js";
 import { Entity } from "../../entity.js";
 import { createStore } from "../../store/create-store.js";
 import { Store } from "../../store/store.js";
@@ -24,15 +24,15 @@ type AllTransactions<DS extends DatabaseSchema[]> =
 
 type DatabaseFromSchemas<DS extends DatabaseSchema[]> =
     Database<
-        AllComponents<DS>,
-        AllResources<DS>,
+        Simplify<AllComponents<DS>>,
+        Simplify<AllResources<DS>>,
         AllTransactions<DS>
     >;
 
 type StoreFromSchemas<DS extends DatabaseSchema[]> =
     Store<
-        AllComponents<DS>,
-        AllResources<DS>
+        Simplify<AllComponents<DS>>,
+        Simplify<AllResources<DS>>
     >;
 
 export const createDatabaseFromSchemas = <DS extends DatabaseSchema[]>(...schemas: DS): { database: DatabaseFromSchemas<DS>, store: StoreFromSchemas<DS> } => {
