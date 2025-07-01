@@ -25,6 +25,8 @@ import { Core, QueryOptions, ReadonlyCore } from "./core/core.js";
 import { Entity } from "../entity.js";
 import { StringKeyof } from "../../types/types.js";
 import { Components } from "./components.js";
+import { ArchetypeComponents } from "./archetype-components.js";
+import { Archetype, ReadonlyArchetype } from "../archetype/archetype.js";
 
 interface BaseStore<C extends object = never> {
     select<
@@ -38,9 +40,11 @@ interface BaseStore<C extends object = never> {
 
 export interface ReadonlyStore<
     C extends Components = never,
-    R extends ResourceComponents = never
+    R extends ResourceComponents = never,
+    A extends ArchetypeComponents<StringKeyof<C>> = never,
 > extends BaseStore<C>, ReadonlyCore<C> {
     readonly resources: { readonly [K in StringKeyof<R>]: R[K] };
+    readonly archetypes: { -readonly [K in StringKeyof<A>]: ReadonlyArchetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
 }
 
 export type ToReadonlyStore<T extends Store<any, any>> = T extends Store<infer C, infer R> ? ReadonlyStore<C, R> : never;
@@ -50,7 +54,9 @@ export type ToReadonlyStore<T extends Store<any, any>> = T extends Store<infer C
  */
 export interface Store<
     C extends Components = never,
-    R extends ResourceComponents = never
+    R extends ResourceComponents = never,
+    A extends ArchetypeComponents<StringKeyof<C>> = never,
 > extends BaseStore<C>, Core<C> {
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };
+    readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
 }

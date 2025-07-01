@@ -29,16 +29,24 @@ import { createCore } from "./core/create-core.js";
 import { Entity } from "../entity.js";
 import { Core, QueryOptions } from "./core/core.js";
 import { ResourceSchemas } from "../resource-schemas.js";
+import { ArchetypeComponents } from "./archetype-components.js";
 
-export function createStore<NC extends ComponentSchemas, NR extends ResourceSchemas>(
+export function createStore<
+    NC extends ComponentSchemas,
+    NR extends ResourceSchemas,
+    A extends ArchetypeComponents<StringKeyof<NC>> = {}
+>(
     newComponentSchemas: NC,
-    resourceSchemas: NR,
+    resourceSchemas: NR = {} as NR,
+    archetypeComponentNames: A = {} as A,
 ): Store<
-    Simplify<{ [K in StringKeyof<NC>]: FromSchema<NC[K]> }>,
-    Simplify<{ -readonly [K in StringKeyof<NR>]: FromSchema<NR[K]> }>
+    { [K in StringKeyof<NC>]: FromSchema<NC[K]> },
+    { -readonly [K in StringKeyof<NR>]: FromSchema<NR[K]> },
+    A
 > {
     type C = CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
     type R = { [K in StringKeyof<NR>]: FromSchema<NR[K]> };
+
     const resources = {} as R;
 
     const componentAndResourceSchemas: { [K in StringKeyof<C | R>]: Schema } = { ...newComponentSchemas };
@@ -89,10 +97,18 @@ export function createStore<NC extends ComponentSchemas, NR extends ResourceSche
         return entities;
     }
 
+    const archetypes = Object.fromEntries(
+        Object.entries(archetypeComponentNames).map(([name, componentNames]) => {
+            const archetype = core.ensureArchetype(["id", ...componentNames as any]);
+            return [name, archetype] as const;
+        })
+    ) as any;
+
     const store: Store<C, R> = {
         ...core,
         resources,
         select,
+        archetypes,
     };
     
     return store as any;

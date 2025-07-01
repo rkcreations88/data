@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { ArchetypeId } from "../archetype/index.js";
-import { CoreComponents } from "../core-components.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { Store } from "../store/index.js";
 import { Database, ToTransactionFunctions, TransactionDeclaration } from "./database.js";
@@ -34,15 +33,17 @@ import { createTransactionalStore } from "./transactional-store/create-transacti
 import { isPromise } from "../../internal/promise/is-promise.js";
 import { isAsyncGenerator } from "../../internal/async-generator/is-async-generator.js";
 import { Components } from "../store/components.js";
+import { ArchetypeComponents } from "../store/archetype-components.js";
 
 export function createDatabase<
     C extends Components,
     R extends ResourceComponents,
+    A extends ArchetypeComponents<StringKeyof<C>>,
     TD extends Record<string, TransactionDeclaration>
 >(
-    store: Store<C, R>,
-    transactionDeclarationFactory: (store: Store<C, R>) => TD,
-): Database<C, R, ToTransactionFunctions<TD>> {
+    store: Store<C, R, A>,
+    transactionDeclarationFactory: (store: Store<C, R, A>) => TD,
+): Database<C, R, A, ToTransactionFunctions<TD>> {
     type T = ToTransactionFunctions<TD>;
 
     const transactionalStore = createTransactionalStore(store);
@@ -73,8 +74,8 @@ export function createDatabase<
     ) as { [K in StringKeyof<R>]: Observe<R[K]>; };
     
     const observe: Database<C, R>["observe"] = {
-        component: observeComponent,
-        resource: observeResource,
+        components: observeComponent,
+        resources: observeResource,
         transactions: (notify) => {
             transactionObservers.add(notify);
             return () => {
@@ -87,7 +88,7 @@ export function createDatabase<
 
     const { execute: transactionDatabaseExecute, resources, ...rest } = transactionalStore;
 
-    const execute = (handler: (db: Store<C, R>) => void) => {
+    const execute = (handler: (db: Store<C, R, A>) => void) => {
         const result = transactionDatabaseExecute(handler);
         
         // Notify transaction observers
@@ -134,7 +135,7 @@ export function createDatabase<
     function handleNext(
         asyncArgs: AsyncGenerator<any>,
         transaction: (args: any) => void,
-        execute: (handler: (db: Store<C, R>) => void) => any
+        execute: (handler: (db: Store<C, R, A>) => void) => any
     ) {
         asyncArgs.next().then((result: IteratorResult<any>) => {
             const { value, done } = result;
@@ -192,7 +193,7 @@ export function createDatabase<
         resources,
         transactions,
         observe,
-    } as Database<C, R, T>;
+    } as Database<C, R, A, T>;
 }
 
 const addToMapSet = <K, T>(key: K, map: Map<K, Set<T>>) => (value: T) => {

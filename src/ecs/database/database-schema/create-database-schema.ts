@@ -1,14 +1,19 @@
-import { FromSchemas } from "../../../schema/schema.js";
-import { ComponentSchemas } from "../../component-schemas.js";
-import { ResourceSchemas } from "../../resource-schemas.js";
+import { FromSchemas, Schema } from "../../../schema/schema.js";
+import { StringKeyof } from "../../../types/types.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { Store } from "../../store/store.js";
 import { TransactionDeclaration } from "../database.js";
-import { DatabaseSchema } from "./database-schema.js";
 
 export function createDatabaseSchema<
-    CS extends ComponentSchemas = ComponentSchemas,
-    RS extends ResourceSchemas = ResourceSchemas,
-    TD extends Record<string, TransactionDeclaration> = Record<string, TransactionDeclaration>
->(components: CS, resources: RS, transactions: (store: Store<FromSchemas<CS>, FromSchemas<RS>>) => TD): DatabaseSchema<CS, RS, TD> {
-    return { components, resources, transactions } satisfies DatabaseSchema<CS, RS, TD> as any;
+    const CS extends Record<string, Schema>,
+    const RS extends Record<string, Schema & { default?: any }>,
+    const A extends ArchetypeComponents<StringKeyof<CS>>,
+    const TD extends Record<string, TransactionDeclaration>
+>(
+    components: CS,
+    resources: RS,
+    archetypes: A,
+    transactions: (store: Store<FromSchemas<CS>, FromSchemas<RS>, A>) => TD,
+) {
+    return { components, resources, archetypes, transactions };
 };
