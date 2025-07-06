@@ -23,3 +23,5 @@ SOFTWARE.*/
 export * from "./types.js";
 export * from "./assert.js";
 export * from "./equal.js";
+export * from "./typed-array-constructer.js";
+export * from "./typed-array.js";

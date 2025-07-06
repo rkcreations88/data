@@ -28,7 +28,8 @@ export const EntityLocationSchema = {
         archetype: U32Schema,
         row: U32Schema
     },
-    required: ["archetype", "row"]
+    required: ["archetype", "row"],
+    additionalProperties: false,
 } as const satisfies Schema;
 
 export type EntityLocation = FromSchema<typeof EntityLocationSchema>;

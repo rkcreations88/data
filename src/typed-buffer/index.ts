@@ -23,5 +23,5 @@ SOFTWARE.*/
 export * from './typed-buffer.js';
 export * from './create-typed-buffer.js';
 export * from './create-struct-buffer.js';
-export { getStructLayout } from './structs/index.js';
+export * from './structs/index.js';
 export { copyToGPUBuffer } from './copy-to-gpu-buffer.js';

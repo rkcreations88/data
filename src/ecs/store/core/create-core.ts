@@ -80,7 +80,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
     const { locate } = entityLocationTable;
 
-    const selectEntity = (entity: Entity): EntityValues<C> | null => {
+    const readEntity = (entity: Entity): EntityValues<C> | null => {
         const location = locate(entity);
         return location !== null ? TABLE.getRowData(archetypes[location.archetype], location.row) : null;
     }
@@ -147,7 +147,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         queryArchetypes,
         ensureArchetype,
         locate,
-        read: selectEntity,
+        read: readEntity,
         delete: deleteEntity,
         update: updateEntity,
     };
