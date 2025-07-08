@@ -28,6 +28,7 @@ import { createWriteStruct } from "./structs/create-write-struct.js";
 import { getStructLayout } from "./structs/get-struct-layout.js";
 import { TypedBuffer } from "./typed-buffer.js";
 import { TypedArray } from "../internal/typed-array/index.js";
+import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
 
 export const createStructBuffer = <S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     args: {
@@ -44,7 +45,7 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
         throw new Error("Schema is not a valid struct schema");
     }
     const { length = 16, arrayType = 'f32' } = args;
-    let arrayBuffer = args.arrayBuffer ?? new SharedArrayBuffer(length * layout.size);
+    let arrayBuffer = args.arrayBuffer ?? createSharedArrayBuffer(length * layout.size);
     const read = createReadStruct<FromSchema<S>>(layout);
     const write = createWriteStruct<FromSchema<S>>(layout);
 
@@ -63,7 +64,7 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
             return arrayBuffer.byteLength / layout.size;
         },
         set size(length: number) {
-            arrayBuffer = grow(arrayBuffer, length * layout.size, true);
+            arrayBuffer = grow(arrayBuffer, length * layout.size);
             dataView = createDataView32(arrayBuffer);
             typedArray = dataView[arrayType] as DataView32[ArrayType];
         },

@@ -19,15 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { createSharedArrayBuffer } from "../shared-array-buffer/create-shared-array-buffer.js";
-import { copy } from "./copy.js";
-import { isArrayBuffer } from "./is-array-buffer.js";
-import { isSharedArrayBuffer } from "./is-shared-array-buffer.js";
 
-export function grow<T extends ArrayBufferLike>(arrayBuffer: T, newCapacity: number): T {
-    // create a new array buffer using the same constructor, copy the data, and return it
-    const constructor = arrayBuffer.constructor as new (size: number) => T;
-    const newArrayBuffer = new constructor(newCapacity);
-    copy(arrayBuffer, newArrayBuffer);
-    return newArrayBuffer;
+export function createSharedArrayBuffer(sizeInBytes: number) {
+    if (typeof globalThis.SharedArrayBuffer === 'undefined') {
+        return new ArrayBuffer(sizeInBytes);
+    }
+    return new SharedArrayBuffer(sizeInBytes);
 }

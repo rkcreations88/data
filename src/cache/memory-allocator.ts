@@ -19,6 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
 import { TypedArray, TypedArrayConstructor } from "../internal/typed-array/index.js";
 import { createObservableEvent } from "../observe/create-observable-event.js";
 import { Observe } from "../observe/types.js";
@@ -57,7 +58,7 @@ export function createSimpleMemoryAllocator(): MemoryAllocator {
     ): InstanceType<T> {
       const sizeInBytes = sizeInElements * typedArray.BYTES_PER_ELEMENT;
       return new typedArray(
-        new SharedArrayBuffer(sizeInBytes),
+        createSharedArrayBuffer(sizeInBytes),
         0,
         sizeInElements
       ) as InstanceType<T>;

@@ -25,6 +25,7 @@ import { Schema } from "../schema/schema.js";
 import { TypedArrayConstructor } from "../internal/typed-array/index.js";
 import { U32Schema } from "../schema/u32.js";
 import { TypedBuffer } from "./typed-buffer.js";
+import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
 
 const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {
     if (schema.type === 'number' || schema.type === 'integer') {
@@ -59,7 +60,7 @@ export const createNumberBuffer = (args: {
     const typedArrayConstructor = getTypedArrayConstructor(schema);
     const stride = typedArrayConstructor.BYTES_PER_ELEMENT;
     let {
-        arrayBuffer = new SharedArrayBuffer(stride * length),
+        arrayBuffer = createSharedArrayBuffer(stride * length),
     } = args;
     let array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {

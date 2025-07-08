@@ -83,7 +83,7 @@ export function createCoreTestSuite(
             const entity2 = archetype2.insert({ health: { current: 100, max: 100 } });
 
             const archetype3 = core.ensureArchetype(["id", "position", "health"]);
-            const entity3 = archetype3.insert({ 
+            const entity3 = archetype3.insert({
                 position: { x: 0, y: 0, z: 0 },
                 health: { current: 50, max: 100 }
             });
@@ -121,7 +121,7 @@ export function createCoreTestSuite(
             const entity2 = archetype2.insert({ health: { current: 100, max: 100 } });
 
             const archetype3 = core.ensureArchetype(["id", "position", "health"]);
-            const entity3 = archetype3.insert({ 
+            const entity3 = archetype3.insert({
                 position: { x: 0, y: 0, z: 0 },
                 health: { current: 50, max: 100 }
             });
@@ -289,7 +289,7 @@ export function createCoreTestSuite(
             });
 
             const archetype1 = core.ensureArchetype(["id", "position", "health"]);
-            const entity = archetype1.insert({ 
+            const entity = archetype1.insert({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 }
             });
@@ -324,13 +324,13 @@ export function createCoreTestSuite(
             });
 
             const archetype = core.ensureArchetype(["id", "position", "health"]);
-            const entity = archetype.insert({ 
+            const entity = archetype.insert({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 }
             });
 
             // Update both components
-            core.update(entity, { 
+            core.update(entity, {
                 position: { x: 10, y: 20, z: 30 },
                 health: { current: 50, max: 100 }
             });
@@ -350,7 +350,7 @@ export function createCoreTestSuite(
             const entity = archetype1.insert({ position: { x: 1, y: 2, z: 3 } });
 
             // Add health and update position
-            core.update(entity, { 
+            core.update(entity, {
                 position: { x: 10, y: 20, z: 30 },
                 health: { current: 100, max: 100 }
             });

@@ -6,7 +6,6 @@ const IS_RUNNING_VSCODE_DEBUG = typeof process.env.VSCODE_INSPECTOR_OPTIONS === 
 export default defineConfig({
   test: {
     tsconfig: './tsconfig-base.json',
-    setupFiles: ['./vitest.setup.js'],
     browser: IS_RUNNING_VSCODE_DEBUG ? {} : {
       provider: 'webdriverio', // or 'webdriverio'
       enabled: true,

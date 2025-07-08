@@ -43,7 +43,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
     >(
         include: readonly Include[],
         options?: QueryOptions<Include, Exclude>
-    ): readonly Archetype<CoreComponents & Pick<C, Include>>[] =>{
+    ): readonly Archetype<CoreComponents & Pick<C, Include>>[] => {
         const results: Archetype<CoreComponents & Pick<C, Include>>[] = [];
         for (const archetype of archetypes) {
             const hasAllRequired = include.every(comp => archetype.columns[comp] !== undefined);
@@ -89,6 +89,10 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         const location = locate(entity);
         if (location !== null) {
             const archetype = archetypes[location.archetype];
+            if (!archetype) {
+                console.log("location", location);
+                throw new Error("Archetype not found: " + JSON.stringify(location));
+            }
             ARCHETYPE.deleteRow(archetype, location.row, entityLocationTable);
             entityLocationTable.delete(entity);
         }
@@ -154,7 +158,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
     return core as any;
 }
 
-type TestType = ReturnType<typeof createCore<{ position: { type: "number"}, health: { type: "string"} }>>
+type TestType = ReturnType<typeof createCore<{ position: { type: "number" }, health: { type: "string" } }>>
 type CheckTestType = Assert<Equal<TestType, Core<{
     position: number;
     health: string;

@@ -23,6 +23,7 @@ import { grow } from "../../internal/array-buffer-like/grow.js";
 import { EntityLocationTable } from "./entity-location-table.js";
 import { EntityLocation } from "./entity-location.js";
 import { Entity } from "../entity.js";
+import { createSharedArrayBuffer } from "../../internal/shared-array-buffer/create-shared-array-buffer.js";
 
 export const createEntityLocationTable = (initialCapacity: number = 16): EntityLocationTable => {
 
@@ -36,7 +37,7 @@ export const createEntityLocationTable = (initialCapacity: number = 16): EntityL
     let nextIndex = 0;
     let capacity = Math.max(initialCapacity, 16);
 
-    let array = new SharedArrayBuffer(capacity * 2 * 4, { maxByteLength: 1024 * 1024 * 1024 });
+    let array = createSharedArrayBuffer(capacity * 2 * 4);
     let entities = new Int32Array(array);
 
     const createEntity = ({ archetype, row }: EntityLocation): Entity => {
