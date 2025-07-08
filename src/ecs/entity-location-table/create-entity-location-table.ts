@@ -36,7 +36,7 @@ export const createEntityLocationTable = (initialCapacity: number = 16): EntityL
     let nextIndex = 0;
     let capacity = Math.max(initialCapacity, 16);
 
-    const array = new ArrayBuffer(capacity * 2 * 4, { maxByteLength: 1024 * 1024 * 1024 });
+    const array = new SharedArrayBuffer(capacity * 2 * 4, { maxByteLength: 1024 * 1024 * 1024 });
     const entities = new Int32Array(array);
 
     const createEntity = ({ archetype, row }: EntityLocation): Entity => {

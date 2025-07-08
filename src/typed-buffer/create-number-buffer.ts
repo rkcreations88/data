@@ -60,7 +60,7 @@ export const createNumberBuffer = (args: {
     const typedArrayConstructor = getTypedArrayConstructor(schema);
     const stride = typedArrayConstructor.BYTES_PER_ELEMENT;
     const {
-        arrayBuffer = new ArrayBuffer(stride * length, { maxByteLength: stride * maxLength }),
+        arrayBuffer = new SharedArrayBuffer(stride * length, { maxByteLength: stride * maxLength }),
     } = args;
     const array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {
