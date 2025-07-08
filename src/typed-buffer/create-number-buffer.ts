@@ -55,14 +55,13 @@ export const createNumberBuffer = (args: {
     const {
         schema,
         length = 16,
-        maxLength = length,
     } = args;
     const typedArrayConstructor = getTypedArrayConstructor(schema);
     const stride = typedArrayConstructor.BYTES_PER_ELEMENT;
-    const {
-        arrayBuffer = new SharedArrayBuffer(stride * length, { maxByteLength: stride * maxLength }),
+    let {
+        arrayBuffer = new SharedArrayBuffer(stride * length),
     } = args;
-    const array = new typedArrayConstructor(arrayBuffer);
+    let array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {
         type: 'number-buffer',
         typedArrayElementSizeInBytes: stride,
@@ -73,7 +72,8 @@ export const createNumberBuffer = (args: {
             return array.length;
         },
         set size(value: number) {
-            grow(arrayBuffer, value * stride);
+            arrayBuffer = grow(arrayBuffer, value * stride);
+            array = new typedArrayConstructor(arrayBuffer);
         },
         get(index: number): number {
             return array[index];

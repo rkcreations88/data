@@ -63,7 +63,6 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
             return arrayBuffer.byteLength / layout.size;
         },
         set size(length: number) {
-            // attempts to grow the array buffer in place, throws if it can't
             arrayBuffer = grow(arrayBuffer, length * layout.size, true);
             dataView = createDataView32(arrayBuffer);
             typedArray = dataView[arrayType] as DataView32[ArrayType];
