@@ -9,7 +9,7 @@ createDatabaseSchema(
         particle: TrueSchema,
     },
     {
-        mousePosition: { type: "number", default: 0 as number },
+        mousePosition: { type: "number", default: 0 },
         fooPosition: { type: "number", default: 0 },
     },
     {
@@ -23,8 +23,6 @@ createDatabaseSchema(
                 store.resources.mousePosition = position;
                 // @ts-expect-error
                 store.resources.mousePosition2 = position;
-                // @ts-expect-error -- fooPosition default is interpreted as 0 because `const` on generic parameter
-                store.resources.fooPosition = position;
             },
         })
     }

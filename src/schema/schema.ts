@@ -88,7 +88,7 @@ export type FromSchemas<T> = {
 
 export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends 0
   ? any
-  : T extends { default: infer D }
+  : T extends { type?: undefined, default: infer D }
   ? D
   : T extends { const: infer Const }
   ? Const
