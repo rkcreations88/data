@@ -36,8 +36,8 @@ export const createEntityLocationTable = (initialCapacity: number = 16): EntityL
     let nextIndex = 0;
     let capacity = Math.max(initialCapacity, 16);
 
-    const array = new SharedArrayBuffer(capacity * 2 * 4, { maxByteLength: 1024 * 1024 * 1024 });
-    const entities = new Int32Array(array);
+    let array = new SharedArrayBuffer(capacity * 2 * 4, { maxByteLength: 1024 * 1024 * 1024 });
+    let entities = new Int32Array(array);
 
     const createEntity = ({ archetype, row }: EntityLocation): Entity => {
         let entity: number;
@@ -50,7 +50,8 @@ export const createEntityLocationTable = (initialCapacity: number = 16): EntityL
             entity = nextIndex++;
             if (nextIndex >= capacity) {
                 capacity *= 2;
-                grow(array, capacity * 2 * 4);
+                array = grow(array, capacity * 2 * 4);
+                entities = new Int32Array(array);
             }
         }
 
