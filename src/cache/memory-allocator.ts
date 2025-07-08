@@ -57,7 +57,7 @@ export function createSimpleMemoryAllocator(): MemoryAllocator {
     ): InstanceType<T> {
       const sizeInBytes = sizeInElements * typedArray.BYTES_PER_ELEMENT;
       return new typedArray(
-        new ArrayBuffer(sizeInBytes),
+        new SharedArrayBuffer(sizeInBytes),
         0,
         sizeInElements
       ) as InstanceType<T>;

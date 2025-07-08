@@ -44,7 +44,7 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
         throw new Error("Schema is not a valid struct schema");
     }
     const { length = 16, arrayType = 'f32' } = args;
-    let arrayBuffer = args.arrayBuffer ?? new ArrayBuffer(length * layout.size);
+    let arrayBuffer = args.arrayBuffer ?? new SharedArrayBuffer(length * layout.size);
     const read = createReadStruct<FromSchema<S>>(layout);
     const write = createWriteStruct<FromSchema<S>>(layout);
 
