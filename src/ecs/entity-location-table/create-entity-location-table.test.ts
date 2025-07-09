@@ -26,7 +26,7 @@ import { Entity } from '../entity.js';
 describe('createEntityLocationTable', () => {
     it('should create entities with increasing ids starting from 0', () => {
         const table = createEntityLocationTable();
-        
+
         const entity0 = table.create({ archetype: 1, row: 10 });
         const entity1 = table.create({ archetype: 2, row: 20 });
         const entity2 = table.create({ archetype: 3, row: 30 });
@@ -38,7 +38,7 @@ describe('createEntityLocationTable', () => {
 
     it('should store and retrieve entity locations correctly', () => {
         const table = createEntityLocationTable();
-        
+
         const entity = table.create({ archetype: 42, row: 123 });
         const location = table.locate(entity);
 
@@ -47,7 +47,7 @@ describe('createEntityLocationTable', () => {
 
     it('should reuse deleted entity ids', () => {
         const table = createEntityLocationTable();
-        
+
         const entity0 = table.create({ archetype: 1, row: 10 });
         const entity1 = table.create({ archetype: 2, row: 20 });
         const entity2 = table.create({ archetype: 3, row: 30 });
@@ -66,7 +66,7 @@ describe('createEntityLocationTable', () => {
 
     it('should reuse multiple deleted entities in LIFO order', () => {
         const table = createEntityLocationTable();
-        
+
         // Create initial entities
         const entity0 = table.create({ archetype: 1, row: 10 });
         const entity1 = table.create({ archetype: 2, row: 20 });
@@ -99,7 +99,7 @@ describe('createEntityLocationTable', () => {
 
     it('should return invalid location for out of bounds or deleted entities', () => {
         const table = createEntityLocationTable();
-        
+
         // Out of bounds
         const outOfBoundsLocation = table.locate(999);
         expect(outOfBoundsLocation).toEqual(null);
@@ -149,7 +149,7 @@ describe('createEntityLocationTable', () => {
 
     it('should update entity locations correctly', () => {
         const table = createEntityLocationTable();
-        
+
         // Create an initial entity
         const entity = table.create({ archetype: 1, row: 10 });
         expect(table.locate(entity)).toEqual({ archetype: 1, row: 10 });
@@ -166,5 +166,11 @@ describe('createEntityLocationTable', () => {
         const entity2 = table.create({ archetype: 4, row: 40 });
         expect(table.locate(entity)).toEqual({ archetype: 3, row: 30 });
         expect(table.locate(entity2)).toEqual({ archetype: 4, row: 40 });
+    });
+
+    it("should return null when locating entity with invalid id -1", () => {
+        const table = createEntityLocationTable();
+        const location = table.locate(-1);
+        expect(location).toBeNull();
     });
 }); 

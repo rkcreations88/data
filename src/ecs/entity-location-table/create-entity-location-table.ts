@@ -71,7 +71,7 @@ export const createEntityLocationTable = (initialCapacity: number = 16): EntityL
     }
 
     const locateEntity = (entity: Entity): EntityLocation | null => {
-        if (entity >= nextIndex) {
+        if (entity < 0 || entity >= nextIndex) {
             return null;
         }
         const index = entity << 1;

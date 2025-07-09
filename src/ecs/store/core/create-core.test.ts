@@ -214,6 +214,15 @@ export function createCoreTestSuite(
             expect(data).toBeNull();
         });
 
+        it("should return null when reading entity with invalid id -1", () => {
+            const core = factory({
+                position: positionSchema,
+            });
+
+            const data = core.read(-1);
+            expect(data).toBeNull();
+        });
+
         it("should delete entities correctly", () => {
             const core = factory({
                 position: positionSchema,

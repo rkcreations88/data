@@ -82,6 +82,9 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
     const readEntity = (entity: Entity): EntityValues<C> | null => {
         const location = locate(entity);
+        if (location === null) {
+            return null;
+        }
         return location !== null ? TABLE.getRowData(archetypes[location.archetype], location.row) : null;
     }
 
