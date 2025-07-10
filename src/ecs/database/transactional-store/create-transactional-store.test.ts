@@ -51,7 +51,7 @@ describe("createTransactionalStore", () => {
             { position: positionSchema, health: healthSchema },
             { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
-        
+
         const store = createTransactionalStore(baseStore);
 
         expect(store).toBeDefined();
@@ -66,7 +66,7 @@ describe("createTransactionalStore", () => {
             { position: positionSchema, health: healthSchema },
             { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
-        
+
         const store = createTransactionalStore(baseStore);
 
         const result = store.execute((transactionStore) => {
@@ -94,7 +94,7 @@ describe("createTransactionalStore", () => {
             { position: positionSchema, health: healthSchema },
             { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
-        
+
         const store = createTransactionalStore(baseStore);
 
         // Create initial entity in a transaction
@@ -113,7 +113,7 @@ describe("createTransactionalStore", () => {
             store.execute((transactionStore) => {
                 // Update entity
                 transactionStore.update(entity, { position: { x: 10, y: 20, z: 30 } });
-                
+
                 // This should cause rollback
                 throw new Error("Transaction failed");
             });
@@ -129,12 +129,12 @@ describe("createTransactionalStore", () => {
             { position: positionSchema, health: healthSchema },
             { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
-        
+
         const store = createTransactionalStore(baseStore);
 
         const result = store.execute((transactionStore) => {
             const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
-            const entity = archetype.insert({ 
+            const entity = archetype.insert({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 }
             });
@@ -147,7 +147,7 @@ describe("createTransactionalStore", () => {
         // Should have combined updates
         expect(result.redo).toHaveLength(2); // insert + combined update
         expect(result.undo).toHaveLength(2); // delete + insert with old values
-        
+
         const updateOperation = result.redo.find(op => op.type === "update");
         expect(updateOperation?.type).toBe("update");
         if (updateOperation?.type === "update") {
@@ -161,14 +161,14 @@ describe("createTransactionalStore", () => {
             { position: positionSchema, health: healthSchema },
             { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
-        
+
         const store = createTransactionalStore(baseStore);
 
         const result = store.execute((transactionStore) => {
             // Create entities in different archetypes
             const posArchetype = transactionStore.ensureArchetype(["id", "position"]);
             const healthArchetype = transactionStore.ensureArchetype(["id", "health"]);
-            
+
             const entity1 = posArchetype.insert({ position: { x: 1, y: 2, z: 3 } });
             const entity2 = healthArchetype.insert({ health: { current: 100, max: 100 } });
 
@@ -186,7 +186,7 @@ describe("createTransactionalStore", () => {
             { position: positionSchema, health: healthSchema },
             { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
-        
+
         const store = createTransactionalStore(baseStore);
 
         // Verify all base store methods are available
@@ -201,7 +201,7 @@ describe("createTransactionalStore", () => {
         // Verify we can use the store normally for read operations
         const archetypes = store.queryArchetypes(["id"]);
         expect(archetypes.length).toBeGreaterThan(0);
-        
+
         // Verify we can create entities through transactions
         store.execute((transactionStore) => {
             const archetype = transactionStore.ensureArchetype(["id", "position"]);
@@ -215,7 +215,7 @@ describe("createTransactionalStore", () => {
             { position: positionSchema, health: healthSchema },
             { time: { default: { delta: 0.016, elapsed: 0 } } }
         );
-        
+
         const store = createTransactionalStore(baseStore);
 
         // Execute a regular transaction (non-transient)
@@ -233,20 +233,26 @@ describe("createTransactionalStore", () => {
         }, { transient: true });
 
         expect(transientResult.transient).toBe(true);
+    });
 
-        // Both transactions should have the same structure but different transient flags
-        expect(regularResult).toHaveProperty("value");
-        expect(regularResult).toHaveProperty("redo");
-        expect(regularResult).toHaveProperty("undo");
-        expect(regularResult).toHaveProperty("changedEntities");
-        expect(regularResult).toHaveProperty("changedComponents");
-        expect(regularResult).toHaveProperty("changedArchetypes");
-        
-        expect(transientResult).toHaveProperty("value");
-        expect(transientResult).toHaveProperty("redo");
-        expect(transientResult).toHaveProperty("undo");
-        expect(transientResult).toHaveProperty("changedEntities");
-        expect(transientResult).toHaveProperty("changedComponents");
-        expect(transientResult).toHaveProperty("changedArchetypes");
+    it("should track specific components and archetypes when creating entities", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {},
+            {
+                PositionHealth: ["position", "health"]
+            }
+        );
+        const store = createTransactionalStore(baseStore);
+
+        const result = store.execute((transactionStore) => {
+            return transactionStore.archetypes.PositionHealth.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            })
+        });
+        expect(result.changedEntities).toEqual(new Set([result.value]));
+        expect(result.changedComponents).toEqual(new Set(["position", "health"]));
+        expect(result.changedArchetypes).toEqual(new Set([store.archetypes.PositionHealth.id]));
     });
 }); 

@@ -21,20 +21,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { CoreComponents } from "../core-components.js";
 import { ResourceComponents } from "./resource-components.js";
-import { Core, QueryOptions, ReadonlyCore } from "./core/core.js";
+import { Core, ReadonlyCore } from "./core/core.js";
 import { Entity } from "../entity.js";
 import { StringKeyof } from "../../types/types.js";
 import { Components } from "./components.js";
 import { ArchetypeComponents } from "./archetype-components.js";
 import { Archetype, ReadonlyArchetype } from "../archetype/archetype.js";
+import { EntitySelectOptions } from "./entity-select-options.js";
 
 interface BaseStore<C extends object = never> {
     select<
-        Include extends StringKeyof<C & CoreComponents>,
-        Exclude extends StringKeyof<C> = never
+        Include extends StringKeyof<C>,
+        T extends Include
     >(
         include: Include[],
-        options?: QueryOptions<Include, Exclude>
+        options?: EntitySelectOptions<C, Pick<C & CoreComponents, T>>
     ): readonly Entity[];
 }
 
@@ -45,6 +46,7 @@ export interface ReadonlyStore<
 > extends BaseStore<C>, ReadonlyCore<C> {
     readonly resources: { readonly [K in StringKeyof<R>]: R[K] };
     readonly archetypes: { -readonly [K in StringKeyof<A>]: ReadonlyArchetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
+
 }
 
 export type ToReadonlyStore<T extends Store<any, any>> = T extends Store<infer C, infer R> ? ReadonlyStore<C, R> : never;
@@ -60,3 +62,4 @@ export interface Store<
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };
     readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
 }
+

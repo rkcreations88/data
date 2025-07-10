@@ -20,20 +20,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Component_stack } from "./component/stack.js";
+import { Filter } from "../../table/select-rows.js";
+import { ArchetypeQueryOptions } from "./core/core.js";
 
-export function useState<T>(initializer: () => T): [T, (value: T) => void]
-export function useState<T>(initialValue: T): [T, (value: T) => void]
-export function useState<T>(initial: () => T) {
-    const component = Component_stack.active();
-    const hookIndex = component.hookIndex++;
-    const value = component.hooks[hookIndex] ??= (typeof initial === "function" ? initial() : initial);
-    return [
-        value,
-        (newValue: T) => {
-            component.hooks[hookIndex] = newValue;
-            component.requestUpdate();
-        }
-    ];
+export type OrderClause<T extends object> = { [K in keyof T]?: boolean };
 
+export type EntitySelectOptions<
+    C extends object,
+    T extends object,
+> = ArchetypeQueryOptions<C> & {
+    /**
+     * Filter the results by the given condition using a declarative where clause.
+     */
+    where?: Filter<T>;
+    /**
+     * Order results by the given components ascending or descending.
+     */
+    order?: OrderClause<T>;
 }

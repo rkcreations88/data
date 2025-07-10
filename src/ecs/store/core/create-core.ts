@@ -26,7 +26,7 @@ import * as TABLE from "../../../table/index.js";
 import { Archetype } from "../../archetype/archetype.js";
 import { CoreComponents } from "../../core-components.js";
 import { Entity, EntitySchema } from "../../entity.js";
-import { Core, EntityUpdateValues, EntityValues, QueryOptions } from "./core.js";
+import { Core, EntityUpdateValues, EntityValues, ArchetypeQueryOptions } from "./core.js";
 import { Assert, Equal, Simplify, StringKeyof } from "../../../types/index.js";
 import { ComponentSchemas } from "../../component-schemas.js";
 
@@ -39,10 +39,9 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
     const queryArchetypes = <
         Include extends StringKeyof<C>,
-        Exclude extends StringKeyof<C> = never
     >(
         include: readonly Include[],
-        options?: QueryOptions<Include, Exclude>
+        options?: ArchetypeQueryOptions<C>
     ): readonly Archetype<CoreComponents & Pick<C, Include>>[] => {
         const results: Archetype<CoreComponents & Pick<C, Include>>[] = [];
         for (const archetype of archetypes) {
