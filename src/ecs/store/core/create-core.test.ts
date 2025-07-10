@@ -178,7 +178,7 @@ export function createCoreTestSuite(
 
             const location = core.locate(entity);
             expect(location).not.toBeNull();
-            expect(location?.archetype).toBe(archetype.id);
+            expect(location?.archetype.id).toBe(archetype.id);
             expect(location?.row).toBeGreaterThanOrEqual(0);
         });
 

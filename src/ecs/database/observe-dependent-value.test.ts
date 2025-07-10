@@ -34,7 +34,8 @@ describe('observeDependentValue', () => {
                 a: { default: 10 },
                 b: { default: 20 },
                 c: { default: 30 }
-            }
+            },
+            {}
         );
         type TestStore = ToReadonlyStore<typeof store>;
 
@@ -157,9 +158,9 @@ describe('observeDependentValue', () => {
     });
 
     it('should handle complex computed values', async () => {
-        const store = createStore({}, { 
-            count: { default: 5 }, 
-            multiplier: { default: 2 }, 
+        const store = createStore({}, {
+            count: { default: 5 },
+            multiplier: { default: 2 },
             offset: { default: 10 }
         });
         const database = createDatabase(store, (store) => ({

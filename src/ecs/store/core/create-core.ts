@@ -23,7 +23,7 @@ import { FromSchema, Schema } from "../../../schema/schema.js";
 import { createEntityLocationTable } from "../../entity-location-table/index.js";
 import * as ARCHETYPE from "../../archetype/index.js";
 import * as TABLE from "../../../table/index.js";
-import { Archetype } from "../../archetype/archetype.js";
+import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { CoreComponents } from "../../core-components.js";
 import { Entity, EntitySchema } from "../../entity.js";
 import { Core, EntityUpdateValues, EntityValues, ArchetypeQueryOptions } from "./core.js";
@@ -35,7 +35,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
     const componentSchemas: { readonly [K in StringKeyof<C>]: Schema } = { id: EntitySchema, ...newComponentSchemas };
     const entityLocationTable = createEntityLocationTable();
-    const archetypes = [] as unknown as Archetype<C>[] & { readonly [x: string]: Archetype<C> };
+    const archetypes = [] as unknown as Archetype<C & CoreComponents>[] & { readonly [x: string]: Archetype<C> };
 
     const queryArchetypes = <
         Include extends StringKeyof<C>,
@@ -152,7 +152,13 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         componentSchemas: componentSchemas,
         queryArchetypes,
         ensureArchetype,
-        locate,
+        locate: (entity) => {
+            const location = locate(entity);
+            if (location === null) {
+                return null;
+            }
+            return { archetype: archetypes[location.archetype] as any, row: location.row };
+        },
         read: readEntity,
         delete: deleteEntity,
         update: updateEntity,

@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, expect, it } from "vitest";
-import { createRowPredicateFromFilterInternal, selectRows, getCachedRowPredicateFromFilter } from "./select-rows.js";
+import { selectRows, getRowPredicateFromFilter } from "./select-rows.js";
 import { createTable } from "./create-table.js";
 import { addRow } from "./add-row.js";
 
@@ -45,7 +45,7 @@ describe("selectRows", () => {
     addRow(table, { id: 5, name: "David", age: 28, score: 88.2, category: "books", price: 75, inStock: false, isActive: false, value: 50 });
 
     it("should create columns for each schema", () => {
-        const predicate = createRowPredicateFromFilterInternal({
+        const predicate = getRowPredicateFromFilter({
             a: 1,
             b: {
                 ">": 5,
@@ -129,15 +129,15 @@ describe("selectRows", () => {
         // These should be different objects but identical structure
         expect(filter1).not.toBe(filter2);
 
-        const predicate1 = getCachedRowPredicateFromFilter(filter1);
-        const predicate2 = getCachedRowPredicateFromFilter(filter2);
+        const predicate1 = getRowPredicateFromFilter(filter1);
+        const predicate2 = getRowPredicateFromFilter(filter2);
 
         // First calls should create new predicates
         expect(predicate1).not.toBe(predicate2);
 
         // Second calls with same objects should return cached predicates
-        const predicate1Cached = getCachedRowPredicateFromFilter(filter1);
-        const predicate2Cached = getCachedRowPredicateFromFilter(filter2);
+        const predicate1Cached = getRowPredicateFromFilter(filter1);
+        const predicate2Cached = getRowPredicateFromFilter(filter2);
 
         expect(predicate1Cached).toBe(predicate1);
         expect(predicate2Cached).toBe(predicate2);

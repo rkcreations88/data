@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Table } from "./table.js";
+import { ReadonlyTable, Table } from "./table.js";
 
 /**
  * Comparison operators for declarative where clauses
@@ -72,7 +72,7 @@ export const selectRows = function* <C extends object>(table: Table<C>, where?: 
         }
     }
     else {
-        const predicate = getCachedRowPredicateFromFilter(where);
+        const predicate = getRowPredicateFromFilter(where);
         for (let row = 0; row < table.rows; row++) {
             if (predicate(table, row)) {
                 yield row;
@@ -81,10 +81,13 @@ export const selectRows = function* <C extends object>(table: Table<C>, where?: 
     }
 };
 
-type RowPredicate<C extends object> = (table: Table<C>, row: number) => boolean;
+type RowPredicate<C extends object> = (table: ReadonlyTable<C>, row: number) => boolean;
 
 const cacheByFilter = new WeakMap<Filter<any>, RowPredicate<any>>();
-export const getCachedRowPredicateFromFilter = <C extends object>(where: Filter<C>): RowPredicate<C> => {
+export const getRowPredicateFromFilter = <C extends object>(where?: Filter<C>): RowPredicate<C> => {
+    if (!where) {
+        return () => true;
+    }
     let predicate = cacheByFilter.get(where);
     if (!predicate) {
         predicate = createRowPredicateFromFilterInternal(where);
@@ -93,7 +96,7 @@ export const getCachedRowPredicateFromFilter = <C extends object>(where: Filter<
     return predicate;
 }
 
-export const createRowPredicateFromFilterInternal = <C extends object>(where: Filter<C>): RowPredicate<C> => {
+const createRowPredicateFromFilterInternal = <C extends object>(where: Filter<C>): RowPredicate<C> => {
     let body =
         `    const { columns } = table;\n`;
     for (const [key, whereCondition] of Object.entries(where)) {

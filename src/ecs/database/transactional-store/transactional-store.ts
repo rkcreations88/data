@@ -79,7 +79,7 @@ export interface TransactionResult<C> {
     readonly transient: boolean;
     readonly redo: TransactionWriteOperation<C>[];
     readonly undo: TransactionWriteOperation<C>[];
-    readonly changedEntities: Set<Entity>;
+    readonly changedEntities: Map<Entity, EntityUpdateValues<C> | null>;
     readonly changedComponents: Set<keyof C>;
     readonly changedArchetypes: Set<ArchetypeId>;
 }

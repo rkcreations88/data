@@ -251,8 +251,229 @@ describe("createTransactionalStore", () => {
                 health: { current: 100, max: 100 }
             })
         });
-        expect(result.changedEntities).toEqual(new Set([result.value]));
+        expect(result.changedEntities).toEqual(new Map([[result.value, { position: { x: 1, y: 2, z: 3 }, health: { current: 100, max: 100 } }]]));
         expect(result.changedComponents).toEqual(new Set(["position", "health"]));
         expect(result.changedArchetypes).toEqual(new Set([store.archetypes.PositionHealth.id]));
+    });
+
+    it("should track changedEntities as Map with combined values for multiple updates", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        const result = store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+            const entity = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            // Multiple updates to the same entity
+            transactionStore.update(entity, { position: { x: 10, y: 20, z: 30 } });
+            transactionStore.update(entity, { health: { current: 50, max: 100 } });
+            transactionStore.update(entity, { position: { x: 15, y: 25, z: 35 } });
+
+            return entity;
+        });
+
+        // Should have combined final values from all updates
+        expect(result.value).toBeDefined();
+        expect(typeof result.value).toBe('number');
+        const entity = result.value as number;
+        expect(result.changedEntities).toEqual(new Map([[entity, {
+            position: { x: 15, y: 25, z: 35 },
+            health: { current: 50, max: 100 }
+        }]]));
+    });
+
+    it("should track changedEntities as Map with null for deleted entities", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        // First create an entity
+        let entity: number;
+        store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+            entity = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+        });
+
+        // Then delete it in a separate transaction
+        const result = store.execute((transactionStore) => {
+            transactionStore.delete(entity!);
+        });
+
+        // Should have null value for the deleted entity
+        expect(result.changedEntities).toEqual(new Map([[entity!, null]]));
+    });
+
+    it("should track changedEntities with combined values when entity is updated then deleted", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        // First create an entity
+        let entity: number;
+        store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+            entity = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+        });
+
+        // Then update and delete in the same transaction
+        const result = store.execute((transactionStore) => {
+            transactionStore.update(entity!, { position: { x: 10, y: 20, z: 30 } });
+            transactionStore.update(entity!, { health: { current: 50, max: 100 } });
+            transactionStore.delete(entity!);
+        });
+
+        // Should have null since the entity was deleted
+        expect(result.changedEntities).toEqual(new Map([[entity!, null]]));
+    });
+
+    it("should track deleted components in changedComponents when entity is deleted", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        // First create an entity with multiple components
+        let entity: number;
+        store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+            entity = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+        });
+
+        // Then delete it in a separate transaction
+        const result = store.execute((transactionStore) => {
+            transactionStore.delete(entity!);
+        });
+
+        // Should have null value for the deleted entity
+        expect(result.changedEntities).toEqual(new Map([[entity!, null]]));
+
+        // Should track the deleted components in changedComponents
+        expect(result.changedComponents).toEqual(new Set(["position", "health"]));
+    });
+
+    it("should track deleted components when entity is updated then deleted", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        // First create an entity
+        let entity: number;
+        store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+            entity = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+        });
+
+        // Then update and delete in the same transaction
+        const result = store.execute((transactionStore) => {
+            transactionStore.update(entity!, { position: { x: 10, y: 20, z: 30 } });
+            transactionStore.update(entity!, { health: { current: 50, max: 100 } });
+            transactionStore.delete(entity!);
+        });
+
+        // Should have null since the entity was deleted
+        expect(result.changedEntities).toEqual(new Map([[entity!, null]]));
+
+        // Should track all components that were affected (updated and then deleted)
+        expect(result.changedComponents).toEqual(new Set(["position", "health"]));
+    });
+
+    it("should track changedEntities with final combined values for complex update sequences", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        const result = store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+            const entity = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            // Complex sequence of updates
+            transactionStore.update(entity, { position: { x: 10, y: 20, z: 30 } });
+            transactionStore.update(entity, { health: { current: 75, max: 100 } });
+            transactionStore.update(entity, { position: { x: 15, y: 25, z: 35 } });
+            transactionStore.update(entity, { health: { current: 50, max: 100 } });
+            transactionStore.update(entity, { position: { x: 20, y: 30, z: 40 } });
+
+            return entity;
+        });
+
+        // Should have the final combined state
+        expect(result.changedEntities).toEqual(new Map([[result.value, {
+            position: { x: 20, y: 30, z: 40 },
+            health: { current: 50, max: 100 }
+        }]]));
+    });
+
+    it("should track multiple entities with different operations in changedEntities", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        const result = store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+
+            // Create first entity
+            const entity1 = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            // Create second entity
+            const entity2 = archetype.insert({
+                position: { x: 10, y: 20, z: 30 },
+                health: { current: 200, max: 200 }
+            });
+
+            // Update first entity
+            transactionStore.update(entity1, { position: { x: 5, y: 6, z: 7 } });
+
+            // Delete second entity
+            transactionStore.delete(entity2);
+
+            return entity1;
+        });
+
+        // Should have both entities tracked with appropriate values
+        expect(result.changedEntities.size).toBe(2);
+        expect(result.changedEntities.get(result.value as number)).toEqual({
+            position: { x: 5, y: 6, z: 7 },
+            health: { current: 100, max: 100 }
+        });
+
+        // Find the deleted entity
+        const deletedEntity = Array.from(result.changedEntities.entries()).find(([_, values]) => values === null)?.[0];
+        expect(deletedEntity).toBeDefined();
+        expect(result.changedEntities.get(deletedEntity!)).toBeNull();
     });
 }); 
