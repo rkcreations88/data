@@ -31,10 +31,8 @@ import { Components } from "../components.js";
 export type EntityValues<C> = CoreComponents & { readonly [K in StringKeyof<C>]?: C[K] }
 export type EntityUpdateValues<C> = Partial<Omit<C, "id">>;
 
-export type QueryOptions<Include, Exclude> =
-    Extract<Include, Exclude> extends never
-        ? { exclude?: readonly Exclude[] }
-        : { exclude?: never };
+export type ArchetypeQueryOptions<C extends object> =
+    { exclude?: readonly StringKeyof<C>[] };
 
 export interface ReadonlyCore<
     C extends Components = never,
@@ -43,13 +41,12 @@ export interface ReadonlyCore<
 
     queryArchetypes<
         Include extends StringKeyof<C & CoreComponents>,
-        Exclude extends StringKeyof<C> = never
     >(
         include: readonly Include[],
-        options?: QueryOptions<Include, Exclude>
+        options?: ArchetypeQueryOptions<C>
     ): readonly ReadonlyArchetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
 
-    ensureArchetype: <const CC extends StringKeyof<C | CoreComponents>>(components: readonly CC[]) => ReadonlyArchetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K]}>;
+    ensureArchetype: <const CC extends StringKeyof<C | CoreComponents>>(components: readonly CC[]) => ReadonlyArchetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
     locate: (entity: Entity) => EntityLocation | null;
     read: (entity: Entity) => EntityValues<C> | null;
 }
@@ -62,12 +59,11 @@ export interface Core<
 > extends ReadonlyCore<C> {
     queryArchetypes<
         Include extends StringKeyof<C & CoreComponents>,
-        Exclude extends StringKeyof<C> = never
     >(
         include: readonly Include[],
-        options?: QueryOptions<Include, Exclude>
+        options?: ArchetypeQueryOptions<C>
     ): readonly Archetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
-    ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K]}>;
+    ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
     delete: (entity: Entity) => void;
     update: (entity: Entity, values: EntityUpdateValues<C>) => void;
 }

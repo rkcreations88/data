@@ -61,7 +61,7 @@ function createTestObservableStore() {
         { position: positionSchema, health: healthSchema, name: nameSchema },
         { time: { default: { delta: 0.016, elapsed: 0 } } }
     );
-    
+
     return createDatabase(baseStore, db => ({
         createPositionEntity(args: { position: { x: number, y: number, z: number } }) {
             const archetype = db.ensureArchetype(["id", "position"]);
@@ -84,8 +84,8 @@ function createTestObservableStore() {
             const entity = archetype.insert(args);
             return entity;
         },
-        updateEntity(args: { 
-            entity: Entity, 
+        updateEntity(args: {
+            entity: Entity,
             values: Partial<{
                 position: { x: number, y: number, z: number },
                 health: { current: number, max: number },
@@ -108,7 +108,7 @@ describe("createDatabase", () => {
         const store = createTestObservableStore();
         const positionObserver = vi.fn();
         const nameObserver = vi.fn();
-        
+
         // Subscribe to component changes
         const unsubscribePosition = store.observe.components.position(positionObserver);
         const unsubscribeName = store.observe.components.name(nameObserver);
@@ -137,7 +137,7 @@ describe("createDatabase", () => {
         // Unsubscribe and verify no more notifications
         unsubscribePosition();
         unsubscribeName();
-        
+
         store.transactions.updateEntity({
             entity: testEntity,
             values: { position: { x: 7, y: 8, z: 9 }, name: "Updated" }
@@ -193,7 +193,7 @@ describe("createDatabase", () => {
     it("should notify transaction observers with full transaction results", () => {
         const store = createTestObservableStore();
         const transactionObserver = vi.fn();
-        
+
         const unsubscribe = store.observe.transactions(transactionObserver);
 
         // Execute a transaction with multiple operations
@@ -222,7 +222,7 @@ describe("createDatabase", () => {
 
     it("should notify archetype observers when entities change archetypes", () => {
         const store = createTestObservableStore();
-        
+
         // Create initial entity
         const entity = store.transactions.createPositionEntity({
             position: { x: 1, y: 2, z: 3 }
@@ -269,7 +269,7 @@ describe("createDatabase", () => {
 
     it("should support multiple observers for the same target", () => {
         const store = createTestObservableStore();
-        
+
         const observer1 = vi.fn();
         const observer2 = vi.fn();
         const observer3 = vi.fn();
@@ -309,7 +309,7 @@ describe("createDatabase", () => {
 
     it("should handle observer cleanup correctly", () => {
         const store = createTestObservableStore();
-        
+
         const observer = vi.fn();
         const unsubscribe = store.observe.components.position(observer);
 
@@ -335,7 +335,7 @@ describe("createDatabase", () => {
 
     it("should handle observing non-existent entities", () => {
         const store = createTestObservableStore();
-        
+
         const observer = vi.fn();
         const unsubscribe = store.observe.entity(999 as Entity)(observer);
 
@@ -347,7 +347,7 @@ describe("createDatabase", () => {
 
     it("should handle complex transaction scenarios with multiple observers", () => {
         const store = createTestObservableStore();
-        
+
         const positionObserver = vi.fn();
         const healthObserver = vi.fn();
         const transactionObserver = vi.fn();
@@ -375,7 +375,7 @@ describe("createDatabase", () => {
         // Update multiple components
         store.transactions.updateEntity({
             entity,
-            values: { 
+            values: {
                 position: { x: 4, y: 5, z: 6 },
                 health: { current: 50, max: 100 }
             }
@@ -401,7 +401,7 @@ describe("createDatabase", () => {
 
     it("should handle rapid successive changes efficiently", () => {
         const store = createTestObservableStore();
-        
+
         const observer = vi.fn();
         const unsubscribe = store.observe.components.position(observer);
 
@@ -426,7 +426,7 @@ describe("createDatabase", () => {
 
     it("should support transaction functions that return an Entity", () => {
         const store = createTestObservableStore();
-        
+
         // Execute a transaction that returns an Entity
         const returnedEntity = store.transactions.createEntityAndReturn({
             position: { x: 10, y: 20, z: 30 },
@@ -444,7 +444,7 @@ describe("createDatabase", () => {
         expect(entityValues?.name).toBe("ReturnedEntity");
 
         // Verify the entity can be found in the store using select
-        const selectedEntities = store.select(["id", "position", "name"]);
+        const selectedEntities = store.select(["position", "name"]);
         expect(selectedEntities).toContain(returnedEntity);
     });
 
@@ -467,7 +467,7 @@ describe("createDatabase", () => {
             await new Promise(resolve => setTimeout(resolve, 0));
 
             // Verify the entity was created with the resolved data
-            const entities = store.select(["id", "position", "name"]);
+            const entities = store.select(["position", "name"]);
             const createdEntity = entities.find(entityId => {
                 const values = store.read(entityId);
                 return values?.name === "AsyncEntity";
@@ -503,7 +503,7 @@ describe("createDatabase", () => {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             // Verify all entities were created
-            const entities = store.select(["id", "position", "name"]);
+            const entities = store.select(["position", "name"]);
             const streamEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Stream");
@@ -550,7 +550,7 @@ describe("createDatabase", () => {
             await new Promise(resolve => setTimeout(resolve, 20));
 
             // Verify all entities were created
-            const entities = store.select(["id", "position", "name"]);
+            const entities = store.select(["position", "name"]);
             const delayedEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Delayed");
@@ -590,7 +590,7 @@ describe("createDatabase", () => {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             // Verify all entities were created
-            const entities = store.select(["id", "position", "name"]);
+            const entities = store.select(["position", "name"]);
             const testEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.endsWith("Entity");
@@ -628,7 +628,7 @@ describe("createDatabase", () => {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             // Verify no entities were created
-            const entities = store.select(["id", "position", "name"]);
+            const entities = store.select(["position", "name"]);
             expect(entities).toHaveLength(0);
             expect(observer).toHaveBeenCalledTimes(0);
 
@@ -653,7 +653,7 @@ describe("createDatabase", () => {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             // Verify only the first entity was created before the error
-            const entities = store.select(["id", "position", "name"]);
+            const entities = store.select(["position", "name"]);
             const beforeErrorEntity = entities.find(entityId => {
                 const values = store.read(entityId);
                 return values?.name === "BeforeError";
@@ -674,9 +674,9 @@ describe("createDatabase", () => {
             async function* conditionalStream() {
                 for (let i = 0; i < 5; i++) {
                     if (i % 2 === 0) {
-                        yield { 
-                            position: { x: i, y: i * 2, z: i * 3 }, 
-                            name: `Even${i}` 
+                        yield {
+                            position: { x: i, y: i * 2, z: i * 3 },
+                            name: `Even${i}`
                         };
                     }
                     await new Promise(resolve => setTimeout(resolve, 1));
@@ -690,7 +690,7 @@ describe("createDatabase", () => {
             await new Promise(resolve => setTimeout(resolve, 20));
 
             // Verify only even-numbered entities were created
-            const entities = store.select(["id", "position", "name"]);
+            const entities = store.select(["position", "name"]);
             const evenEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Even");

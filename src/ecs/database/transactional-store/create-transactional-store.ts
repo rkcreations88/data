@@ -73,7 +73,7 @@ export function createTransactionalStore<
 
     // Create wrapped archetypes for transaction tracking
     const wrappedArchetypes = new Map<ArchetypeId, any>();
-    
+
     const getWrappedArchetype = (archetype: any) => {
         if (!wrappedArchetypes.has(archetype.id)) {
             wrappedArchetypes.set(archetype.id, wrapArchetype(archetype));
@@ -130,7 +130,7 @@ export function createTransactionalStore<
             changed.archetypes.add(location.archetype);
         }
         changed.entities.add(entity);
-        
+
         const oldValues = store.read(entity);
         if (!oldValues) {
             throw new Error(`Entity not found: ${entity}`);
@@ -164,6 +164,7 @@ export function createTransactionalStore<
     // Create transaction-aware store
     const transactionStore: Store<C, R, A> = {
         ...store,
+        archetypes: Object.fromEntries(Object.entries(store.archetypes).map(([key, value]) => [key, getWrappedArchetype(value)])) as any,
         resources,
         ensureArchetype: (componentNames) => {
             const archetype = store.ensureArchetype(componentNames);
@@ -238,7 +239,7 @@ function addUpdateOperationsMaybeCombineLast<C>(
 ) {
     const lastUndoOperation: TransactionWriteOperation<C> | undefined =
         undoOperationsInReverseOrder[undoOperationsInReverseOrder.length - 1];
-    
+
     if (
         lastUndoOperation?.type === "update" &&
         lastUndoOperation.entity === entity
@@ -265,7 +266,7 @@ function addUpdateOperationsMaybeCombineLast<C>(
 
 // Helper function to apply write operations for rollback
 function applyWriteOperations<C extends Components, R extends ResourceComponents, A extends ArchetypeComponents<StringKeyof<C>>>(
-    store: Store<C, R, A>, 
+    store: Store<C, R, A>,
     operations: TransactionWriteOperation<C>[]
 ): void {
     for (const operation of operations) {

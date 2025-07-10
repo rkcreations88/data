@@ -34,6 +34,7 @@ import { isPromise } from "../../internal/promise/is-promise.js";
 import { isAsyncGenerator } from "../../internal/async-generator/is-async-generator.js";
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
+import { observeSelectEntities } from "./observe-select-entities.js";
 
 export function createDatabase<
     C extends Components,
@@ -63,7 +64,7 @@ export function createDatabase<
     };
     const observeArchetype = (archetype: ArchetypeId) => addToMapSet(archetype, archetypeObservers);
     const observeComponent = mapEntries(store.componentSchemas, ([component]) => addToMapSet(component, componentObservers));
-    
+
     // Resource observation - resources are stored as entities with specific archetypes
     const observeResource = Object.fromEntries(
         Object.entries(store.resources).map(([resource]) => {
@@ -72,30 +73,33 @@ export function createDatabase<
             return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>])];
         })
     ) as { [K in StringKeyof<R>]: Observe<R[K]>; };
-    
+
+    const observeTransaction: Observe<TransactionResult<C>> = (notify: (transaction: TransactionResult<C>) => void) => {
+        transactionObservers.add(notify);
+        return () => {
+            transactionObservers.delete(notify);
+        }
+    }
+
     const observe: Database<C, R>["observe"] = {
         components: observeComponent,
         resources: observeResource,
-        transactions: (notify) => {
-            transactionObservers.add(notify);
-            return () => {
-                transactionObservers.delete(notify);
-            }
-        },
+        transactions: observeTransaction,
         entity: observeEntity,
         archetype: observeArchetype,
+        select: observeSelectEntities(transactionalStore, observeTransaction),
     };
 
     const { execute: transactionDatabaseExecute, resources, ...rest } = transactionalStore;
 
     const execute = (handler: (db: Store<C, R, A>) => void) => {
         const result = transactionDatabaseExecute(handler);
-        
+
         // Notify transaction observers
         for (const transactionObserver of transactionObservers) {
             transactionObserver(result);
         }
-        
+
         // Notify component observers
         for (const changedComponent of result.changedComponents) {
             const observers = componentObservers.get(changedComponent as StringKeyof<C>);
@@ -105,7 +109,7 @@ export function createDatabase<
                 }
             }
         }
-        
+
         // Notify archetype observers
         for (const changedArchetype of result.changedArchetypes) {
             const observers = archetypeObservers.get(changedArchetype);
@@ -115,7 +119,7 @@ export function createDatabase<
                 }
             }
         }
-        
+
         // Notify entity observers
         for (const changedEntity of result.changedEntities) {
             const observers = entityObservers.get(changedEntity);
@@ -160,7 +164,7 @@ export function createDatabase<
                 if (typeof args === 'function') {
                     const asyncArgsProvider = args as () => Promise<any> | AsyncGenerator<any>;
                     const asyncResult = asyncArgsProvider();
-                    
+
                     if (isAsyncGenerator(asyncResult)) {
                         const asyncArgs = asyncResult;
                         handleNext(asyncArgs, transaction, execute);
@@ -188,12 +192,13 @@ export function createDatabase<
     }
 
     // Return the complete observable store
-    return {
+    const database = {
         ...rest,
         resources,
         transactions,
         observe,
     } as Database<C, R, A, T>;
+    return database;
 }
 
 const addToMapSet = <K, T>(key: K, map: Map<K, Set<T>>) => (value: T) => {

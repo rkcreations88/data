@@ -27,7 +27,7 @@ import { F32Schema } from "../../schema/f32.js";
 
 describe("createStore", () => {
     // Test that store passes all core functionality tests
-    createCoreTestSuite("Store core functionality", (componentSchemas) => 
+    createCoreTestSuite("Store core functionality", (componentSchemas) =>
         createStore(componentSchemas, {}) as any
     );
 
@@ -51,11 +51,11 @@ describe("createStore", () => {
 
             // Create entities in a single archetype
             const archetype = store.ensureArchetype(["id", "position", "health"]);
-            const entity1 = archetype.insert({ 
+            const entity1 = archetype.insert({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 }
             });
-            const entity2 = archetype.insert({ 
+            const entity2 = archetype.insert({
                 position: { x: 4, y: 5, z: 6 },
                 health: { current: 50, max: 100 }
             });
@@ -77,26 +77,26 @@ describe("createStore", () => {
 
             // Create entities in different archetypes
             const positionOnlyArchetype = store.ensureArchetype(["id", "position"]);
-            const entity1 = positionOnlyArchetype.insert({ 
+            const entity1 = positionOnlyArchetype.insert({
                 position: { x: 1, y: 2, z: 3 }
             });
-            const entity2 = positionOnlyArchetype.insert({ 
+            const entity2 = positionOnlyArchetype.insert({
                 position: { x: 4, y: 5, z: 6 }
             });
 
             const healthOnlyArchetype = store.ensureArchetype(["id", "health"]);
-            const entity3 = healthOnlyArchetype.insert({ 
+            const entity3 = healthOnlyArchetype.insert({
                 health: { current: 100, max: 100 }
             });
 
             const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
-            const entity4 = positionHealthArchetype.insert({ 
+            const entity4 = positionHealthArchetype.insert({
                 position: { x: 0, y: 0, z: 0 },
                 health: { current: 50, max: 100 }
             });
 
             const velocityArchetype = store.ensureArchetype(["id", "velocity"]);
-            const entity5 = velocityArchetype.insert({ 
+            const entity5 = velocityArchetype.insert({
                 velocity: { x: 1, y: 0, z: 0 }
             });
 
@@ -137,12 +137,12 @@ describe("createStore", () => {
 
             // Create entities in different archetypes
             const positionOnlyArchetype = store.ensureArchetype(["id", "position"]);
-            const entity1 = positionOnlyArchetype.insert({ 
+            const entity1 = positionOnlyArchetype.insert({
                 position: { x: 1, y: 2, z: 3 }
             });
 
             const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
-            const entity2 = positionHealthArchetype.insert({ 
+            const entity2 = positionHealthArchetype.insert({
                 position: { x: 0, y: 0, z: 0 },
                 health: { current: 50, max: 100 }
             });
@@ -186,11 +186,11 @@ describe("createStore", () => {
             const entity3 = archetype2.insert({ health: { current: 100, max: 100 } });
 
             const archetype3 = store.ensureArchetype(["id", "position", "health"]);
-            const entity4 = archetype3.insert({ 
+            const entity4 = archetype3.insert({
                 position: { x: 0, y: 0, z: 0 },
                 health: { current: 50, max: 100 }
             });
-            const entity5 = archetype3.insert({ 
+            const entity5 = archetype3.insert({
                 position: { x: 10, y: 20, z: 30 },
                 health: { current: 75, max: 100 }
             });
@@ -199,13 +199,13 @@ describe("createStore", () => {
             const entity6 = archetype4.insert({ name: "Player1" });
 
             const archetype5 = store.ensureArchetype(["id", "position", "name"]);
-            const entity7 = archetype5.insert({ 
+            const entity7 = archetype5.insert({
                 position: { x: 100, y: 200, z: 300 },
                 name: "Player2"
             });
 
             const archetype6 = store.ensureArchetype(["id", "position", "health", "name"]);
-            const entity8 = archetype6.insert({ 
+            const entity8 = archetype6.insert({
                 position: { x: 500, y: 600, z: 700 },
                 health: { current: 25, max: 100 },
                 name: "Player3"
@@ -262,7 +262,7 @@ describe("createStore", () => {
             const entity3 = archetype2.insert({ health: { current: 100, max: 100 } });
 
             const archetype3 = store.ensureArchetype(["id", "position", "health"]);
-            const entity4 = archetype3.insert({ 
+            const entity4 = archetype3.insert({
                 position: { x: 0, y: 0, z: 0 },
                 health: { current: 50, max: 100 }
             });
@@ -270,7 +270,7 @@ describe("createStore", () => {
             // Select all entities with position
             const entities = store.select(["position"]);
             expect(entities).toHaveLength(3);
-            
+
             // Verify all expected entities are present (order may vary)
             expect(entities).toContain(entity1);
             expect(entities).toContain(entity2);
@@ -303,7 +303,7 @@ describe("createStore", () => {
             // Select entities with time component (should include the resource entity)
             const timeEntities = store.select(["time" as any]);
             expect(timeEntities).toHaveLength(1);
-            
+
             // The resource entity should be included in time queries
             const timeArchetypes = store.queryArchetypes(["time" as any]);
             expect(timeArchetypes).toHaveLength(1);
@@ -323,7 +323,7 @@ describe("createStore", () => {
         it("should create store with resources", () => {
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
                 }
@@ -341,7 +341,7 @@ describe("createStore", () => {
 
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     time: { default: defaultTime },
                     config: { default: defaultConfig }
                 }
@@ -354,7 +354,7 @@ describe("createStore", () => {
         it("should allow reading resource values", () => {
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
                 }
@@ -369,7 +369,7 @@ describe("createStore", () => {
         it("should allow updating resource values", () => {
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
                 }
@@ -389,7 +389,7 @@ describe("createStore", () => {
         it("should maintain resource values across updates", () => {
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
                 }
@@ -408,7 +408,7 @@ describe("createStore", () => {
         it("should handle nested resource updates", () => {
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } }
                 }
             );
@@ -434,7 +434,7 @@ describe("createStore", () => {
         it("should handle multiple resources independently", () => {
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } },
                     score: { default: 0 }
@@ -454,11 +454,11 @@ describe("createStore", () => {
 
         it("should allow querying resources as components", () => {
             const store = createStore(
-                { 
+                {
                     position: positionSchema,
                     time: timeSchema
                 },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } }
                 }
             );
@@ -471,11 +471,11 @@ describe("createStore", () => {
 
         it("should maintain resource singleton behavior", () => {
             const store = createStore(
-                { 
+                {
                     position: positionSchema,
                     time: timeSchema
                 },
-                { 
+                {
                     time: { default: { delta: 0.016, elapsed: 0 } }
                 }
             );
@@ -483,10 +483,10 @@ describe("createStore", () => {
             // Resources should be queryable as components
             const timeArchetypes = store.queryArchetypes(["time"]);
             expect(timeArchetypes).toHaveLength(1);
-            
+
             // Resources should maintain their values
             expect(store.resources.time).toEqual({ delta: 0.016, elapsed: 0 });
-            
+
             // Update and verify
             store.resources.time = { delta: 0.033, elapsed: 1.5 };
             expect(store.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
@@ -495,7 +495,7 @@ describe("createStore", () => {
         it("should handle primitive resource values", () => {
             const store = createStore(
                 { position: positionSchema },
-                { 
+                {
                     score: { default: 0 },
                     name: { default: "Player1" },
                     active: { default: true }
@@ -562,7 +562,7 @@ describe("createStore", () => {
                 },
                 {},
                 {
-                    Player: ["name", "health"] as const,
+                    Player: ["name", "health"],
                 }
             );
 

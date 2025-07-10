@@ -22,14 +22,15 @@ SOFTWARE.*/
 import { ComponentSchemas } from "../component-schemas.js";
 import { StringKeyof } from "../../types/types.js";
 import { CoreComponents } from "../core-components.js";
-import { Simplify } from "../../types/index.js";
 import { Store } from "./store.js";
 import { FromSchema, Schema } from "../../schema/schema.js";
 import { createCore } from "./core/create-core.js";
 import { Entity } from "../entity.js";
-import { Core, QueryOptions } from "./core/core.js";
+import { Core } from "./core/core.js";
 import { ResourceSchemas } from "../resource-schemas.js";
 import { ArchetypeComponents } from "./archetype-components.js";
+import { EntitySelectOptions } from "./entity-select-options.js";
+import { selectEntities } from "./core/select-entities.js";
 
 export function createStore<
     NC extends ComponentSchemas,
@@ -75,26 +76,12 @@ export function createStore<
     }
 
     const select = <
-        Include extends StringKeyof<C>,
-        Exclude extends StringKeyof<C> = never
+        Include extends StringKeyof<C>
     >(
         include: Include[],
-        options?: QueryOptions<Include, Exclude>
+        options?: EntitySelectOptions<C & CoreComponents, Pick<C & CoreComponents, Include>>
     ): readonly Entity[] => {
-        const archetypes = core.queryArchetypes(include, options);
-        let length = 0;
-        for (const archetype of archetypes) {
-            length += archetype.rows;
-        }
-        const entities = new Array<Entity>(length);
-        let index = 0;
-        for (const archetype of archetypes) {
-            const typedArray = archetype.columns.id.getTypedArray();
-            for (let i = 0; i < archetype.rows; i++) {
-                entities[index++] = typedArray[i];
-            }
-        }
-        return entities;
+        return selectEntities<C, Include>(core, include, options);
     }
 
     const archetypes = Object.fromEntries(
@@ -110,6 +97,6 @@ export function createStore<
         select,
         archetypes,
     };
-    
+
     return store as any;
 }

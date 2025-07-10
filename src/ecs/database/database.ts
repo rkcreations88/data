@@ -29,6 +29,8 @@ import { TransactionResult } from "./transactional-store/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
+import { CoreComponents } from "../core-components.js";
+import { EntitySelectOptions } from "../store/entity-select-options.js";
 
 export type TransactionDeclaration<Input extends any | void = any> = (input: Input) => void | Entity
 export type TransactionDeclarations = object
@@ -38,37 +40,44 @@ export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
  * Converts from TransactionDeclarations to TransactionFunctions by removing the initial database argument.
  */
 export type ToTransactionFunctions<T> = {
-    [K in keyof T]:
-      T[K] extends () => infer R
-        ? R extends void | Entity
-          ? () => R
-          : never
-      : T[K] extends (input: infer Input) => infer R
-        ? R extends void | Entity
-          ? (arg: Input | AsyncArgsProvider<Input>) => R
-          : never
-        : never;
-  };  
+  [K in keyof T]:
+  T[K] extends () => infer R
+  ? R extends void | Entity
+  ? () => R
+  : never
+  : T[K] extends (input: infer Input) => infer R
+  ? R extends void | Entity
+  ? (arg: Input | AsyncArgsProvider<Input>) => R
+  : never
+  : never;
+};
 
 export type TransactionFunctions = { readonly [K: string]: (args?: any) => void | Entity };
 
 export interface Database<
-    C extends Components = never,
-    R extends ResourceComponents = never,
-    A extends ArchetypeComponents<StringKeyof<C>> = never,
-    T extends TransactionDeclarations = never,
+  C extends Components = never,
+  R extends ResourceComponents = never,
+  A extends ArchetypeComponents<StringKeyof<C>> = never,
+  T extends TransactionDeclarations = never,
 > extends ReadonlyStore<C, R, A> {
-    readonly transactions: ToTransactionFunctions<T>;
-    readonly observe: {
-        readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
-        readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
-        readonly transactions: Observe<TransactionResult<C>>;
-        entity(id: Entity): Observe<EntityValues<C> | null>;
-        archetype(id: ArchetypeId): Observe<void>;
-    }
+  readonly transactions: ToTransactionFunctions<T>;
+  readonly observe: {
+    readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
+    readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
+    readonly transactions: Observe<TransactionResult<C>>;
+    entity(id: Entity): Observe<EntityValues<C> | null>;
+    archetype(id: ArchetypeId): Observe<void>;
+    select<
+      Include extends StringKeyof<C>,
+      T extends Include
+    >(
+      include: Include[],
+      options?: EntitySelectOptions<C, Pick<C & CoreComponents, T>>
+    ): Observe<readonly Entity[]>;
+  }
 }
 
 type TestTransactionFunctions = ToTransactionFunctions<{
-    test1: (db: Store<any, any>, arg: number) => void;
-    test2: (db: Store<any, any>) => void;
+  test1: (db: Store<any, any>, arg: number) => void;
+  test2: (db: Store<any, any>) => void;
 }>
