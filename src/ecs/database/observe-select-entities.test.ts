@@ -249,7 +249,7 @@ describe("observeSelectEntities", () => {
             const initialCall = observer.mock.calls[0][0];
             expect(initialCall).toContain(entities.pos1);
 
-            // Update position component - should trigger new notification
+            // Update position component - should NOT trigger new notification since entity stays in result set
             database.transactions.updateEntity({
                 entity: entities.pos1,
                 values: { position: 999 }
@@ -258,9 +258,8 @@ describe("observeSelectEntities", () => {
             // Wait for microtask to complete
             await Promise.resolve();
 
-            expect(observer).toHaveBeenCalledTimes(2);
-            const updatedCall = observer.mock.calls[1][0];
-            expect(updatedCall).toContain(entities.pos1);
+            // Should still only be called once (no new notification since only values changed)
+            expect(observer).toHaveBeenCalledTimes(1);
 
             unsubscribe();
         });
@@ -341,7 +340,7 @@ describe("observeSelectEntities", () => {
             expect(observer).toHaveBeenCalledTimes(1);
             expect(observer.mock.calls[0][0]).toContain(entities.posHealth1);
 
-            // Update both position and health components
+            // Update both position and health components - should NOT trigger new notification since entity stays in result set
             database.transactions.updateEntity({
                 entity: entities.posHealth1,
                 values: { position: 999, health: 888 }
@@ -350,8 +349,8 @@ describe("observeSelectEntities", () => {
             // Wait for microtask to complete
             await Promise.resolve();
 
-            // Should get new notification
-            expect(observer).toHaveBeenCalledTimes(2);
+            // Should still only be called once (no new notification since only values changed)
+            expect(observer).toHaveBeenCalledTimes(1);
 
             unsubscribe();
         });

@@ -205,7 +205,7 @@ describe("createDatabase", () => {
 
         // Transaction observer should be called with the full result
         expect(transactionObserver).toHaveBeenCalledWith(expect.objectContaining({
-            changedEntities: expect.any(Set),
+            changedEntities: expect.any(Map),
             changedComponents: expect.any(Set),
             changedArchetypes: expect.any(Set),
             redo: expect.any(Array),
@@ -232,7 +232,7 @@ describe("createDatabase", () => {
         expect(archetype).toBeDefined();
 
         const archetypeObserver = vi.fn();
-        const unsubscribe = store.observe.archetype(archetype!)(archetypeObserver);
+        const unsubscribe = store.observe.archetype(archetype!.id)(archetypeObserver);
 
         // No initial notification for archetype observers
         expect(archetypeObserver).toHaveBeenCalledTimes(0);
@@ -731,7 +731,7 @@ describe("createDatabase", () => {
 
             // Verify transaction observer was called with proper transaction result
             expect(transactionObserver).toHaveBeenCalledWith(expect.objectContaining({
-                changedEntities: expect.any(Set),
+                changedEntities: expect.any(Map),
                 changedComponents: expect.any(Set),
                 changedArchetypes: expect.any(Set),
                 redo: expect.any(Array),

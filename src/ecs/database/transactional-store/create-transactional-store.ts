@@ -28,6 +28,7 @@ import { TransactionalStore, TransactionResult, TransactionWriteOperation } from
 import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { patchEntityValues } from "./patch-entity-values.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
@@ -44,7 +45,7 @@ export function createTransactionalStore<
     let undoOperationsInReverseOrder: TransactionWriteOperation<C>[] = [];
     let redoOperations: TransactionWriteOperation<C>[] = [];
     const changed = {
-        entities: new Set<Entity>(),
+        entities: new Map<Entity, EntityUpdateValues<C> | null>(),
         components: new Set<keyof C>(),
         archetypes: new Set<ArchetypeId>(),
     };
@@ -61,7 +62,7 @@ export function createTransactionalStore<
                     values: values,
                 });
                 undoOperationsInReverseOrder.push({ type: "delete", entity });
-                changed.entities.add(entity);
+                changed.entities.set(entity, values);
                 changed.archetypes.add(id);
                 for (const key in values) {
                     changed.components.add(key as keyof C);
@@ -104,10 +105,10 @@ export function createTransactionalStore<
             }
         }
 
-        changed.entities.add(entity);
+        changed.entities.set(entity, patchEntityValues(changed.entities.get(entity), values));
         const location = store.locate(entity);
         if (location) {
-            changed.archetypes.add(location.archetype);
+            changed.archetypes.add(location.archetype.id);
         }
 
         // Perform the actual update
@@ -116,7 +117,7 @@ export function createTransactionalStore<
         // Check if archetype changed after update
         const newLocation = store.locate(entity);
         if (newLocation) {
-            changed.archetypes.add(newLocation.archetype);
+            changed.archetypes.add(newLocation.archetype.id);
         }
 
         // Add operations with potential combining
@@ -127,9 +128,9 @@ export function createTransactionalStore<
     const deleteEntity = (entity: Entity) => {
         const location = store.locate(entity);
         if (location) {
-            changed.archetypes.add(location.archetype);
+            changed.archetypes.add(location.archetype.id);
         }
-        changed.entities.add(entity);
+        changed.entities.set(entity, null);
 
         const oldValues = store.read(entity);
         if (!oldValues) {
@@ -198,7 +199,7 @@ export function createTransactionalStore<
                 transient: options?.transient ?? false,
                 redo: [...redoOperations],
                 undo: [...undoOperationsInReverseOrder.reverse()],
-                changedEntities: new Set(changed.entities),
+                changedEntities: new Map(changed.entities),
                 changedComponents: new Set(changed.components),
                 changedArchetypes: new Set(changed.archetypes),
             };

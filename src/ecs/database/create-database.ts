@@ -121,7 +121,7 @@ export function createDatabase<
         }
 
         // Notify entity observers
-        for (const changedEntity of result.changedEntities) {
+        for (const changedEntity of result.changedEntities.keys()) {
             const observers = entityObservers.get(changedEntity);
             if (observers) {
                 const values = store.read(changedEntity);
