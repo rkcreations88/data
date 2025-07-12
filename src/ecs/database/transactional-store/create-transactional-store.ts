@@ -55,6 +55,9 @@ export function createTransactionalStore<
         const { id } = archetype;
         return {
             ...archetype,
+            get rows() {
+                return archetype.rows;
+            },
             insert: (values: EntityInsertValues<C>) => {
                 const entity = archetype.insert(values);
                 redoOperations.push({

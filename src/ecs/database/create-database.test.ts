@@ -746,4 +746,305 @@ describe("createDatabase", () => {
             unsubscribe();
         });
     });
+
+    describe("entity observation with minArchetype filtering", () => {
+        it("should observe entity when it matches minArchetype exactly", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position only
+            const entity = store.transactions.createPositionEntity({
+                position: { x: 1, y: 2, z: 3 }
+            });
+
+            const positionArchetype = store.ensureArchetype(["id", "position"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+
+            // Should receive the entity data since it matches exactly
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 }
+            }));
+
+            unsubscribe();
+        });
+
+        it("should observe entity when it has more components than minArchetype", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position and health
+            const entity = store.transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            const positionArchetype = store.ensureArchetype(["id", "position"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+
+            // Should receive the entity data since it has all required components
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 }
+            }));
+
+            unsubscribe();
+        });
+
+        it("should return null when entity has fewer components than minArchetype", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position only
+            const entity = store.transactions.createPositionEntity({
+                position: { x: 1, y: 2, z: 3 }
+            });
+
+            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, positionHealthArchetype)(observer);
+
+            // Should return null since entity doesn't have health component
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should return null when entity has different components than minArchetype", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position and name
+            const entity = store.transactions.createPositionNameEntity({
+                position: { x: 1, y: 2, z: 3 },
+                name: "Test"
+            });
+
+            const healthArchetype = store.ensureArchetype(["id", "health"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, healthArchetype)(observer);
+
+            // Should return null since entity doesn't have health component
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should update observation when entity gains required components", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position only
+            const entity = store.transactions.createPositionEntity({
+                position: { x: 1, y: 2, z: 3 }
+            });
+
+            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, positionHealthArchetype)(observer);
+
+            // Initially should be null
+            expect(observer).toHaveBeenCalledWith(null);
+
+            // Add health component
+            store.transactions.updateEntity({
+                entity,
+                values: { health: { current: 100, max: 100 } }
+            });
+
+            // Should now receive the entity data
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            }));
+
+            unsubscribe();
+        });
+
+        it("should update observation when entity loses required components", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position and health
+            const entity = store.transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, positionHealthArchetype)(observer);
+
+            // Initially should receive data
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            }));
+
+            // Remove health component
+            store.transactions.updateEntity({
+                entity,
+                values: { health: undefined }
+            });
+
+            // Should now return null
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should handle entity deletion correctly with minArchetype", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position and health
+            const entity = store.transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            const positionArchetype = store.ensureArchetype(["id", "position"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+
+            // Initially should receive data
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 }
+            }));
+
+            // Delete entity
+            store.transactions.deleteEntity({ entity });
+
+            // Should return null for deleted entity
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should handle non-existent entity with minArchetype", () => {
+            const store = createTestObservableStore();
+
+            const positionArchetype = store.ensureArchetype(["id", "position"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(999 as Entity, positionArchetype)(observer);
+
+            // Should return null for non-existent entity
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should handle invalid entity ID with minArchetype", () => {
+            const store = createTestObservableStore();
+
+            const positionArchetype = store.ensureArchetype(["id", "position"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(-1, positionArchetype)(observer);
+
+            // Should return null for invalid entity ID
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should maintain separate observations for different minArchetypes", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position and health
+            const entity = store.transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            const positionArchetype = store.ensureArchetype(["id", "position"]);
+            const healthArchetype = store.ensureArchetype(["id", "health"]);
+            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
+
+            const positionObserver = vi.fn();
+            const healthObserver = vi.fn();
+            const fullObserver = vi.fn();
+
+            const unsubscribePosition = store.observe.entity(entity, positionArchetype)(positionObserver);
+            const unsubscribeHealth = store.observe.entity(entity, healthArchetype)(healthObserver);
+            const unsubscribeFull = store.observe.entity(entity, positionHealthArchetype)(fullObserver);
+
+            // All should receive data since entity has all components
+            expect(positionObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 }
+            }));
+            expect(healthObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                health: { current: 100, max: 100 }
+            }));
+            expect(fullObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            }));
+
+            // Remove health component
+            store.transactions.updateEntity({
+                entity,
+                values: { health: undefined }
+            });
+
+            // Position observer should still receive data
+            expect(positionObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 }
+            }));
+            // Health and full observers should return null
+            expect(healthObserver).toHaveBeenCalledWith(null);
+            expect(fullObserver).toHaveBeenCalledWith(null);
+
+            unsubscribePosition();
+            unsubscribeHealth();
+            unsubscribeFull();
+        });
+
+        it("should handle component updates that don't affect minArchetype requirements", () => {
+            const store = createTestObservableStore();
+
+            // Create entity with position and health
+            const entity = store.transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+
+            const positionArchetype = store.ensureArchetype(["id", "position"]);
+            const observer = vi.fn();
+            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+
+            // Initially should receive data
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 }
+            }));
+
+            // Update position (should trigger notification)
+            store.transactions.updateEntity({
+                entity,
+                values: { position: { x: 10, y: 20, z: 30 } }
+            });
+
+            // Should receive updated data
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 10, y: 20, z: 30 }
+            }));
+
+            // Update health (should not affect position observation)
+            store.transactions.updateEntity({
+                entity,
+                values: { health: { current: 50, max: 100 } }
+            });
+
+            // Should still receive position data (health update shouldn't trigger position observer)
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 10, y: 20, z: 30 }
+            }));
+
+            unsubscribe();
+        });
+    });
 }); 

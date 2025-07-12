@@ -29,9 +29,9 @@ describe('Archetype_deleteRow', () => {
     it('should delete a row from the middle and update moved entity location', () => {
         const entityLocationTable = createEntityLocationTable();
         const archetype = createArchetype(
-            { 
+            {
                 id: EntitySchema,
-                value: U32Schema 
+                value: U32Schema
             },
             1,
             entityLocationTable
@@ -64,9 +64,9 @@ describe('Archetype_deleteRow', () => {
     it('should handle deleting the last row without moving entities', () => {
         const entityLocationTable = createEntityLocationTable();
         const archetype = createArchetype(
-            { 
+            {
                 id: EntitySchema,
-                value: U32Schema 
+                value: U32Schema
             },
             1,
             entityLocationTable
@@ -90,9 +90,9 @@ describe('Archetype_deleteRow', () => {
     it('should handle deleting the only row', () => {
         const entityLocationTable = createEntityLocationTable();
         const archetype = createArchetype(
-            { 
+            {
                 id: EntitySchema,
-                value: U32Schema 
+                value: U32Schema
             },
             1,
             entityLocationTable

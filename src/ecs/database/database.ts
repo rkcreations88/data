@@ -19,11 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { ArchetypeId } from "../archetype/index.js";
+import { Archetype, ArchetypeId, ReadonlyArchetype } from "../archetype/index.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { ReadonlyStore, Store } from "../store/index.js";
 import { Entity } from "../entity.js";
-import { EntityValues } from "../store/core/index.js";
+import { EntityReadValues } from "../store/core/index.js";
 import { Observe } from "../../observe/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
 import { StringKeyof } from "../../types/types.js";
@@ -65,13 +65,14 @@ export interface Database<
     readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
     readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
     readonly transactions: Observe<TransactionResult<C>>;
-    entity(id: Entity): Observe<EntityValues<C> | null>;
+    entity<T extends CoreComponents>(id: Entity, minArchetype?: ReadonlyArchetype<T> | Archetype<T>): Observe<{ readonly [K in (StringKeyof<CoreComponents & T>)]: (CoreComponents & T)[K] } | null>;
+    entity(id: Entity): Observe<EntityReadValues<C> | null>;
     archetype(id: ArchetypeId): Observe<void>;
     select<
       Include extends StringKeyof<C>,
       T extends Include
     >(
-      include: Include[],
+      include: readonly Include[] | ReadonlySet<string>,
       options?: EntitySelectOptions<C, Pick<C & CoreComponents, T>>
     ): Observe<readonly Entity[]>;
   }

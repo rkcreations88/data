@@ -33,11 +33,11 @@ export const observeSelectEntities = <C extends object>(store: ReadonlyStore<C, 
     const cachedSelectObserveFunctions = new Map<string, Observe<readonly Entity[]>>();
 
     const createSelectObserveFunction = <Include extends StringKeyof<C>>(
-        include: Include[],
+        include: readonly Include[] | ReadonlySet<string>,
         options?: EntitySelectOptions<C, Pick<C & CoreComponents, Include>>
     ): Observe<readonly Entity[]> => {
         return (observer: (entities: readonly Entity[]) => void) => {
-            const includeSet = new Set(include);
+            const includeSet = new Set<string>(include);
             const whereSet = new Set(Object.keys(options?.where ?? {}) as StringKeyof<C>[]);
             const orderSet = new Set(Object.keys(options?.order ?? {}) as StringKeyof<C>[]);
             let isMicrotaskQueued = false;
@@ -124,7 +124,7 @@ export const observeSelectEntities = <C extends object>(store: ReadonlyStore<C, 
     }
 
     return <Include extends StringKeyof<C>>(
-        include: Include[],
+        include: readonly Include[] | ReadonlySet<string>,
         options?: EntitySelectOptions<C, Pick<C & CoreComponents, Include>>
     ) => {
         const key = JSON.stringify({ include, options });

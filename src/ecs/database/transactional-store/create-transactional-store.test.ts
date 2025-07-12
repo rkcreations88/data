@@ -43,6 +43,8 @@ const healthSchema = {
         current: F32Schema,
         max: F32Schema,
     },
+    required: ["current", "max"],
+    additionalProperties: false,
 } as const satisfies Schema;
 
 describe("createTransactionalStore", () => {
@@ -193,8 +195,6 @@ describe("createTransactionalStore", () => {
         expect(store.componentSchemas).toBeDefined();
         expect(store.resources).toBeDefined();
         expect(store.queryArchetypes).toBeDefined();
-        expect(store.ensureArchetype).toBeDefined();
-        expect(store.locate).toBeDefined();
         expect(store.read).toBeDefined();
         expect(store.execute).toBeDefined();
 
@@ -475,5 +475,42 @@ describe("createTransactionalStore", () => {
         const deletedEntity = Array.from(result.changedEntities.entries()).find(([_, values]) => values === null)?.[0];
         expect(deletedEntity).toBeDefined();
         expect(result.changedEntities.get(deletedEntity!)).toBeNull();
+    });
+
+    it("should increment .rows property after each insert operation within a transaction", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        // Get the archetype before any inserts
+        const archetype = baseStore.ensureArchetype(["id", "position"]);
+        const initialRows = archetype.rows;
+
+        store.execute((transactionStore) => {
+            const transactionArchetype = transactionStore.ensureArchetype(["id", "position"]);
+
+            // First insert - rows should be incremented
+            const entity1 = transactionArchetype.insert({
+                position: { x: 1, y: 2, z: 3 }
+            });
+            expect(transactionArchetype.rows).toBe(initialRows + 1);
+
+            // Second insert - rows should be incremented again
+            const entity2 = transactionArchetype.insert({
+                position: { x: 10, y: 20, z: 30 }
+            });
+            expect(transactionArchetype.rows).toBe(initialRows + 2);
+
+            // Third insert - rows should be incremented again
+            const entity3 = transactionArchetype.insert({
+                position: { x: 100, y: 200, z: 300 }
+            });
+            expect(transactionArchetype.rows).toBe(initialRows + 3);
+        });
+
+        // After transaction, the base store should also reflect the changes
+        expect(archetype.rows).toBe(initialRows + 3);
     });
 }); 

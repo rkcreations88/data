@@ -32,7 +32,7 @@ export const selectEntities = <
     Include extends StringKeyof<C>
 >(
     core: Core<C>,
-    include: Include[],
+    include: readonly Include[] | ReadonlySet<string>,
     options?: EntitySelectOptions<C & CoreComponents, Pick<C & CoreComponents, Include>>
 ): readonly Entity[] => {
     const archetypes = core.queryArchetypes(include, options as any);

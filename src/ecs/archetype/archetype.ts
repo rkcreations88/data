@@ -22,18 +22,28 @@ SOFTWARE.*/
 import { CoreComponents } from "../core-components.js";
 import { Entity } from "../entity.js";
 import { Table, ReadonlyTable } from "../../table/index.js";
+import { Assert } from "../../types/assert.js";
+import { Equal } from "../../types/equal.js";
 
 export type EntityInsertValues<C> = Omit<C, "id">;
 export type ArchetypeId = number;
 
-interface BaseArchetype<C> {
+interface BaseArchetype {
     readonly id: ArchetypeId;
     readonly components: ReadonlySet<string>;
 }
-
-export interface ReadonlyArchetype<C extends CoreComponents> extends BaseArchetype<C>, ReadonlyTable<C> {
+export interface ReadonlyArchetype<C extends CoreComponents> extends BaseArchetype, ReadonlyTable<C> {
 }
 
-export interface Archetype<C extends CoreComponents = CoreComponents> extends BaseArchetype<C>, Table<C> {
+export interface Archetype<C extends CoreComponents = CoreComponents> extends BaseArchetype, Table<C> {
     insert: (rowData: EntityInsertValues<C>) => Entity;
 }
+
+export type FromArchetype<T> =
+    T extends ReadonlyArchetype<infer C> ? { readonly [K in keyof C]: C[K] } :
+    T extends Archetype<infer C> ? { readonly [K in keyof C]: C[K] } :
+    never;
+
+// compile time type tests.
+type TestFromReadonlyArchetype = Assert<Equal<FromArchetype<ReadonlyArchetype<{ id: number, a: number, b: string }>>, { readonly id: number, readonly a: number, readonly b: string }>>;
+type TestFromArchetype = Assert<Equal<FromArchetype<Archetype<{ id: number, a: number, b: string }>>, { readonly id: number, readonly a: number, readonly b: string }>>;

@@ -78,7 +78,7 @@ export function createStore<
     const select = <
         Include extends StringKeyof<C>
     >(
-        include: Include[],
+        include: readonly Include[] | ReadonlySet<string>,
         options?: EntitySelectOptions<C & CoreComponents, Pick<C & CoreComponents, Include>>
     ): readonly Entity[] => {
         return selectEntities<C, Include>(core, include, options);
