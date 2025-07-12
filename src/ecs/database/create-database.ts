@@ -19,12 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { ArchetypeId } from "../archetype/index.js";
+import { Archetype, ArchetypeId, ReadonlyArchetype } from "../archetype/index.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { Store } from "../store/index.js";
 import { Database, ToTransactionFunctions, TransactionDeclaration } from "./database.js";
 import { Entity } from "../entity.js";
-import { EntityValues } from "../store/core/index.js";
+import { EntityReadValues } from "../store/core/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
 import { mapEntries } from "../../internal/object/index.js";
 import { StringKeyof } from "../../types/types.js";
@@ -35,6 +35,7 @@ import { isAsyncGenerator } from "../../internal/async-generator/is-async-genera
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { observeSelectEntities } from "./observe-select-entities.js";
+import { CoreComponents } from "../core-components.js";
 
 export function createDatabase<
     C extends Components,
@@ -52,15 +53,30 @@ export function createDatabase<
     //  variables to track the observers
     const componentObservers = new Map<StringKeyof<C>, Set<() => void>>();
     const archetypeObservers = new Map<ArchetypeId, Set<() => void>>();
-    const entityObservers = new Map<Entity, Set<(values: EntityValues<C> | null) => void>>();
+    const entityObservers = new Map<Entity, Set<(values: EntityReadValues<C> | null) => void>>();
     const transactionObservers = new Set<(transaction: TransactionResult<C>) => void>();
 
     //  observation interface
-    const observeEntity = (entity: Entity) => (observer: (values: EntityValues<C> | null) => void) => {
+    const observeEntity = <T extends CoreComponents>(entity: Entity, minArchetype?: ReadonlyArchetype<T> | Archetype<T>) => (observer: (values: EntityReadValues<C> | null) => void) => {
+        if (minArchetype) {
+            const originalObserver = observer;
+            observer = (values) => {
+                if (values) {
+                    const { archetype } = store.locate(entity)!;
+                    if (archetype.id !== minArchetype.id && !archetype.components.isSupersetOf(minArchetype.components)) {
+                        // when a min archetype is provided the entity will be considered null
+                        // if the entity does not satisfy the min archetype components.
+                        values = null;
+                    }
+                }
+                originalObserver(values);
+            }
+        }
         // Call immediately with current values
         observer(store.read(entity));
         // Add to observers for future changes
-        return addToMapSet(entity, entityObservers)(observer);
+        const dispose = addToMapSet(entity, entityObservers)(observer);
+        return dispose;
     };
     const observeArchetype = (archetype: ArchetypeId) => addToMapSet(archetype, archetypeObservers);
     const observeComponent = mapEntries(store.componentSchemas, ([component]) => addToMapSet(component, componentObservers));

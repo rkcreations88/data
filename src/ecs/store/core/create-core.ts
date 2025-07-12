@@ -26,7 +26,7 @@ import * as TABLE from "../../../table/index.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { CoreComponents } from "../../core-components.js";
 import { Entity, EntitySchema } from "../../entity.js";
-import { Core, EntityUpdateValues, EntityValues, ArchetypeQueryOptions } from "./core.js";
+import { Core, EntityUpdateValues, EntityReadValues, ArchetypeQueryOptions } from "./core.js";
 import { Assert, Equal, Simplify, StringKeyof } from "../../../types/index.js";
 import { ComponentSchemas } from "../../component-schemas.js";
 
@@ -40,12 +40,13 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
     const queryArchetypes = <
         Include extends StringKeyof<C>,
     >(
-        include: readonly Include[],
+        include: readonly Include[] | ReadonlySet<string>,
         options?: ArchetypeQueryOptions<C>
     ): readonly Archetype<CoreComponents & Pick<C, Include>>[] => {
+        const includeArray = Array.from(include);
         const results: Archetype<CoreComponents & Pick<C, Include>>[] = [];
         for (const archetype of archetypes) {
-            const hasAllRequired = include.every(comp => archetype.columns[comp] !== undefined);
+            const hasAllRequired = includeArray.every(comp => archetype.columns[comp] !== undefined);
             const hasNoExcluded = !options?.exclude || options.exclude.every(comp => archetype.columns[comp] === undefined);
             if (hasAllRequired && hasNoExcluded) {
                 results.push(archetype as unknown as Archetype<CoreComponents & Pick<C, Include>>);
@@ -79,12 +80,16 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
     const { locate } = entityLocationTable;
 
-    const readEntity = (entity: Entity): EntityValues<C> | null => {
+    const readEntity = (entity: Entity, minArchetype?: ReadonlyArchetype<C> | Archetype<C>): any => {
         const location = locate(entity);
         if (location === null) {
             return null;
         }
-        return location !== null ? TABLE.getRowData(archetypes[location.archetype], location.row) : null;
+        const archetype = archetypes[location.archetype];
+        if (minArchetype && location.archetype !== minArchetype.id && !archetype.components.isSupersetOf(minArchetype.components)) {
+            return null;
+        }
+        return TABLE.getRowData(archetype, location.row);
     }
 
     const deleteEntity = (entity: Entity) => {

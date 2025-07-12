@@ -440,6 +440,153 @@ export function createCoreTestSuite(
                 expect(core.locate(entities[i])).toBeNull();
             }
         });
+
+        describe("core read with minArchetype", () => {
+            it("should read entity data when entity has matching components", () => {
+                const core = factory({
+                    position: positionSchema,
+                    health: healthSchema,
+                });
+
+                const positionArchetype = core.ensureArchetype(["id", "position"]);
+                const entity = positionArchetype.insert({ position: { x: 1, y: 2, z: 3 } });
+
+                const data = core.read(entity, positionArchetype);
+                expect(data).not.toBeNull();
+                expect((data as any)?.id).toBe(entity);
+                expect((data as any)?.position).toEqual({ x: 1, y: 2, z: 3 });
+            });
+
+            it("should return null when entity doesn't exist", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                const data = core.read(999 as Entity, archetype);
+                expect(data).toBeNull();
+            });
+
+            it("should return null when entity exists but doesn't have required components", () => {
+                const core = factory({
+                    position: positionSchema,
+                    health: healthSchema,
+                });
+
+                // Create entity with only position
+                const positionArchetype = core.ensureArchetype(["id", "position"]);
+                const entity = positionArchetype.insert({ position: { x: 1, y: 2, z: 3 } });
+
+                // Try to read from health archetype
+                const healthArchetype = core.ensureArchetype(["id", "health"]);
+                const data = core.read(entity, healthArchetype);
+                expect(data).toBeNull();
+            });
+
+            it("should read entity data when entity has more components than archetype requires", () => {
+                const core = factory({
+                    position: positionSchema,
+                    health: healthSchema,
+                });
+
+                // Create entity with both position and health
+                const fullArchetype = core.ensureArchetype(["id", "position", "health"]);
+                const entity = fullArchetype.insert({
+                    position: { x: 1, y: 2, z: 3 },
+                    health: { current: 100, max: 100 }
+                });
+
+                // Should be able to read from position-only archetype
+                const positionArchetype = core.ensureArchetype(["id", "position"]);
+                const data = core.read(entity, positionArchetype);
+                expect(data).not.toBeNull();
+                expect((data as any)?.id).toBe(entity);
+                expect((data as any)?.position).toEqual({ x: 1, y: 2, z: 3 });
+            });
+
+            it("should return null when entity has different components than archetype", () => {
+                const core = factory({
+                    position: positionSchema,
+                    health: healthSchema,
+                    name: nameSchema,
+                });
+
+                // Create entity with position and health
+                const positionHealthArchetype = core.ensureArchetype(["id", "position", "health"]);
+                const entity = positionHealthArchetype.insert({
+                    position: { x: 1, y: 2, z: 3 },
+                    health: { current: 100, max: 100 }
+                });
+
+                // Try to read from name archetype
+                const nameArchetype = core.ensureArchetype(["id", "name"]);
+                const data = core.read(entity, nameArchetype);
+                expect(data).toBeNull();
+            });
+
+            it("should read entity data after component updates", () => {
+                const core = factory({
+                    position: positionSchema,
+                    health: healthSchema,
+                });
+
+                const positionArchetype = core.ensureArchetype(["id", "position"]);
+                const entity = positionArchetype.insert({ position: { x: 1, y: 2, z: 3 } });
+
+                // Update position
+                core.update(entity, { position: { x: 10, y: 20, z: 30 } });
+
+                const data = core.read(entity, positionArchetype);
+                expect(data).not.toBeNull();
+                expect((data as any)?.position).toEqual({ x: 10, y: 20, z: 30 });
+            });
+
+            it("should return null after entity is deleted", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                const entity = archetype.insert({ position: { x: 1, y: 2, z: 3 } });
+
+                // Verify entity exists
+                expect(core.read(entity, archetype)).not.toBeNull();
+
+                // Delete entity
+                core.delete(entity);
+
+                // Verify entity is no longer readable
+                expect(core.read(entity, archetype)).toBeNull();
+            });
+
+            it("should handle multiple entities in same archetype", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                const entity1 = archetype.insert({ position: { x: 1, y: 2, z: 3 } });
+                const entity2 = archetype.insert({ position: { x: 4, y: 5, z: 6 } });
+
+                const data1 = core.read(entity1, archetype);
+                const data2 = core.read(entity2, archetype);
+
+                expect(data1).not.toBeNull();
+                expect(data2).not.toBeNull();
+                expect((data1 as any)?.position).toEqual({ x: 1, y: 2, z: 3 });
+                expect((data2 as any)?.position).toEqual({ x: 4, y: 5, z: 6 });
+            });
+
+            it("should return null for invalid entity ID -1", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                const data = core.read(-1, archetype);
+                expect(data).toBeNull();
+            });
+        });
     });
 }
 

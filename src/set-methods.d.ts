@@ -26,36 +26,36 @@ SOFTWARE.*/
 declare global {
     interface Set<T> {
         /** Returns a new set with the elements of `this` ∪ `other`. */
-        union(other: Set<T>): Set<T>;
+        union<U>(other: Set<U>): Set<T | U>;
 
         /** Returns a new set with the elements of `this` ∩ `other`. */
-        intersection(other: Set<T>): Set<T>;
+        intersection<U>(other: Set<U>): Set<T & U>;
 
         /** Returns a new set with the elements of `this` ∖ `other`. */
-        difference(other: Set<T>): Set<T>;
+        difference<U>(other: Set<U>): Set<T | U>;
 
         /** Returns a new set with the elements of `(this ∖ other) ∪ (other ∖ this)`. */
-        symmetricDifference(other: Set<T>): Set<T>;
+        symmetricDifference<U>(other: Set<U>): Set<T | U>;
 
         /** `true` if every element of `this` is also in `other`. */
-        isSubsetOf(other: Set<T>): boolean;
+        isSubsetOf<U>(other: Set<U>): boolean;
 
         /** `true` if every element of `other` is also in `this`. */
-        isSupersetOf(other: Set<T>): boolean;
+        isSupersetOf<U>(other: Set<U>): boolean;
 
         /** `true` if `this` and `other` share no elements. */
-        isDisjointFrom(other: Set<T>): boolean;
+        isDisjointFrom<U>(other: Set<U>): boolean;
     }
 
     // (Optional) mirror the same methods on ReadonlySet:
     interface ReadonlySet<T> {
-        union(other: Set<T>): Set<T>;
-        intersection(other: Set<T>): Set<T>;
-        difference(other: Set<T>): Set<T>;
-        symmetricDifference(other: Set<T>): Set<T>;
-        isSubsetOf(other: Set<T>): boolean;
-        isSupersetOf(other: Set<T>): boolean;
-        isDisjointFrom(other: Set<T>): boolean;
+        union<U>(other: ReadonlySet<U>): Set<T | U>;
+        intersection<U>(other: ReadonlySet<U>): Set<T & U>;
+        difference<U>(other: ReadonlySet<U>): Set<T | U>;
+        symmetricDifference<U>(other: ReadonlySet<U>): Set<T | U>;
+        isSubsetOf<U>(other: ReadonlySet<U>): boolean;
+        isSupersetOf<U>(other: ReadonlySet<U>): boolean;
+        isDisjointFrom<U>(other: ReadonlySet<U>): boolean;
     }
 }
 

@@ -25,6 +25,7 @@ import { Archetype } from "./archetype.js";
 import { CoreComponents } from "../core-components.js";
 import { EntityLocationTable } from "../entity-location-table/entity-location-table.js";
 import { Entity, EntitySchema } from "../entity.js";
+import { StringKeyof } from "../../types/types.js";
 
 export const createArchetype = <C extends { id: typeof EntitySchema }>(
     components: C,
@@ -42,10 +43,12 @@ export const createArchetype = <C extends { id: typeof EntitySchema }>(
         return entity;
     }
 
+    const componentSet = new Set(Object.keys(components) as StringKeyof<C & CoreComponents>[]);
+
     const archetype = {
         id,
         ...table,
-        components: new Set(Object.keys(components) as (keyof C & string)[]),
+        components: componentSet,
         insert: createEntity,
     } as const satisfies Archetype<{ [K in keyof C]: FromSchema<C[K]> }> as Archetype<CoreComponents & { [K in keyof C]: FromSchema<C[K]> }>;
     return archetype;

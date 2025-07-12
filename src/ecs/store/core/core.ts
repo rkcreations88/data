@@ -23,12 +23,12 @@ SOFTWARE.*/
 import { Entity } from "../../entity.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { Schema } from "../../../schema/schema.js";
-import { EntityLocation } from "../../entity-location-table/entity-location.js";
 import { CoreComponents } from "../../core-components.js";
 import { StringKeyof } from "../../../types/index.js";
 import { Components } from "../components.js";
 
-export type EntityValues<C> = CoreComponents & { readonly [K in StringKeyof<C>]?: C[K] }
+export type EntityValues<C> = { readonly [K in (CoreComponents & StringKeyof<C>)]: C[K] }
+export type EntityReadValues<C> = CoreComponents & { readonly [K in StringKeyof<C>]?: C[K] }
 export type EntityUpdateValues<C> = Partial<Omit<C, "id">>;
 
 export type ArchetypeQueryOptions<C extends object> =
@@ -42,13 +42,14 @@ export interface ReadonlyCore<
     queryArchetypes<
         Include extends StringKeyof<C & CoreComponents>,
     >(
-        include: readonly Include[],
+        include: readonly Include[] | ReadonlySet<string>,
         options?: ArchetypeQueryOptions<C>
     ): readonly ReadonlyArchetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
+    ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => ReadonlyArchetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
 
-    ensureArchetype: <const CC extends StringKeyof<C | CoreComponents>>(components: readonly CC[]) => ReadonlyArchetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
     locate: (entity: Entity) => { archetype: ReadonlyArchetype<CoreComponents>, row: number } | null;
-    read: (entity: Entity) => EntityValues<C> | null;
+    read<T extends CoreComponents>(entity: Entity, minArchetype: ReadonlyArchetype<T> | Archetype<T>): { readonly [K in (StringKeyof<CoreComponents & T>)]: (CoreComponents & T)[K] } & EntityReadValues<C> | null;
+    read(entity: Entity): { readonly [K in (StringKeyof<CoreComponents & C>)]: (CoreComponents & C)[K] } | null;
 }
 
 /**
@@ -60,7 +61,7 @@ export interface Core<
     queryArchetypes<
         Include extends StringKeyof<C & CoreComponents>,
     >(
-        include: readonly Include[],
+        include: readonly Include[] | ReadonlySet<string>,
         options?: ArchetypeQueryOptions<C>
     ): readonly Archetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
     ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
