@@ -65,7 +65,7 @@ export interface Database<
     readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
     readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
     readonly transactions: Observe<TransactionResult<C>>;
-    entity<T extends CoreComponents>(id: Entity, minArchetype?: ReadonlyArchetype<T> | Archetype<T>): Observe<{ readonly [K in (StringKeyof<CoreComponents & T>)]: (CoreComponents & T)[K] } | null>;
+    entity<T extends CoreComponents>(id: Entity, minArchetype?: ReadonlyArchetype<T> | Archetype<T>): Observe<{ readonly [K in (StringKeyof<CoreComponents & T>)]: (CoreComponents & T)[K] } & EntityReadValues<C> | null>;
     entity(id: Entity): Observe<EntityReadValues<C> | null>;
     archetype(id: ArchetypeId): Observe<void>;
     select<
