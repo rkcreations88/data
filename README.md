@@ -58,7 +58,7 @@ It is important that we use `as const` for the schema definition. Without that, 
 
 ### Normalized Data
 
-Data is considered "Normalized" when all object keys contained anywhere within it are lexicographically sorted. We include a `normalize` function which performs this conversion. This is particularly useful when you want to use data as a cache key.
+Data is considered "Normalized" when all object keys contained anywhere within it are lexigraphically sorted. We include a `normalize` function which performs this conversion. This is particularly useful when you want to use data as a cache key.
 
 ```typescript
 const notNormalized = { b: 2, a: 1 };
