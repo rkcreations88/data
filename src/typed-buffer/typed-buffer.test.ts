@@ -30,7 +30,7 @@ describe('TypedBuffer copyWithin', () => {
         it('should copy elements within the same buffer', () => {
             const buffer = createNumberBuffer({
                 schema: { type: 'number', precision: 1 },
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -50,7 +50,7 @@ describe('TypedBuffer copyWithin', () => {
         it('should handle negative indices', () => {
             const buffer = createNumberBuffer({
                 schema: { type: 'number', precision: 1 },
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -59,7 +59,7 @@ describe('TypedBuffer copyWithin', () => {
             }
             
             // Copy last 2 elements to start (from index -2 to end of array)
-            buffer.copyWithin(0, -2, buffer.size);
+            buffer.copyWithin(0, -2, buffer.capacity);
             expect(buffer.get(0)).toBe(4);
             expect(buffer.get(1)).toBe(5);
             expect(buffer.get(2)).toBe(3);
@@ -70,7 +70,7 @@ describe('TypedBuffer copyWithin', () => {
         it('should handle out of bounds indices', () => {
             const buffer = createNumberBuffer({
                 schema: { type: 'number', precision: 1 },
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -90,7 +90,7 @@ describe('TypedBuffer copyWithin', () => {
 
     describe('ArrayBuffer', () => {
         it('should copy elements within the same buffer', () => {
-            const buffer = createArrayBuffer<string>({ length: 5 });
+            const buffer = createArrayBuffer<string>({ capacity: 5 });
             
             // Initialize with values
             for (let i = 0; i < 5; i++) {
@@ -107,7 +107,7 @@ describe('TypedBuffer copyWithin', () => {
         });
 
         it('should handle negative indices', () => {
-            const buffer = createArrayBuffer<string>({ length: 5 });
+            const buffer = createArrayBuffer<string>({ capacity: 5 });
             
             // Initialize with values
             for (let i = 0; i < 5; i++) {
@@ -115,7 +115,7 @@ describe('TypedBuffer copyWithin', () => {
             }
             
             // Copy last 2 elements to start (from index -2 to end of array)
-            buffer.copyWithin(0, -2, buffer.size);
+            buffer.copyWithin(0, -2, buffer.capacity);
             expect(buffer.get(0)).toBe('value4');
             expect(buffer.get(1)).toBe('value5');
             expect(buffer.get(2)).toBe('value3');
@@ -124,7 +124,7 @@ describe('TypedBuffer copyWithin', () => {
         });
 
         it('should handle out of bounds indices', () => {
-            const buffer = createArrayBuffer<string>({ length: 5 });
+            const buffer = createArrayBuffer<string>({ capacity: 5 });
             
             // Initialize with values
             for (let i = 0; i < 5; i++) {
@@ -153,7 +153,7 @@ describe('TypedBuffer copyWithin', () => {
         it('should copy elements within the same buffer', () => {
             const buffer = createStructBuffer({
                 schema: vec2Schema,
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -173,7 +173,7 @@ describe('TypedBuffer copyWithin', () => {
         it('should handle negative indices', () => {
             const buffer = createStructBuffer({
                 schema: vec2Schema,
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -182,7 +182,7 @@ describe('TypedBuffer copyWithin', () => {
             }
             
             // Copy last 2 elements to start (from index -2 to end of array)
-            buffer.copyWithin(0, -2, buffer.size);
+            buffer.copyWithin(0, -2, buffer.capacity);
             expect(buffer.get(0)).toEqual({ x: 4, y: 5 });
             expect(buffer.get(1)).toEqual({ x: 5, y: 6 });
             expect(buffer.get(2)).toEqual({ x: 3, y: 4 });
@@ -193,7 +193,7 @@ describe('TypedBuffer copyWithin', () => {
         it('should handle out of bounds indices', () => {
             const buffer = createStructBuffer({
                 schema: vec2Schema,
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -260,7 +260,7 @@ describe('TypedBuffer slice', () => {
         it('should support full slice', () => {
             const buffer = createNumberBuffer({
                 schema: { type: 'number', precision: 1 },
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -275,7 +275,7 @@ describe('TypedBuffer slice', () => {
         it('should support partial slicing', () => {
             const buffer = createNumberBuffer({
                 schema: { type: 'number', precision: 1 },
-                length: 5
+                capacity: 5
             });
             
             // Initialize with values
@@ -299,7 +299,7 @@ describe('TypedBuffer slice', () => {
 
     describe('ArrayBuffer', () => {
         it('should support full slice', () => {
-            const buffer = createArrayBuffer<string>({ length: 3 });
+            const buffer = createArrayBuffer<string>({ capacity: 3 });
             
             // Initialize with values
             for (let i = 0; i < 3; i++) {
@@ -311,7 +311,7 @@ describe('TypedBuffer slice', () => {
         });
 
         it('should support partial slicing', () => {
-            const buffer = createArrayBuffer<string>({ length: 4 });
+            const buffer = createArrayBuffer<string>({ capacity: 4 });
             
             // Initialize with values
             for (let i = 0; i < 4; i++) {
@@ -340,7 +340,7 @@ describe('TypedBuffer slice', () => {
         it('should support full slice', () => {
             const buffer = createStructBuffer({
                 schema: vec2Schema,
-                length: 3
+                capacity: 3
             });
             
             // Initialize with values
@@ -359,7 +359,7 @@ describe('TypedBuffer slice', () => {
         it('should support partial slicing', () => {
             const buffer = createStructBuffer({
                 schema: vec2Schema,
-                length: 4
+                capacity: 4
             });
             
             // Initialize with values

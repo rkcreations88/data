@@ -24,15 +24,16 @@ import { TypedBuffer } from "./typed-buffer.js";
 
 export const arrayBufferType = "array";
 export const createArrayBuffer = <T>(args: {
-    length?: number,
+    capacity?: number,
     array?: Array<T>,
     schema?: Schema
 }): TypedBuffer<T> => {
     const {
-        length = 16,
-        array = new Array<T>(length),
+        capacity = 16,
+        array = new Array<T>(capacity),
         schema = { type: "number" },
     } = args;
+    let length = 0;
     const typedBuffer = {
         type: arrayBufferType,
         schema,
@@ -40,10 +41,16 @@ export const createArrayBuffer = <T>(args: {
         getTypedArray() {
             throw new Error("Typed array not supported");
         },
-        get size(): number {
+        get length(): number {
+            return length;
+        },
+        set length(value: number) {
+            length = value;
+        },
+        get capacity(): number {
             return array.length;
         },
-        set size(value: number) {
+        set capacity(value: number) {
             array.length = value;
         },
         get(index: number): T {

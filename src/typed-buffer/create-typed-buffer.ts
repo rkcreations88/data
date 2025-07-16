@@ -30,8 +30,7 @@ import { createConstBuffer } from "./create-const-buffer.js";
 export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
     args: {
         schema: S,
-        length?: number,
-        maxLength?: number,
+        capacity?: number,
     }
 ): TypedBuffer<FromSchema<S>> => {
     const { schema } = args;

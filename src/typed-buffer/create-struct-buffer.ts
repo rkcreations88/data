@@ -34,8 +34,7 @@ export const structBufferType = "struct";
 export const createStructBuffer = <S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     args: {
         schema: S,
-        length?: number,
-        maxLength?: number,
+        capacity?: number,
         arrayBuffer?: ArrayBufferLike,
         arrayType?: ArrayType
     }
@@ -45,8 +44,9 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
     if (!layout) {
         throw new Error("Schema is not a valid struct schema");
     }
-    const { length = 16, arrayType = 'f32' } = args;
-    let arrayBuffer = args.arrayBuffer ?? createSharedArrayBuffer(length * layout.size);
+    const { capacity = 16, arrayType = 'f32' } = args;
+    let length = 0;
+    let arrayBuffer = args.arrayBuffer ?? createSharedArrayBuffer(capacity * layout.size);
     const read = createReadStruct<FromSchema<S>>(layout);
     const write = createWriteStruct<FromSchema<S>>(layout);
 
@@ -62,10 +62,16 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
         getTypedArray() {
             return typedArray;
         },
-        get size() {
+        get length(): number {
+            return length;
+        },
+        set length(value: number) {
+            length = value;
+        },
+        get capacity() {
             return arrayBuffer.byteLength / layout.size;
         },
-        set size(length: number) {
+        set capacity(length: number) {
             arrayBuffer = grow(arrayBuffer, length * layout.size);
             dataView = createDataView32(arrayBuffer);
             typedArray = dataView[arrayType] as DataView32[ArrayType];
@@ -75,9 +81,9 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
         copyWithin: (target: number, start: number, end: number) => {
             dataView[arrayType].copyWithin(target * sizeInQuads, start * sizeInQuads, end * sizeInQuads);
         },
-        slice(start = 0, end = buffer.size): ArrayLike<FromSchema<S>> & Iterable<FromSchema<S>> {
+        slice(start = 0, end = buffer.capacity): ArrayLike<FromSchema<S>> & Iterable<FromSchema<S>> {
             const result = new Array<FromSchema<S>>(Math.max(0, end - start));
-            for (let i = start; i < end && i < buffer.size; i++) {
+            for (let i = start; i < end && i < buffer.capacity; i++) {
                 result[i - start] = read(dataView, i);
             }
             return result;

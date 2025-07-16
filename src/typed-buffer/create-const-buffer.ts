@@ -25,7 +25,8 @@ export const constBufferType = "const";
 export const createConstBuffer = <T>(
     value: T,
 ): TypedBuffer<T> => {
-    let size = 0;
+    let capacity = 0;
+    let length = 0;
     const typedBuffer: TypedBuffer<T> = {
         type: constBufferType,
         schema: { const: value },
@@ -33,11 +34,17 @@ export const createConstBuffer = <T>(
         getTypedArray() {
             throw new Error("Const buffer does not support getTypedArray");
         },
-        get size(): number {
-            return size;
+        get length(): number {
+            return length;
         },
-        set size(value: number) {
-            size = value;
+        set length(value: number) {
+            length = value;
+        },
+        get capacity(): number {
+            return capacity;
+        },
+        set capacity(value: number) {
+            capacity = value;
         },
         get(index: number): T {
             return value;
@@ -48,7 +55,7 @@ export const createConstBuffer = <T>(
         copyWithin(target: number, start: number, end: number): void {
             // No-op: const buffer copyWithin is a no-op
         },
-        slice(start = 0, end = size): ArrayLike<T> & Iterable<T> {
+        slice(start = 0, end = capacity): ArrayLike<T> & Iterable<T> {
             return Array(Math.max(0, end - start)).fill(value);
         },
     };

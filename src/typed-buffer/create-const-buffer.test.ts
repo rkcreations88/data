@@ -26,7 +26,7 @@ describe('createConstBuffer', () => {
     it('should always return the same value for any get call', () => {
         const constValue = { x: 10, y: 20 };
         const buffer = createConstBuffer(constValue);
-        buffer.size = 5;
+        buffer.capacity = 5;
         
         // All get calls should return the same value
         expect(buffer.get(0)).toBe(constValue);
@@ -40,7 +40,7 @@ describe('createConstBuffer', () => {
     it('should ignore set calls', () => {
         const constValue = 42;
         const buffer = createConstBuffer(constValue);
-        buffer.size = 3;
+        buffer.capacity = 3;
         
         // Set calls should not change the value
         buffer.set(0, 100);
@@ -55,23 +55,23 @@ describe('createConstBuffer', () => {
 
     it('should track size correctly', () => {
         const buffer = createConstBuffer('test');
-        buffer.size = 10;
+        buffer.capacity = 10;
         
-        expect(buffer.size).toBe(10);
+        expect(buffer.capacity).toBe(10);
     });
 
     it('should allow size to be set', () => {
         const buffer = createConstBuffer('test');
-        buffer.size = 5;
-        expect(buffer.size).toBe(5);
+        buffer.capacity = 5;
+        expect(buffer.capacity).toBe(5);
         
-        buffer.size = 100;
-        expect(buffer.size).toBe(100);
+        buffer.capacity = 100;
+        expect(buffer.capacity).toBe(100);
     });
 
     it('should have copyWithin as no-op', () => {
         const buffer = createConstBuffer('constant');
-        buffer.size = 5;
+        buffer.capacity = 5;
         
         // copyWithin should not throw and should not change anything
         expect(() => {
@@ -79,7 +79,7 @@ describe('createConstBuffer', () => {
         }).not.toThrow();
         
         // All values should still be the same
-        for (let i = 0; i < buffer.size; i++) {
+        for (let i = 0; i < buffer.capacity; i++) {
             expect(buffer.get(i)).toBe('constant');
         }
     });
@@ -94,7 +94,7 @@ describe('createConstBuffer', () => {
 
     it('should support slicing', () => {
         const buffer = createConstBuffer('sliceable');
-        buffer.size = 5;
+        buffer.capacity = 5;
         
         const values = Array.from(buffer.slice());
         expect(values).toEqual(['sliceable', 'sliceable', 'sliceable', 'sliceable', 'sliceable']);
@@ -102,7 +102,7 @@ describe('createConstBuffer', () => {
 
     it('should support partial slicing', () => {
         const buffer = createConstBuffer('partial');
-        buffer.size = 4;
+        buffer.capacity = 4;
         
         // Slice first 2 elements
         const firstSlice = Array.from(buffer.slice(0, 2));
@@ -120,7 +120,7 @@ describe('createConstBuffer', () => {
     it('should work with default size of 0', () => {
         const buffer = createConstBuffer('default');
         
-        expect(buffer.size).toBe(0);
+        expect(buffer.capacity).toBe(0);
         // Should still return the value even with size 0
         expect(buffer.get(0)).toBe('default');
     });
@@ -133,7 +133,7 @@ describe('createConstBuffer', () => {
         };
         
         const buffer = createConstBuffer(complexValue);
-        buffer.size = 2;
+        buffer.capacity = 2;
         
         expect(buffer.get(0)).toBe(complexValue);
         expect(buffer.get(1)).toBe(complexValue);
@@ -141,13 +141,13 @@ describe('createConstBuffer', () => {
 
     it('should work with primitive values', () => {
         const numberBuffer = createConstBuffer(42);
-        numberBuffer.size = 3;
+        numberBuffer.capacity = 3;
         
         const stringBuffer = createConstBuffer('hello');
-        stringBuffer.size = 2;
+        stringBuffer.capacity = 2;
         
         const booleanBuffer = createConstBuffer(true);
-        booleanBuffer.size = 1;
+        booleanBuffer.capacity = 1;
         
         expect(numberBuffer.get(0)).toBe(42);
         expect(stringBuffer.get(0)).toBe('hello');

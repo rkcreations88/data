@@ -50,18 +50,18 @@ const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {
 export const numberBufferType = "number";
 export const createNumberBuffer = (args: {
     schema: Schema,
-    length?: number,
-    maxLength?: number,
+    capacity?: number,
     arrayBuffer?: ArrayBufferLike,
 }): TypedBuffer<number> => {
     const {
         schema,
-        length = 16,
+        capacity = 16,
     } = args;
+    let length = 0;
     const typedArrayConstructor = getTypedArrayConstructor(schema);
     const stride = typedArrayConstructor.BYTES_PER_ELEMENT;
     let {
-        arrayBuffer = createSharedArrayBuffer(stride * length),
+        arrayBuffer = createSharedArrayBuffer(stride * capacity),
     } = args;
     let array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {
@@ -71,10 +71,16 @@ export const createNumberBuffer = (args: {
         getTypedArray() {
             return array;
         },
-        get size(): number {
+        get length(): number {
+            return length;
+        },
+        set length(value: number) {
+            length = value;
+        },
+        get capacity(): number {
             return array.length;
         },
-        set size(value: number) {
+        set capacity(value: number) {
             arrayBuffer = grow(arrayBuffer, value * stride);
             array = new typedArrayConstructor(arrayBuffer);
         },
