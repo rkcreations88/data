@@ -20,13 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { TypedArray } from "../internal/typed-array/index.js";
+import { Schema } from "../schema/schema.js";
+
+export type TypedBufferType = "array" | "const" | "number" | "struct";
 
 export interface ReadonlyTypedBuffer<T> {
-    readonly type: string;
+    readonly type: TypedBufferType;
+    readonly schema: Schema;
     readonly size: number;
     readonly typedArrayElementSizeInBytes: number;
     get(index: number): T;
-    slice(start?: number, end?: number): ArrayLike<T>;
+    slice(start?: number, end?: number): ArrayLike<T> & Iterable<T>;
 }
 
 export interface TypedBuffer<T> extends ReadonlyTypedBuffer<T> {
@@ -40,4 +44,3 @@ export interface TypedBuffer<T> extends ReadonlyTypedBuffer<T> {
      */
     getTypedArray(): TypedArray;
 }
-

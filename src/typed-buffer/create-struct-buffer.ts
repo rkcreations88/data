@@ -30,6 +30,7 @@ import { TypedBuffer } from "./typed-buffer.js";
 import { TypedArray } from "../internal/typed-array/index.js";
 import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
 
+export const structBufferType = "struct";
 export const createStructBuffer = <S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     args: {
         schema: S,
@@ -55,7 +56,8 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
     let typedArray: TypedArray = dataView[arrayType];
 
     const buffer: TypedBuffer<FromSchema<S>> = {
-        type: 'struct-buffer',
+        type: structBufferType,
+        schema,
         typedArrayElementSizeInBytes: layout.size,
         getTypedArray() {
             return typedArray;
@@ -73,7 +75,7 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
         copyWithin: (target: number, start: number, end: number) => {
             dataView[arrayType].copyWithin(target * sizeInQuads, start * sizeInQuads, end * sizeInQuads);
         },
-        slice(start = 0, end = buffer.size): ArrayLike<FromSchema<S>> {
+        slice(start = 0, end = buffer.size): ArrayLike<FromSchema<S>> & Iterable<FromSchema<S>> {
             const result = new Array<FromSchema<S>>(Math.max(0, end - start));
             for (let i = start; i < end && i < buffer.size; i++) {
                 result[i - start] = read(dataView, i);

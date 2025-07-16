@@ -21,12 +21,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { TypedBuffer } from "./typed-buffer.js";
 
+export const constBufferType = "const";
 export const createConstBuffer = <T>(
-    value: T
-): TypedBuffer<T> => {    
+    value: T,
+): TypedBuffer<T> => {
     let size = 0;
     const typedBuffer: TypedBuffer<T> = {
-        type: 'const-buffer',
+        type: constBufferType,
+        schema: { const: value },
         typedArrayElementSizeInBytes: 0,
         getTypedArray() {
             throw new Error("Const buffer does not support getTypedArray");
@@ -46,7 +48,7 @@ export const createConstBuffer = <T>(
         copyWithin(target: number, start: number, end: number): void {
             // No-op: const buffer copyWithin is a no-op
         },
-        slice(start = 0, end = size): ArrayLike<T> {
+        slice(start = 0, end = size): ArrayLike<T> & Iterable<T> {
             return Array(Math.max(0, end - start)).fill(value);
         },
     };

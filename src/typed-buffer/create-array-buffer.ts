@@ -19,17 +19,23 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import { Schema } from "../schema/schema.js";
 import { TypedBuffer } from "./typed-buffer.js";
 
+export const arrayBufferType = "array";
 export const createArrayBuffer = <T>(args: {
     length?: number,
+    array?: Array<T>,
+    schema?: Schema
 }): TypedBuffer<T> => {
     const {
         length = 16,
+        array = new Array<T>(length),
+        schema = { type: "number" },
     } = args;
-    const array = new Array<T>(length);
     const typedBuffer = {
-        type: 'array-buffer',
+        type: arrayBufferType,
+        schema,
         typedArrayElementSizeInBytes: 0,
         getTypedArray() {
             throw new Error("Typed array not supported");
@@ -49,7 +55,7 @@ export const createArrayBuffer = <T>(args: {
         copyWithin(target: number, start: number, end: number): void {
             array.copyWithin(target, start, end);
         },
-        slice(start = 0, end = array.length): ArrayLike<T> {
+        slice(start = 0, end = array.length): ArrayLike<T> & Iterable<T> {
             if (start === 0 && end === array.length) {
                 return array;
             }
@@ -58,3 +64,12 @@ export const createArrayBuffer = <T>(args: {
     } as const satisfies TypedBuffer<T>;
     return typedBuffer;
 }
+
+// export function registerCreateArrayBufferCodec() {
+//     registerCodec<TypedBuffer<any>>({
+//         name: typeName,
+//         predicate: (data: any): data.type === typeName,
+//         serialize: (data: TypedBuffer<any>) => ({ json: data }),
+//         deserialize: ({ binary }: { json?: Data, binary: Uint8Array[] }) => new (typedArrayConstructor as any)(binary[0].buffer, binary[0].byteOffset, binary[0].byteLength / typedArrayConstructor.BYTES_PER_ELEMENT),
+//     });
+// }

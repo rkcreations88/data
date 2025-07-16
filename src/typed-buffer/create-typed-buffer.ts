@@ -35,7 +35,6 @@ export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
     }
 ): TypedBuffer<FromSchema<S>> => {
     const { schema } = args;
-    args.maxLength ??= 10_0000_000;
 
     if (schema.const !== undefined) {
         return createConstBuffer(schema.const) as TypedBuffer<FromSchema<S>>;
@@ -44,7 +43,6 @@ export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
     if (schema.type === 'number' || schema.type === 'integer') {
         return createNumberBuffer(args) as TypedBuffer<FromSchema<S>>;
     }
-
 
     const structLayout = getStructLayout(schema, false);
     if (structLayout) {

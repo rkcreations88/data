@@ -20,8 +20,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { serialize, deserialize } from './serialization.js';
 import { describe, it, expect } from 'vitest';
+import { serialize } from './serialize.js';
+import { deserialize } from './deserialize.js';
 
 describe('serialize/deserialize', () => {
   it('round-trips objects with typed arrays', () => {

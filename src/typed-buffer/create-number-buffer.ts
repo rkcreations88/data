@@ -47,6 +47,7 @@ const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {
     throw new Error("Schema is not a valid number schema");
 }
 
+export const numberBufferType = "number";
 export const createNumberBuffer = (args: {
     schema: Schema,
     length?: number,
@@ -64,7 +65,8 @@ export const createNumberBuffer = (args: {
     } = args;
     let array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {
-        type: 'number-buffer',
+        type: numberBufferType,
+        schema,
         typedArrayElementSizeInBytes: stride,
         getTypedArray() {
             return array;
@@ -85,7 +87,7 @@ export const createNumberBuffer = (args: {
         copyWithin(target: number, start: number, end: number): void {
             array.copyWithin(target, start, end);
         },
-        slice(start = 0, end = array.length): ArrayLike<number> {
+        slice(start = 0, end = array.length): ArrayLike<number> & Iterable<number> {
             return array.subarray(start, end);
         },
     } as const satisfies TypedBuffer<number>;
