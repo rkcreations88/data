@@ -28,25 +28,22 @@ import { createArrayBuffer } from "./create-array-buffer.js";
 import { createConstBuffer } from "./create-const-buffer.js";
 
 export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
-    args: {
-        schema: S,
-        capacity?: number,
-    }
+    schema: S,
+    initialCapacity = 16,
 ): TypedBuffer<FromSchema<S>> => {
-    const { schema } = args;
 
     if (schema.const !== undefined) {
-        return createConstBuffer(schema.const) as TypedBuffer<FromSchema<S>>;
+        return createConstBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
     }
 
     if (schema.type === 'number' || schema.type === 'integer') {
-        return createNumberBuffer(args) as TypedBuffer<FromSchema<S>>;
+        return createNumberBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
     }
 
     const structLayout = getStructLayout(schema, false);
     if (structLayout) {
-        return createStructBuffer(args);
+        return createStructBuffer(schema, initialCapacity);
     }
 
-    return createArrayBuffer<FromSchema<S>>(args);
+    return createArrayBuffer(schema, initialCapacity);
 }

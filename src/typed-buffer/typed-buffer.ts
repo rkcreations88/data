@@ -27,14 +27,6 @@ export type TypedBufferType = "array" | "const" | "number" | "struct";
 export interface ReadonlyTypedBuffer<T> {
     readonly type: TypedBufferType;
     readonly schema: Schema;
-    /**
-     * The number of logical elements in the buffer.
-     */
-    readonly length: number;
-    /**
-     * The number of physical elements in the buffer.
-     * The length can be resized up to this value efficiently.
-     */
     readonly capacity: number;
     readonly typedArrayElementSizeInBytes: number;
     get(index: number): T;
@@ -42,7 +34,7 @@ export interface ReadonlyTypedBuffer<T> {
 }
 
 export interface TypedBuffer<T> extends ReadonlyTypedBuffer<T> {
-    capacity: number;                 // drops `readonly`
+    capacity: number;                // drops `readonly`
     set(index: number, value: T): void;
     copyWithin(target: number, start: number, end: number): void;
 

@@ -19,22 +19,35 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Table } from "./table.js";
 
-export const ensureCapacity = <C>(table: Table<C>, minimumCapacity: number) => {
-    // we don't actually loop, we just need to check the first columns length.
-    for (const name in table.columns) {
-        // this assumes that all columns will have the same capacity from ensuring capacity.
-        const currentCapacity = table.columns[name].capacity;
-        if (currentCapacity < minimumCapacity) {
-            // may need smart growth factor, faster when smaller, smaller when larger.
-            const growthFactor = 2;
-            const newCapacity = Math.max(minimumCapacity, currentCapacity * growthFactor);
-            for (const name in table.columns) {
-                const column = table.columns[name];
-                column.capacity = newCapacity;
-            }
-        }
-        return;
+/**
+ * Copy `byteLength` bytes from `src`[@`srcByteOffset`] to
+ * `dst`[@`dstByteOffset`].
+ *
+ * Uses `copyWithin` when the source and destination are the **same**
+ * `ArrayBuffer` (or SharedArrayBuffer) and the ranges overlap; otherwise it
+ * falls back to `TypedArray.set`.
+ */
+export function blit(
+    src: ArrayBufferLike,
+    dst: ArrayBufferLike,
+    srcByteOffset = 0,
+    dstByteOffset = 0,
+    byteLength = src.byteLength - srcByteOffset,
+) {
+    // Fast path: in-place copy on the same buffer
+    if (src === dst) {
+        /* Uint8Array#copyWithin handles overlap correctly and
+           stays entirely in native code. */
+        new Uint8Array(dst).copyWithin(
+            dstByteOffset,
+            srcByteOffset,
+            srcByteOffset + byteLength,
+        );
+    } else {
+        // Different buffers → fall back to a zero-copy .set
+        new Uint8Array(dst, dstByteOffset, byteLength).set(
+            new Uint8Array(src, srcByteOffset, byteLength),
+        );
     }
 }

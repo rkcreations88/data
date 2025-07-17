@@ -40,7 +40,7 @@ describe("createTable", () => {
     it("should initialize with 0 rows", () => {
         const schemas = { a: { type: "number" } } as const;
         const table = createTable(schemas);
-        expect(table.rows).toBe(0);
+        expect(table.rowCount).toBe(0);
     });
 
 }); 

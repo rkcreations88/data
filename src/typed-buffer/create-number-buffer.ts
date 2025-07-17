@@ -48,21 +48,14 @@ const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {
 }
 
 export const numberBufferType = "number";
-export const createNumberBuffer = (args: {
+export const createNumberBuffer = (
     schema: Schema,
-    capacity?: number,
-    arrayBuffer?: ArrayBufferLike,
-}): TypedBuffer<number> => {
-    const {
-        schema,
-        capacity = 16,
-    } = args;
-    let length = 0;
+    initialCapacity: number,
+): TypedBuffer<number> => {
     const typedArrayConstructor = getTypedArrayConstructor(schema);
     const stride = typedArrayConstructor.BYTES_PER_ELEMENT;
-    let {
-        arrayBuffer = createSharedArrayBuffer(stride * capacity),
-    } = args;
+    let arrayBuffer = createSharedArrayBuffer(stride * initialCapacity);
+    let capacity = initialCapacity;
     let array = new typedArrayConstructor(arrayBuffer);
     const typedBuffer = {
         type: numberBufferType,
@@ -71,18 +64,15 @@ export const createNumberBuffer = (args: {
         getTypedArray() {
             return array;
         },
-        get length(): number {
-            return length;
-        },
-        set length(value: number) {
-            length = value;
-        },
         get capacity(): number {
-            return array.length;
+            return capacity;
         },
         set capacity(value: number) {
-            arrayBuffer = grow(arrayBuffer, value * stride);
-            array = new typedArrayConstructor(arrayBuffer);
+            if (value !== capacity) {
+                capacity = value;
+                arrayBuffer = grow(arrayBuffer, value * stride);
+                array = new typedArrayConstructor(arrayBuffer);
+            }
         },
         get(index: number): number {
             return array[index];
@@ -93,7 +83,7 @@ export const createNumberBuffer = (args: {
         copyWithin(target: number, start: number, end: number): void {
             array.copyWithin(target, start, end);
         },
-        slice(start = 0, end = array.length): ArrayLike<number> & Iterable<number> {
+        slice(start = 0, end = capacity): ArrayLike<number> & Iterable<number> {
             return array.subarray(start, end);
         },
     } as const satisfies TypedBuffer<number>;

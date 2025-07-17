@@ -19,33 +19,21 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Schema } from "../schema/schema.js";
+import { FromSchema, Schema } from "../schema/schema.js";
 import { TypedBuffer } from "./typed-buffer.js";
 
 export const arrayBufferType = "array";
-export const createArrayBuffer = <T>(args: {
-    capacity?: number,
-    array?: Array<T>,
-    schema?: Schema
-}): TypedBuffer<T> => {
-    const {
-        capacity = 16,
-        array = new Array<T>(capacity),
-        schema = { type: "number" },
-    } = args;
-    let length = 0;
+export const createArrayBuffer = <S extends Schema, T = FromSchema<S>>(
+    schema: S,
+    initialCapacity: number,
+): TypedBuffer<T> => {
+    const array = new Array<T>(initialCapacity);
     const typedBuffer = {
         type: arrayBufferType,
         schema,
         typedArrayElementSizeInBytes: 0,
         getTypedArray() {
             throw new Error("Typed array not supported");
-        },
-        get length(): number {
-            return length;
-        },
-        set length(value: number) {
-            length = value;
         },
         get capacity(): number {
             return array.length;

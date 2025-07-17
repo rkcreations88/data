@@ -19,26 +19,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import { Schema } from "../schema/schema.js";
 import { TypedBuffer } from "./typed-buffer.js";
 
 export const constBufferType = "const";
 export const createConstBuffer = <T>(
-    value: T,
+    schema: Schema,
+    initialCapacity: number,
 ): TypedBuffer<T> => {
-    let capacity = 0;
-    let length = 0;
+    const { const: value } = schema;
+    let capacity = initialCapacity;
     const typedBuffer: TypedBuffer<T> = {
         type: constBufferType,
-        schema: { const: value },
+        schema,
         typedArrayElementSizeInBytes: 0,
         getTypedArray() {
             throw new Error("Const buffer does not support getTypedArray");
-        },
-        get length(): number {
-            return length;
-        },
-        set length(value: number) {
-            length = value;
         },
         get capacity(): number {
             return capacity;
@@ -46,13 +42,13 @@ export const createConstBuffer = <T>(
         set capacity(value: number) {
             capacity = value;
         },
-        get(index: number): T {
+        get(_index: number): T {
             return value;
         },
-        set(index: number, value: T): void {
+        set(_index: number, _value: T): void {
             // No-op: const buffer ignores set calls
         },
-        copyWithin(target: number, start: number, end: number): void {
+        copyWithin(_target: number, _start: number, _end: number): void {
             // No-op: const buffer copyWithin is a no-op
         },
         slice(start = 0, end = capacity): ArrayLike<T> & Iterable<T> {

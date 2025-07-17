@@ -38,7 +38,7 @@ describe('createArchetype', () => {
 
         // Verify basic properties
         expect(archetype.id).toBe(id);
-        expect(archetype.rows).toBe(0);
+        expect(archetype.rowCount).toBe(0);
         expect(archetype.components).toEqual(new Set(['id', 'value']));
         expect(archetype.columns).toHaveProperty('id');
         expect(archetype.columns).toHaveProperty('value');
@@ -57,14 +57,14 @@ describe('createArchetype', () => {
         // Create first entity
         const entity1 = archetype.insert({ value: 42 });
         expect(entity1).toBe(0); // First entity should have id 0
-        expect(archetype.rows).toBe(1);
+        expect(archetype.rowCount).toBe(1);
         expect(archetype.columns.id.get(0)).toBe(0);
         expect(archetype.columns.value.get(0)).toBe(42);
 
         // Create second entity
         const entity2 = archetype.insert({ value: 100 });
         expect(entity2).toBe(1); // Second entity should have id 1
-        expect(archetype.rows).toBe(2);
+        expect(archetype.rowCount).toBe(2);
         expect(archetype.columns.id.get(1)).toBe(1);
         expect(archetype.columns.value.get(1)).toBe(100);
 
@@ -102,7 +102,7 @@ describe('createArchetype', () => {
         });
 
         expect(entity).toBe(0);
-        expect(archetype.rows).toBe(1);
+        expect(archetype.rowCount).toBe(1);
         expect(archetype.columns.health.get(0)).toBe(100);
         expect(archetype.columns.mana.get(0)).toBe(50);
         expect(archetype.columns.level.get(0)).toBe(5);

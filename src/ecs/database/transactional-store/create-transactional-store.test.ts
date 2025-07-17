@@ -486,7 +486,7 @@ describe("createTransactionalStore", () => {
 
         // Get the archetype before any inserts
         const archetype = baseStore.ensureArchetype(["id", "position"]);
-        const initialRows = archetype.rows;
+        const initialRows = archetype.rowCount;
 
         store.execute((transactionStore) => {
             const transactionArchetype = transactionStore.ensureArchetype(["id", "position"]);
@@ -495,22 +495,22 @@ describe("createTransactionalStore", () => {
             const entity1 = transactionArchetype.insert({
                 position: { x: 1, y: 2, z: 3 }
             });
-            expect(transactionArchetype.rows).toBe(initialRows + 1);
+            expect(transactionArchetype.rowCount).toBe(initialRows + 1);
 
             // Second insert - rows should be incremented again
             const entity2 = transactionArchetype.insert({
                 position: { x: 10, y: 20, z: 30 }
             });
-            expect(transactionArchetype.rows).toBe(initialRows + 2);
+            expect(transactionArchetype.rowCount).toBe(initialRows + 2);
 
             // Third insert - rows should be incremented again
             const entity3 = transactionArchetype.insert({
                 position: { x: 100, y: 200, z: 300 }
             });
-            expect(transactionArchetype.rows).toBe(initialRows + 3);
+            expect(transactionArchetype.rowCount).toBe(initialRows + 3);
         });
 
         // After transaction, the base store should also reflect the changes
-        expect(archetype.rows).toBe(initialRows + 3);
+        expect(archetype.rowCount).toBe(initialRows + 3);
     });
 }); 

@@ -54,7 +54,7 @@ describe('Archetype_deleteRow', () => {
         expect(movedEntityLocation).toEqual({ archetype: 1, row: 1 });
 
         // Verify total rows decreased
-        expect(archetype.rows).toBe(2);
+        expect(archetype.rowCount).toBe(2);
 
         // Verify entity1 is unchanged
         expect(archetype.columns.id.get(0)).toBe(entity1);
@@ -80,7 +80,7 @@ describe('Archetype_deleteRow', () => {
         deleteRow(archetype, entity2, entityLocationTable);
 
         // Verify total rows decreased
-        expect(archetype.rows).toBe(1);
+        expect(archetype.rowCount).toBe(1);
 
         // Verify entity1 is unchanged
         expect(archetype.columns.id.get(0)).toBe(entity1);
@@ -105,6 +105,6 @@ describe('Archetype_deleteRow', () => {
         deleteRow(archetype, 0, entityLocationTable);
 
         // Verify total rows is zero
-        expect(archetype.rows).toBe(0);
+        expect(archetype.rowCount).toBe(0);
     });
 }); 

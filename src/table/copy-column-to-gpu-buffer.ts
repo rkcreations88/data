@@ -34,7 +34,7 @@ export const copyColumnToGPUBuffer = <T extends Table<any>, K extends keyof T["c
     // get total byte length
     let totalByteLength = 0;
     for (const table of tables) {
-        totalByteLength += table.rows * table.columns[columnName].typedArrayElementSizeInBytes;
+        totalByteLength += table.rowCount * table.columns[columnName].typedArrayElementSizeInBytes;
     }
     // ensure the gpu buffer is large enough
     if (gpuBuffer.size < totalByteLength) {
@@ -45,7 +45,7 @@ export const copyColumnToGPUBuffer = <T extends Table<any>, K extends keyof T["c
     let offset = 0;
     for (const table of tables) {
         const column = table.columns[columnName];
-        const writeByteLength = table.rows * column.typedArrayElementSizeInBytes;
+        const writeByteLength = table.rowCount * column.typedArrayElementSizeInBytes;
         const array = column.getTypedArray();
         device.queue.writeBuffer(gpuBuffer, offset, array.buffer, 0, writeByteLength);
         offset += writeByteLength;

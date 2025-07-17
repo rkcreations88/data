@@ -32,21 +32,16 @@ import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-
 
 export const structBufferType = "struct";
 export const createStructBuffer = <S extends Schema, ArrayType extends keyof DataView32 = "f32">(
-    args: {
-        schema: S,
-        capacity?: number,
-        arrayBuffer?: ArrayBufferLike,
-        arrayType?: ArrayType
-    }
+    schema: S,
+    initialCapacity: number,
 ): TypedBuffer<FromSchema<S>> => {
-    const { schema } = args;
     const layout = getStructLayout(schema);
     if (!layout) {
         throw new Error("Schema is not a valid struct schema");
     }
-    const { capacity = 16, arrayType = 'f32' } = args;
-    let length = 0;
-    let arrayBuffer = args.arrayBuffer ?? createSharedArrayBuffer(capacity * layout.size);
+    const arrayType = 'f32';
+    let arrayBuffer = createSharedArrayBuffer(initialCapacity * layout.size);
+    let capacity = initialCapacity;
     const read = createReadStruct<FromSchema<S>>(layout);
     const write = createWriteStruct<FromSchema<S>>(layout);
 
@@ -62,28 +57,25 @@ export const createStructBuffer = <S extends Schema, ArrayType extends keyof Dat
         getTypedArray() {
             return typedArray;
         },
-        get length(): number {
-            return length;
+        get capacity(): number {
+            return capacity;
         },
-        set length(value: number) {
-            length = value;
-        },
-        get capacity() {
-            return arrayBuffer.byteLength / layout.size;
-        },
-        set capacity(length: number) {
-            arrayBuffer = grow(arrayBuffer, length * layout.size);
-            dataView = createDataView32(arrayBuffer);
-            typedArray = dataView[arrayType] as DataView32[ArrayType];
+        set capacity(value: number) {
+            if (value !== capacity) {
+                capacity = value;
+                arrayBuffer = grow(arrayBuffer, value * layout.size);
+                dataView = createDataView32(arrayBuffer);
+                typedArray = dataView[arrayType] as DataView32[ArrayType];
+            }
         },
         get: (index: number) => read(dataView, index),
         set: (index: number, value: FromSchema<S>) => write(dataView, index, value),
         copyWithin: (target: number, start: number, end: number) => {
             dataView[arrayType].copyWithin(target * sizeInQuads, start * sizeInQuads, end * sizeInQuads);
         },
-        slice(start = 0, end = buffer.capacity): ArrayLike<FromSchema<S>> & Iterable<FromSchema<S>> {
+        slice(start = 0, end = capacity): ArrayLike<FromSchema<S>> & Iterable<FromSchema<S>> {
             const result = new Array<FromSchema<S>>(Math.max(0, end - start));
-            for (let i = start; i < end && i < buffer.capacity; i++) {
+            for (let i = start; i < end; i++) {
                 result[i - start] = read(dataView, i);
             }
             return result;
