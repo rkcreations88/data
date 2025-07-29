@@ -26,11 +26,14 @@ import { Observe } from "./types.js";
  */
 export function withMap<T, U>(
   observable: Observe<T>,
-  map: (value: T) => U
+  map: (value: T) => U | undefined
 ): Observe<U> {
   return (observer) => {
     return observable((value) => {
-      observer(map(value));
+      const mapped = map(value);
+      if (mapped !== undefined) {
+        observer(mapped);
+      }
     });
   };
 }

@@ -37,6 +37,7 @@ export * from "./from-promise-with-error.js";
 export * from "./from-promise.js";
 export * from "./to-promise.js";
 export * from "./to-properties.js";
+export * from "./to-async-generator.js";
 export * from "./types.js";
 export * from "./with-cache.js";
 export * from "./with-copy.js";

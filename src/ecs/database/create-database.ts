@@ -86,7 +86,7 @@ export function createDatabase<
         Object.entries(store.resources).map(([resource]) => {
             const archetype = store.ensureArchetype(["id" as StringKeyof<C>, resource as unknown as StringKeyof<C>]);
             const resourceId = archetype.columns.id.get(0);
-            return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>])];
+            return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>]!)];
         })
     ) as { [K in StringKeyof<R>]: Observe<R[K]>; };
 
