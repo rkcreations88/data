@@ -19,9 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import type { Schema } from "./schema.js";
 
-import { F64Schema } from "./f64.js";
-import { FromSchema } from "./schema.js";
+export const F64Schema = {
+    type: 'number',
+    precision: 2,
+    default: 0 as number,
+} as const satisfies Schema;
 
-export const TimeSchema = F64Schema;
-export type Time = FromSchema<typeof TimeSchema>;
+export type F64 = number;

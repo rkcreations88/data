@@ -24,6 +24,7 @@ import { createStore } from "./create-store.js";
 import { createCoreTestSuite, positionSchema, healthSchema, nameSchema } from "./core/create-core.test.js";
 import { Schema } from "../../schema/schema.js";
 import { F32Schema } from "../../schema/f32.js";
+import { TimeSchema } from "../../schema/time.js";
 
 describe("createStore", () => {
     // Test that store passes all core functionality tests
@@ -573,6 +574,33 @@ describe("createStore", () => {
 
             expect(store.archetypes.Player.columns.name.get(entity)).toEqual("test");
             expect(store.archetypes.Player.columns.health.get(entity)).toEqual(100);
+        });
+    });
+
+    // TimeSchema round-trip test
+    describe("TimeSchema functionality", () => {
+        it("should store and retrieve Date.now() value correctly", () => {
+            const store = createStore(
+                {
+                    timestamp: TimeSchema,
+                },
+                {}
+            );
+
+            // Create entity with current timestamp
+            const now = Date.now();
+            const archetype = store.ensureArchetype(["id", "timestamp"]);
+            const entity = archetype.insert({ timestamp: now });
+
+            // Query for the entity
+            const entities = store.select(["timestamp"]);
+            expect(entities).toHaveLength(1);
+            expect(entities[0]).toBe(entity);
+
+            // Read the stored value and verify it matches original
+            const storedData = store.read(entity);
+            expect(storedData).not.toBeNull();
+            expect(storedData!.timestamp).toBe(now);
         });
     });
 }); 
