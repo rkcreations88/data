@@ -44,6 +44,7 @@ export * from "./with-copy.js";
 export * from "./with-deduplicate-data.js";
 export * from "./with-deduplicate.js";
 export * from "./with-default.js";
+export * from "./with-filter.js";
 export * from "./with-async-map.js";
 export * from "./with-map.js";
 export * from "./with-map-data.js";

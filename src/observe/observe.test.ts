@@ -34,6 +34,7 @@ import {
   withCache,
   withDeduplicate,
   withDefault,
+  withFilter,
   withMap,
   withOptional,
 } from "./index.js";
@@ -362,28 +363,46 @@ describe("observable", () => {
       output: [2, [2, 4, 6]],
     });
   });
-  test("withMap filters undefined values", async () => {
+  test("withMap passes through undefined values", async () => {
     await testObservableFilter({
-      given: "an Observable withMap that filters out undefined values",
+      given: "an Observable withMap that passes through undefined values",
       filter: (observable) => withMap(observable, (value) =>
+        value > 0 ? value * 2 : undefined
+      ),
+      input: [1, [-1, 2, -3, 4]],
+      output: [2, [undefined, 4, undefined, 8]],
+    });
+  });
+  test("withMap passes through all undefined values", async () => {
+    await testObservableFilter({
+      given: "an Observable withMap that passes through all undefined values",
+      filter: (observable) => withMap(observable, (value) => undefined),
+      input: [1, [2, 3, 4]],
+      output: [undefined, [undefined, undefined, undefined]],
+    });
+  });
+  test("withFilter filters undefined values", async () => {
+    await testObservableFilter({
+      given: "an Observable withFilter that filters out undefined values",
+      filter: (observable) => withFilter(observable, (value) =>
         value > 0 ? value * 2 : undefined
       ),
       input: [1, [-1, 2, -3, 4]],
       output: [2, [4, 8]],
     });
   });
-  test("withMap filters all values", async () => {
+  test("withFilter filters all values", async () => {
     await testObservableFilter({
-      given: "an Observable withMap that filters out all values",
-      filter: (observable) => withMap(observable, (value) => undefined),
+      given: "an Observable withFilter that filters out all values",
+      filter: (observable) => withFilter(observable, (value) => undefined),
       input: [1, [2, 3, 4]],
       output: [undefined, []],
     });
   });
-  test("withMap filters based on condition", async () => {
+  test("withFilter filters based on condition", async () => {
     await testObservableFilter({
-      given: "an Observable withMap that filters based on condition",
-      filter: (observable) => withMap(observable, (value) =>
+      given: "an Observable withFilter that filters based on condition",
+      filter: (observable) => withFilter(observable, (value) =>
         value % 2 === 0 ? value : undefined
       ),
       input: [1, [2, 3, 4, 5, 6]],

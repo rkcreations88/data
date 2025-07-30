@@ -22,15 +22,19 @@ SOFTWARE.*/
 import { Observe } from "./types.js";
 
 /**
- * Creates a new Observe function that converts the original observe functions notify values into a new value at each notification.
+ * Creates a new Observe function that converts the original observe functions notify values into a new value at each notification,
+ * optionally returning undefined to filter out the value.
  */
-export function withMap<T, U>(
+export function withFilter<T, U>(
   observable: Observe<T>,
-  map: (value: T) => U
+  filter: (value: T) => U | undefined
 ): Observe<U> {
   return (observer) => {
     return observable((value) => {
-      observer(map(value));
+      const filtered = filter(value);
+      if (filtered !== undefined) {
+        observer(filtered);
+      }
     });
   };
 }
