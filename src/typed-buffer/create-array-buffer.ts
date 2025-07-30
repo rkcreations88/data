@@ -20,51 +20,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { FromSchema, Schema } from "../schema/schema.js";
-import { TypedBuffer } from "./typed-buffer.js";
+import { TypedBuffer, TypedBufferType } from "./typed-buffer.js";
+import { TypedArray } from "../internal/typed-array/index.js";
 
 export const arrayBufferType = "array";
+
+class ArrayTypedBuffer<T> extends TypedBuffer<T> {
+    public readonly type: TypedBufferType = arrayBufferType;
+    public readonly typedArrayElementSizeInBytes: number = 0;
+    
+    private array: T[];
+
+    constructor(schema: Schema, initialCapacity: number) {
+        super(schema);
+        this.array = new Array<T>(initialCapacity);
+    }
+
+    get capacity(): number {
+        return this.array.length;
+    }
+
+    set capacity(value: number) {
+        this.array.length = value;
+    }
+
+    getTypedArray(): TypedArray {
+        throw new Error("Typed array not supported");
+    }
+
+    get(index: number): T {
+        return this.array[index];
+    }
+
+    set(index: number, value: T): void {
+        this.array[index] = value;
+    }
+
+    copyWithin(target: number, start: number, end: number): void {
+        this.array.copyWithin(target, start, end);
+    }
+
+    slice(start = 0, end = this.array.length): ArrayLike<T> & Iterable<T> {
+        if (start === 0 && end === this.array.length) {
+            return this.array;
+        }
+        return this.array.slice(start, end);
+    }
+}
+
 export const createArrayBuffer = <S extends Schema, T = FromSchema<S>>(
     schema: S,
     initialCapacity: number,
 ): TypedBuffer<T> => {
-    const array = new Array<T>(initialCapacity);
-    const typedBuffer = {
-        type: arrayBufferType,
-        schema,
-        typedArrayElementSizeInBytes: 0,
-        getTypedArray() {
-            throw new Error("Typed array not supported");
-        },
-        get capacity(): number {
-            return array.length;
-        },
-        set capacity(value: number) {
-            array.length = value;
-        },
-        get(index: number): T {
-            return array[index];
-        },
-        set(index: number, value: T): void {
-            array[index] = value;
-        },
-        copyWithin(target: number, start: number, end: number): void {
-            array.copyWithin(target, start, end);
-        },
-        slice(start = 0, end = array.length): ArrayLike<T> & Iterable<T> {
-            if (start === 0 && end === array.length) {
-                return array;
-            }
-            return array.slice(start, end);
-        },
-    } as const satisfies TypedBuffer<T>;
-    return typedBuffer;
-}
-
-// export function registerCreateArrayBufferCodec() {
-//     registerCodec<TypedBuffer<any>>({
-//         name: typeName,
-//         predicate: (data: any): data.type === typeName,
-//         serialize: (data: TypedBuffer<any>) => ({ json: data }),
-//         deserialize: ({ binary }: { json?: Data, binary: Uint8Array[] }) => new (typedArrayConstructor as any)(binary[0].buffer, binary[0].byteOffset, binary[0].byteLength / typedArrayConstructor.BYTES_PER_ELEMENT),
-//     });
-// }
+    return new ArrayTypedBuffer<T>(schema, initialCapacity);
+};

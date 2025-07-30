@@ -27,11 +27,33 @@ import { createNumberBuffer } from "./create-number-buffer.js";
 import { createArrayBuffer } from "./create-array-buffer.js";
 import { createConstBuffer } from "./create-const-buffer.js";
 
-export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
+export function createTypedBuffer <S extends Schema>(
     schema: S,
-    initialCapacity = 16,
-): TypedBuffer<FromSchema<S>> => {
+    initialCapacity?: number,
+): TypedBuffer<FromSchema<S>>
+export function createTypedBuffer <S extends Schema>(
+    schema: S,
+    initialValues: FromSchema<S>[]
+): TypedBuffer<FromSchema<S>>
+export function createTypedBuffer <S extends Schema>(
+    schema: S,
+    initialCapacityOrValues?: number | FromSchema<S>[],
+): TypedBuffer<FromSchema<S>> {
+    if (Array.isArray(initialCapacityOrValues)) {
+        const buffer = createTypedBufferInternal<S>(schema, initialCapacityOrValues.length);
+        for (let i = 0; i < initialCapacityOrValues.length; i++) {
+            buffer.set(i, initialCapacityOrValues[i]);
+        }
+        return buffer;
+    }
+    return createTypedBufferInternal<S>(schema, initialCapacityOrValues ?? 16);
+}
 
+function createTypedBufferInternal <S extends Schema>(
+    schema: S,
+    initialCapacity: number,
+): TypedBuffer<FromSchema<S>> {
+    
     if (schema.const !== undefined) {
         return createConstBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
     }

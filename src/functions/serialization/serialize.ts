@@ -6,11 +6,12 @@ export function serialize<T>(data: T): { json: string, binary: Uint8Array[] } {
         const codec = findCodec(value);
         if (codec) {
             const { json, binary } = codec.serialize(value);
+            console.log("serialize", {json, binary});
             const binaryIndex = allBinaries.length;
             if (binary) {
                 allBinaries.push(...binary);
             }
-            return { codec: codec.name, json, binary: [binaryIndex, binary?.length ?? 0] } satisfies EncodedValue;
+            return { codec: codec.name, json, binaryIndex, binaryCount: binary?.length ?? 0 } satisfies EncodedValue;
         }
         return value;
     });

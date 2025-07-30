@@ -22,6 +22,10 @@ SOFTWARE.*/
 
 import { equals } from './equals.js';
 import { describe, expect, it } from 'vitest';
+import { createNumberBuffer } from './typed-buffer/create-number-buffer.js';
+import { createArrayBuffer } from './typed-buffer/create-array-buffer.js';
+import { createStructBuffer } from './typed-buffer/create-struct-buffer.js';
+import { createConstBuffer } from './typed-buffer/create-const-buffer.js';
 
 describe('equals', () => {
   describe('primitives and identical references', () => {
@@ -170,6 +174,66 @@ describe('equals', () => {
       expect(equals(NaN, NaN)).toBe(true);
       expect(equals(NaN, 42)).toBe(false);
       expect(equals(42, NaN)).toBe(false);
+    });
+  });
+
+  describe('typed buffers', () => {
+    it('should return true for identical number buffers', () => {
+      const buffer1 = createNumberBuffer({ type: 'number', precision: 1 }, 3);
+      const buffer2 = createNumberBuffer({ type: 'number', precision: 1 }, 3);
+      
+      buffer1.set(0, 1.5);
+      buffer1.set(1, 2.5);
+      buffer1.set(2, 3.5);
+      
+      buffer2.set(0, 1.5);
+      buffer2.set(1, 2.5);
+      buffer2.set(2, 3.5);
+      
+      expect(equals(buffer1, buffer2)).toBe(true);
+    });
+
+    it('should return false for different typed buffers', () => {
+      const buffer1 = createNumberBuffer({ type: 'number', precision: 1 }, 2);
+      const buffer2 = createNumberBuffer({ type: 'number', precision: 1 }, 2);
+      
+      buffer1.set(0, 1.5);
+      buffer1.set(1, 2.5);
+      
+      buffer2.set(0, 1.5);
+      buffer2.set(1, 3.5); // Different value
+      
+      expect(equals(buffer1, buffer2)).toBe(false);
+    });
+
+    it('should return false when comparing typed buffer with non-typed buffer', () => {
+      const buffer = createNumberBuffer({ type: 'number', precision: 1 }, 2);
+      const array = [1.5, 2.5];
+      
+      expect(equals(buffer, array)).toBe(false);
+      expect(equals(array, buffer)).toBe(false);
+    });
+
+    it('should handle different typed buffer types', () => {
+      const numberBuffer = createNumberBuffer({ type: 'number', precision: 1 }, 2);
+      const arrayBuffer = createArrayBuffer({ type: 'string' }, 2);
+      
+      numberBuffer.set(0, 1);
+      numberBuffer.set(1, 2);
+      
+      arrayBuffer.set(0, '1');
+      arrayBuffer.set(1, '2');
+      
+      expect(equals(numberBuffer, arrayBuffer)).toBe(false);
+    });
+
+    it('should handle const buffers', () => {
+      const buffer1 = createConstBuffer({ const: 42 }, 3);
+      const buffer2 = createConstBuffer({ const: 42 }, 3);
+      const buffer3 = createConstBuffer({ const: 43 }, 3);
+      
+      expect(equals(buffer1, buffer2)).toBe(true);
+      expect(equals(buffer1, buffer3)).toBe(false);
     });
   });
 }); 

@@ -33,14 +33,23 @@ export interface ReadonlyTypedBuffer<T> {
     slice(start?: number, end?: number): ArrayLike<T> & Iterable<T>;
 }
 
-export interface TypedBuffer<T> extends ReadonlyTypedBuffer<T> {
-    capacity: number;                // drops `readonly`
-    set(index: number, value: T): void;
-    copyWithin(target: number, start: number, end: number): void;
+export abstract class TypedBuffer<T> implements ReadonlyTypedBuffer<T> {
+    
+    public readonly __brand = "TypedBuffer";
 
+    constructor(public readonly schema: Schema) {
+    }
+    
+    abstract copyWithin(target: number, start: number, end: number): void;
+    abstract readonly type: TypedBufferType;
+    abstract capacity: number;
+    abstract readonly typedArrayElementSizeInBytes: number;
     /**
      * Returns the typed array of the buffer.
      * @throws If the buffer is not backed by a typed array.
      */
-    getTypedArray(): TypedArray;
+    abstract getTypedArray(): TypedArray;
+    abstract get(index: number): T;
+    abstract slice(start?: number, end?: number): ArrayLike<T> & Iterable<T>;
+    abstract set(index: number, value: T): void;
 }

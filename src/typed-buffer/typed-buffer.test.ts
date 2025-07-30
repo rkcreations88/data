@@ -24,6 +24,7 @@ import { createTypedBuffer } from './create-typed-buffer.js';
 import { createNumberBuffer, numberBufferType } from './create-number-buffer.js';
 import { arrayBufferType, createArrayBuffer } from './create-array-buffer.js';
 import { createStructBuffer, structBufferType } from './create-struct-buffer.js';
+import { isTypedBuffer } from './is-typed-buffer.js';
 
 describe('TypedBuffer copyWithin', () => {
     describe('NumberBuffer', () => {
@@ -343,4 +344,4 @@ describe('TypedBuffer slice', () => {
             ]);
         });
     });
-}); 
+});

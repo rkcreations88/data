@@ -20,41 +20,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Schema } from "../schema/schema.js";
-import { TypedBuffer } from "./typed-buffer.js";
+import { TypedBuffer, TypedBufferType } from "./typed-buffer.js";
+import { TypedArray } from "../internal/typed-array/index.js";
 
 export const constBufferType = "const";
+
+class ConstTypedBuffer<T> extends TypedBuffer<T> {
+
+    public capacity: number;
+    private readonly constValue: T;
+    public readonly type: TypedBufferType = constBufferType;
+
+    constructor(schema: Schema, initialCapacity: number) {
+        super(schema);
+        this.capacity = initialCapacity;
+        this.constValue = schema.const;
+    }
+
+    get typedArrayElementSizeInBytes(): number {
+        return 0;
+    }
+
+    getTypedArray(): TypedArray {
+        throw new Error("Const buffer does not support getTypedArray");
+    }
+
+    get(_index: number): T {
+        return this.constValue;
+    }
+
+    set(_index: number, _value: T): void {
+        // No-op: const buffer ignores set calls
+    }
+
+    copyWithin(_target: number, _start: number, _end: number): void {
+        // No-op: const buffer copyWithin is a no-op
+    }
+
+    slice(start = 0, end = this.capacity): ArrayLike<T> & Iterable<T> {
+        return Array(Math.max(0, end - start)).fill(this.constValue);
+    }
+}
+
 export const createConstBuffer = <T>(
     schema: Schema,
     initialCapacity: number,
 ): TypedBuffer<T> => {
-    const { const: value } = schema;
-    let capacity = initialCapacity;
-    const typedBuffer: TypedBuffer<T> = {
-        type: constBufferType,
-        schema,
-        typedArrayElementSizeInBytes: 0,
-        getTypedArray() {
-            throw new Error("Const buffer does not support getTypedArray");
-        },
-        get capacity(): number {
-            return capacity;
-        },
-        set capacity(value: number) {
-            capacity = value;
-        },
-        get(_index: number): T {
-            return value;
-        },
-        set(_index: number, _value: T): void {
-            // No-op: const buffer ignores set calls
-        },
-        copyWithin(_target: number, _start: number, _end: number): void {
-            // No-op: const buffer copyWithin is a no-op
-        },
-        slice(start = 0, end = capacity): ArrayLike<T> & Iterable<T> {
-            return Array(Math.max(0, end - start)).fill(value);
-        },
-    };
-    
-    return typedBuffer;
-}; 
+    return new ConstTypedBuffer<T>(schema, initialCapacity);
+};

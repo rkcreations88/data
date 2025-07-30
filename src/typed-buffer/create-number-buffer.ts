@@ -22,9 +22,9 @@ SOFTWARE.*/
 import { grow } from "../internal/array-buffer-like/grow.js";
 import { I32Schema } from "../schema/i32.js";
 import { Schema } from "../schema/schema.js";
-import { TypedArrayConstructor } from "../internal/typed-array/index.js";
+import { TypedArrayConstructor, TypedArray } from "../internal/typed-array/index.js";
 import { U32Schema } from "../schema/u32.js";
-import { TypedBuffer } from "./typed-buffer.js";
+import { TypedBuffer, TypedBufferType } from "./typed-buffer.js";
 import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
 
 const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {
@@ -48,44 +48,61 @@ const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {
 }
 
 export const numberBufferType = "number";
+
+class NumberTypedBuffer extends TypedBuffer<number> {
+    public readonly type: TypedBufferType = numberBufferType;
+    public readonly typedArrayElementSizeInBytes: number;
+    
+    private arrayBuffer: ArrayBuffer | SharedArrayBuffer;
+    private array: TypedArray;
+    private readonly typedArrayConstructor: TypedArrayConstructor;
+    private _capacity: number;
+
+    constructor(schema: Schema, initialCapacity: number) {
+        super(schema);
+        this.typedArrayConstructor = getTypedArrayConstructor(schema);
+        this.typedArrayElementSizeInBytes = this.typedArrayConstructor.BYTES_PER_ELEMENT;
+        this._capacity = initialCapacity;
+        this.arrayBuffer = createSharedArrayBuffer(this.typedArrayElementSizeInBytes * initialCapacity);
+        this.array = new this.typedArrayConstructor(this.arrayBuffer);
+    }
+
+    get capacity(): number {
+        return this._capacity;
+    }
+
+    set capacity(value: number) {
+        if (value !== this._capacity) {
+            this._capacity = value;
+            this.arrayBuffer = grow(this.arrayBuffer, value * this.typedArrayElementSizeInBytes);
+            this.array = new this.typedArrayConstructor(this.arrayBuffer);
+        }
+    }
+
+    getTypedArray(): TypedArray {
+        return this.array;
+    }
+
+    get(index: number): number {
+        return this.array[index];
+    }
+
+    set(index: number, value: number): void {
+        this.array[index] = value;
+    }
+
+    copyWithin(target: number, start: number, end: number): void {
+        this.array.copyWithin(target, start, end);
+    }
+
+    slice(start = 0, end = this._capacity): ArrayLike<number> & Iterable<number> {
+        return this.array.subarray(start, end);
+    }
+}
+
 export const createNumberBuffer = (
     schema: Schema,
     initialCapacity: number,
 ): TypedBuffer<number> => {
-    const typedArrayConstructor = getTypedArrayConstructor(schema);
-    const stride = typedArrayConstructor.BYTES_PER_ELEMENT;
-    let arrayBuffer = createSharedArrayBuffer(stride * initialCapacity);
-    let capacity = initialCapacity;
-    let array = new typedArrayConstructor(arrayBuffer);
-    const typedBuffer = {
-        type: numberBufferType,
-        schema,
-        typedArrayElementSizeInBytes: stride,
-        getTypedArray() {
-            return array;
-        },
-        get capacity(): number {
-            return capacity;
-        },
-        set capacity(value: number) {
-            if (value !== capacity) {
-                capacity = value;
-                arrayBuffer = grow(arrayBuffer, value * stride);
-                array = new typedArrayConstructor(arrayBuffer);
-            }
-        },
-        get(index: number): number {
-            return array[index];
-        },
-        set(index: number, value: number): void {
-            array[index] = value;
-        },
-        copyWithin(target: number, start: number, end: number): void {
-            array.copyWithin(target, start, end);
-        },
-        slice(start = 0, end = capacity): ArrayLike<number> & Iterable<number> {
-            return array.subarray(start, end);
-        },
-    } as const satisfies TypedBuffer<number>;
-    return typedBuffer;
-}
+    return new NumberTypedBuffer(schema, initialCapacity);
+};

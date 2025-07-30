@@ -5,7 +5,7 @@ export function deserialize<T>(payload: { json: string, binary: Uint8Array[] }):
         if (isEncodedValue(value)) {
             const codec = getCodec(value.codec);
             if (codec) {
-                const binary = payload.binary.slice(value.binary[0], value.binary[0] + value.binary[1]);
+                const binary = payload.binary.slice(value.binaryIndex, value.binaryIndex + value.binaryCount);
                 return codec.deserialize({ json: value.json, binary });
             }
         }
