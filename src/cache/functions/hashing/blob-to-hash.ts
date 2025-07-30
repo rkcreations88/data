@@ -19,28 +19,58 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import { arrayBufferToHex } from "./array-buffer-to-hex.js";
 import { bufferToHash } from "./buffer-to-hash.js";
 
 /**
  * Converts a Blob to a hash using the blob content and type using SHA-256.
  */
+/**
+ * Converts a Blob to a SHA-256 hash.  
+ * • Uses the streaming `crypto.DigestStream` API when present (no large buffers).  
+ * • Falls back to the original buffer-based approach otherwise.
+ */
 export async function blobToHash(blob: Blob): Promise<string> {
+  // ── 1. Streamed path
+  if ("DigestStream" in crypto) {
+    const digestStream = new (crypto as any).DigestStream("SHA-256");
+
+    // Encode the MIME-type as UTF-16LE
+    const tCodes = new Uint16Array(blob.type.length);
+    for (let i = 0; i < blob.type.length; i++) tCodes[i] = blob.type.charCodeAt(i);
+    const tBytes = new Uint8Array(tCodes.buffer);
+
+    // Feed type + blob chunks into the hash
+    const writer = digestStream.writable.getWriter();
+    await writer.write(tBytes);
+
+    const reader = blob.stream().getReader();
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      await writer.write(value!);
+    }
+    await writer.close();
+
+    const hashBuf = await digestStream.digest;
+    return arrayBufferToHex(hashBuf);
+  }
+
+  // ── 2. Fallback
   const { type } = blob;
-  //  create a single buffer to hold both the type and the blob
   const typeByteLength = type.length * 2;
   const buffer = new ArrayBuffer(typeByteLength + blob.size);
 
-  //  write the type into the first part of the buffer
+  // Write the MIME-type (UTF-16LE) into the first part of the buffer
   const charView = new Uint16Array(buffer, 0, type.length);
-  for (let i = 0, strLen = type.length; i < strLen; i++) {
-    charView[i] = type.charCodeAt(i);
-  }
-  //  write the blob into the second part of the buffer
+  for (let i = 0; i < type.length; i++) charView[i] = type.charCodeAt(i);
+
+  // Append the blob bytes
   const byteView = new Uint8Array(buffer);
   const blobArrayBuffer = await blob.arrayBuffer();
   byteView.set(new Uint8Array(blobArrayBuffer), typeByteLength);
 
-  //  finally create the hash off the combined buffer
-  const hash = await bufferToHash(buffer);
-  return hash;
+  // Hash the combined buffer
+  return bufferToHash(buffer);
 }
+

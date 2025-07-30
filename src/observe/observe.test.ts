@@ -362,6 +362,34 @@ describe("observable", () => {
       output: [2, [2, 4, 6]],
     });
   });
+  test("withMap filters undefined values", async () => {
+    await testObservableFilter({
+      given: "an Observable withMap that filters out undefined values",
+      filter: (observable) => withMap(observable, (value) =>
+        value > 0 ? value * 2 : undefined
+      ),
+      input: [1, [-1, 2, -3, 4]],
+      output: [2, [4, 8]],
+    });
+  });
+  test("withMap filters all values", async () => {
+    await testObservableFilter({
+      given: "an Observable withMap that filters out all values",
+      filter: (observable) => withMap(observable, (value) => undefined),
+      input: [1, [2, 3, 4]],
+      output: [undefined, []],
+    });
+  });
+  test("withMap filters based on condition", async () => {
+    await testObservableFilter({
+      given: "an Observable withMap that filters based on condition",
+      filter: (observable) => withMap(observable, (value) =>
+        value % 2 === 0 ? value : undefined
+      ),
+      input: [1, [2, 3, 4, 5, 6]],
+      output: [undefined, [2, 4, 6]],
+    });
+  });
   test("withAsyncMap", async () => {
     await testObservableFilter({
       given: "an Observable withAsyncMap",

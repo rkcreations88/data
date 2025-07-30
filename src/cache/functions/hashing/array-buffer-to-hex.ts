@@ -19,21 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Observe } from "./types.js";
-
-/**
- * Creates a new Observe function that converts the original observe functions notify values into a new value at each notification.
- */
-export function withMap<T, U>(
-  observable: Observe<T>,
-  map: (value: T) => U | undefined
-): Observe<U> {
-  return (observer) => {
-    return observable((value) => {
-      const mapped = map(value);
-      if (mapped !== undefined) {
-        observer(mapped);
-      }
-    });
-  };
+export function arrayBufferToHex(buffer: ArrayBuffer): string {
+    return [...new Uint8Array(buffer)]
+        .map((x) => x.toString(16).padStart(2, "0"))
+        .join("");
 }
