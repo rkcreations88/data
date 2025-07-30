@@ -19,19 +19,24 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Table } from "./table.js";
 
-export const ensureCapacity = <C>(table: Table<C>, minimumCapacity: number) => {
-    // we don't actually loop, we just need to check the first columns length.
-    const currentCapacity = table.rowCapacity;
-    if (currentCapacity < minimumCapacity) {
-        // may need smart growth factor, faster when smaller, smaller when larger.
-        const growthFactor = 2;
-        const newCapacity = Math.max(minimumCapacity, currentCapacity * growthFactor);
-        for (const name in table.columns) {
-            const column = table.columns[name];
-            column.capacity = newCapacity;
-        }
-        table.rowCapacity = newCapacity;
-    }
-}
+import { blit } from "./blit.js";
+
+/** Raw byte-copy from any view to any view. */
+export function copyViewBytes(
+    src: ArrayBufferView,
+    dst: ArrayBufferView,
+  ): number {
+    const bytes = Math.min(src.byteLength, dst.byteLength);
+  
+    blit(
+      src.buffer,
+      dst.buffer,
+      src.byteOffset,
+      dst.byteOffset,
+      bytes,
+    );
+  
+    return bytes;
+  }
+  

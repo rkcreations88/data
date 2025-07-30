@@ -67,13 +67,13 @@ export type Filter<T extends object> = {
 
 export const selectRows = function* <C extends object>(table: Table<C>, where?: Filter<C>): Generator<number> {
     if (!where) {
-        for (let row = 0; row < table.rows; row++) {
+        for (let row = 0; row < table.rowCount; row++) {
             yield row;
         }
     }
     else {
         const predicate = getRowPredicateFromFilter(where);
-        for (let row = 0; row < table.rows; row++) {
+        for (let row = 0; row < table.rowCount; row++) {
             if (predicate(table, row)) {
                 yield row;
             }

@@ -29,7 +29,7 @@ import { Table } from "./table.js";
  * @param rowIndex 
  */
 export const deleteRow = <C>(table: Table<C>, rowIndex: RowIndex): boolean => {
-    const lastRowIndex = --table.rows;
+    const lastRowIndex = --table.rowCount;
     if (rowIndex === lastRowIndex) {
         return false;
     }

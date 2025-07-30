@@ -25,12 +25,14 @@ import { Table } from "./table.js";
 
 export const createTable = <C extends Record<string, Schema>>(schemas: C) : Table<{ [K in keyof C]: FromSchema<C[K]> }> => {
     const columns = {} as { [K in keyof C]: TypedBuffer<FromSchema<C[K]>> };
+    const rowCapacity = 16;
     for (const name in schemas) {
-        columns[name] = createTypedBuffer({schema: schemas[name]});
+        columns[name] = createTypedBuffer(schemas[name], rowCapacity);
     }
 
     return {
         columns,
-        rows: 0,
+        rowCount: 0,
+        rowCapacity,
     };
 }

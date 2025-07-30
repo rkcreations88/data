@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
+import { TypedBuffer } from "../typed-buffer/typed-buffer.js";
 import { DeepReadonly, EquivalentTypes, True } from "../types/types.js";
 
 type JSONPath = string;
@@ -56,7 +57,7 @@ export interface UIProperties {
 }
 
 export interface Schema {
-  type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object';
+  type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object' | 'typed-buffer';
   conditionals?: readonly Conditional[];
   ui?: UIProperties;
   transient?: boolean;
@@ -104,6 +105,8 @@ export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends
   ? boolean
   : T extends { type: 'null' }
   ? null
+  : T extends { type: 'typed-buffer', items: infer Items }
+  ? TypedBuffer<FromSchema<Items>>
   : T extends { type: 'array' } | { items: any }
   ? FromSchemaArray<T, Decrement<Depth>>
   : T extends { type: 'object' } | { properties: any }
@@ -131,9 +134,6 @@ type FromSchemaArray<T, Depth extends number> = T extends {
 type BuildTuple<T, N, R extends unknown[] = []> = R['length'] extends N
   ? R
   : BuildTuple<T, N, [...R, T]>;
-
-// Handle up to 16 elements
-type BuildTupleHelper<T, N> = N extends number ? BuildTuple<T, N> : T[];
 
 type FromSchemaObject<T extends Schema, Depth extends number> = T extends {
   properties: infer P;
@@ -237,3 +237,6 @@ type CheckTestAdditionalProps = True<EquivalentTypes<TestAdditionalProps, { read
 
 type TestDefault = FromSchema<{ default: 42 }>; // 42
 type CheckDefault = True<EquivalentTypes<TestDefault, 42>>;
+
+type TestTypedBuffer = FromSchema<{ type: 'typed-buffer', items: { type: 'number' } }>; // TypedBuffer<number>
+type CheckTypedBuffer = True<EquivalentTypes<TestTypedBuffer, TypedBuffer<number>>>;

@@ -24,21 +24,41 @@ import { EntityLocationTable } from "./entity-location-table.js";
 import { EntityLocation } from "./entity-location.js";
 import { Entity } from "../entity.js";
 import { createSharedArrayBuffer } from "../../internal/shared-array-buffer/create-shared-array-buffer.js";
+import { copyViewBytes } from "../../functions/copy-view-bytes.js";
 
 export const createEntityLocationTable = (initialCapacity: number = 16): EntityLocationTable => {
+    return restoreEntityLocationTable({
+        freeListHead: -1,
+        nextIndex: 0,
+        capacity: initialCapacity,
+    });
+}
 
-    /**
-     * The index of the first free entity in the free list or -1 if the free list is empty.
-     */
-    let freeListHead = -1;
-    /**
-     * The next index to use for a new entity once the free list is exhausted.
-     */
-    let nextIndex = 0;
-    let capacity = Math.max(initialCapacity, 16);
+type SerializedProps = {
+    freeListHead: number;
+    nextIndex: number;
+    capacity: number;
+}
+
+export const restoreEntityLocationTable = (props: SerializedProps, entityData?: Uint8Array): EntityLocationTable => {
+
+    let {
+        /**
+         * The index of the first free entity in the free list or -1 if the free list is empty.
+         */
+        freeListHead,
+        /**
+         * The next index to use for a new entity once the free list is exhausted.
+         */
+        nextIndex,
+        capacity,
+    } = props;
 
     let array = createSharedArrayBuffer(capacity * 2 * 4);
     let entities = new Int32Array(array);
+    if (entityData) {
+        copyViewBytes(entityData, entities);
+    }
 
     const createEntity = ({ archetype, row }: EntityLocation): Entity => {
         let entity: number;

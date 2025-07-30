@@ -38,7 +38,7 @@ export const selectEntities = <
     const archetypes = core.queryArchetypes(include, options as any);
     let length = 0;
     for (const archetype of archetypes) {
-        length += archetype.rows;
+        length += archetype.rowCount;
     }
     if (!options?.where && !options?.order) {
         // when there is no where filter or order we have a fast path
@@ -47,7 +47,7 @@ export const selectEntities = <
         let index = 0;
         for (const archetype of archetypes) {
             const idTypedArray = archetype.columns.id.getTypedArray();
-            for (let i = 0; i < archetype.rows; i++) {
+            for (let i = 0; i < archetype.rowCount; i++) {
                 entities[index++] = idTypedArray[i];
             }
         }

@@ -27,29 +27,45 @@ import { createNumberBuffer } from "./create-number-buffer.js";
 import { createArrayBuffer } from "./create-array-buffer.js";
 import { createConstBuffer } from "./create-const-buffer.js";
 
-export const createTypedBuffer = <S extends Schema, T = FromSchema<S>>(
-    args: {
-        schema: S,
-        length?: number,
-        maxLength?: number,
+export function createTypedBuffer <S extends Schema>(
+    schema: S,
+    initialCapacity?: number,
+): TypedBuffer<FromSchema<S>>
+export function createTypedBuffer <S extends Schema>(
+    schema: S,
+    initialValues: FromSchema<S>[]
+): TypedBuffer<FromSchema<S>>
+export function createTypedBuffer <S extends Schema>(
+    schema: S,
+    initialCapacityOrValues?: number | FromSchema<S>[],
+): TypedBuffer<FromSchema<S>> {
+    if (Array.isArray(initialCapacityOrValues)) {
+        const buffer = createTypedBufferInternal<S>(schema, initialCapacityOrValues.length);
+        for (let i = 0; i < initialCapacityOrValues.length; i++) {
+            buffer.set(i, initialCapacityOrValues[i]);
+        }
+        return buffer;
     }
-): TypedBuffer<FromSchema<S>> => {
-    const { schema } = args;
-    args.maxLength ??= 10_0000_000;
+    return createTypedBufferInternal<S>(schema, initialCapacityOrValues ?? 16);
+}
 
+function createTypedBufferInternal <S extends Schema>(
+    schema: S,
+    initialCapacity: number,
+): TypedBuffer<FromSchema<S>> {
+    
     if (schema.const !== undefined) {
-        return createConstBuffer(schema.const) as TypedBuffer<FromSchema<S>>;
+        return createConstBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
     }
 
     if (schema.type === 'number' || schema.type === 'integer') {
-        return createNumberBuffer(args) as TypedBuffer<FromSchema<S>>;
+        return createNumberBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
     }
-
 
     const structLayout = getStructLayout(schema, false);
     if (structLayout) {
-        return createStructBuffer(args);
+        return createStructBuffer(schema, initialCapacity);
     }
 
-    return createArrayBuffer<FromSchema<S>>(args);
+    return createArrayBuffer(schema, initialCapacity);
 }

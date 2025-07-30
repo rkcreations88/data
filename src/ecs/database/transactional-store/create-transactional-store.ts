@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { ArchetypeId, EntityInsertValues } from "../../archetype/index.js";
+import { Archetype, ArchetypeId, EntityInsertValues } from "../../archetype/index.js";
 import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
 import { Entity } from "../../entity.js";
@@ -51,12 +51,12 @@ export function createTransactionalStore<
     };
 
     // Wrap archetype creation to track operations
-    const wrapArchetype = (archetype: any) => {
+    const wrapArchetype = (archetype: Archetype<any>) => {
         const { id } = archetype;
         return {
             ...archetype,
-            get rows() {
-                return archetype.rows;
+            get rowCount() {
+                return archetype.rowCount;
             },
             insert: (values: EntityInsertValues<C>) => {
                 const entity = archetype.insert(values);

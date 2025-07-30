@@ -29,14 +29,15 @@ import { Table } from "./table.js";
  * @param rowData 
  */
 export const addRow = <C>(table: Table<C>, rowData: C): RowIndex => {
-    ensureCapacity(table, table.rows + 1);
-    const rowIndex = table.rows;
+    ensureCapacity(table, table.rowCount + 1);
+    const rowIndex = table.rowCount;
+    const newLength = rowIndex + 1;
     for (const name in rowData) {
         const column = table.columns[name];
         if (column) {
             column.set(rowIndex, rowData[name]);
         }
     }
-    table.rows++;
+    table.rowCount++;
     return rowIndex;
 }
