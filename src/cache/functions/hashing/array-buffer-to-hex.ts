@@ -19,11 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { arrayBufferToHex } from "./array-buffer-to-hex.js";
-
-/**
- * Converts an ArrayBuffer to a hash using SHA-256.
- */
-export async function bufferToHash(buffer: ArrayBuffer): Promise<string> {
-  return arrayBufferToHex(await crypto.subtle.digest("SHA-256", buffer));
+export function arrayBufferToHex(buffer: ArrayBuffer): string {
+    return [...new Uint8Array(buffer)]
+        .map((x) => x.toString(16).padStart(2, "0"))
+        .join("");
 }
