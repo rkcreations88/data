@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { TypedBuffer } from "../typed-buffer/typed-buffer.js";
-import { DeepReadonly, EquivalentTypes, True } from "../types/types.js";
+import { DeepReadonly, EquivalentTypes, False, True } from "../types/types.js";
 
 type JSONPath = string;
 type JSONMergePatch = unknown;
@@ -57,7 +57,7 @@ export interface UIProperties {
 }
 
 export interface Schema {
-  type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object' | 'typed-buffer';
+  type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object' | 'typed-buffer' | 'blob';
   conditionals?: readonly Conditional[];
   ui?: UIProperties;
   transient?: boolean;
@@ -105,6 +105,8 @@ export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends
   ? boolean
   : T extends { type: 'null' }
   ? null
+  : T extends { type: 'blob' }
+  ? Blob
   : T extends { type: 'typed-buffer', items: infer Items }
   ? TypedBuffer<FromSchema<Items>>
   : T extends { type: 'array' } | { items: any }
@@ -240,3 +242,6 @@ type CheckDefault = True<EquivalentTypes<TestDefault, 42>>;
 
 type TestTypedBuffer = FromSchema<{ type: 'typed-buffer', items: { type: 'number' } }>; // TypedBuffer<number>
 type CheckTypedBuffer = True<EquivalentTypes<TestTypedBuffer, TypedBuffer<number>>>;
+
+type TestBlob = FromSchema<{ type: 'blob' }>; // Blob
+type CheckBlob = True<EquivalentTypes<TestBlob, Blob>>;

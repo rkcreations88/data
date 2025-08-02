@@ -28,7 +28,7 @@ type Codec<T> = {
     name: string;
     predicate: (data: any) => data is T;
     serialize: (data: T) => { json?: any, binary?: Uint8Array[] };
-    deserialize: (props: {json?: any, binary: Uint8Array[] }) => T;
+    deserialize: (props: { json?: any, binary: Uint8Array[] }) => T;
 }
 const codecs: Record<string, Codec<any>> = {};
 
