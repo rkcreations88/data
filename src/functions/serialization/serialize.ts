@@ -6,7 +6,6 @@ export function serialize<T>(data: T): { json: string, binary: Uint8Array[] } {
         const codec = findCodec(value);
         if (codec) {
             const { json, binary } = codec.serialize(value);
-            console.log("serialize", {json, binary});
             const binaryIndex = allBinaries.length;
             if (binary) {
                 allBinaries.push(...binary);

@@ -123,7 +123,7 @@ export type IsUnknown<T> = unknown extends T
   : false;
 
 
-export type DeepReadonly<T> = T extends Function | Branded | Element
+export type DeepReadonly<T> = T extends Function | Branded | Element | Blob
   ? T
   : T extends Array<infer U>
   ? IsTuple<T> extends true

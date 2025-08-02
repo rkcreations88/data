@@ -49,7 +49,6 @@ export function registerTypedBufferCodecs() {
                 }
             }
             catch (e) {
-
                 console.log("error serializing this", data, e, "data.slice", data.slice);
                 throw e;
             }

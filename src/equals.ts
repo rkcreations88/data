@@ -34,7 +34,6 @@ import { typedBufferEquals } from "./typed-buffer/typed-buffer-equals.js";
  * • No cyclic references (add a WeakMap if you need that).
  */
 export function equals(a: unknown, b: unknown): boolean {
-
   // 1  Primitives / identical reference
   if (Object.is(a, b)) return true;
   if (a == null || b == null) return false;
