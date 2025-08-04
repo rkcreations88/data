@@ -152,25 +152,6 @@ export function createDatabase<
 
     const transactions = {} as T;
 
-    function handleNext(
-        asyncArgs: AsyncGenerator<any>,
-        transaction: (args: any) => void,
-        execute: (handler: (db: Store<C, R, A>) => void) => any
-    ) {
-        asyncArgs.next().then((result: IteratorResult<any>) => {
-            const { value, done } = result;
-            if (!done || value !== undefined) {
-                execute((_db) => transaction(value));
-            }
-            if (done) {
-                return;
-            }
-            handleNext(asyncArgs, transaction, execute); // loop
-        }).catch((error: unknown) => {
-            console.error('AsyncGenerator error:', error);
-        });
-    }
-
     const transactionDeclarations = transactionDeclarationFactory(transactionalStore.transactionStore);
     for (const [name, transactionUntyped] of Object.entries(transactionDeclarations)) {
         const transaction = transactionUntyped as (args: any) => void;
@@ -182,8 +163,15 @@ export function createDatabase<
                     const asyncResult = asyncArgsProvider();
 
                     if (isAsyncGenerator(asyncResult)) {
-                        const asyncArgs = asyncResult;
-                        handleNext(asyncArgs, transaction, execute);
+                        (async () => {
+                            try {
+                                for await (const asyncArgs of asyncResult) {
+                                    execute((_db) => transaction(asyncArgs));
+                                }
+                            } catch (error) {
+                                console.error('AsyncGenerator error:', error);
+                            }
+                        })();
                     }
                     else if (isPromise(asyncResult)) {
                         asyncResult.then(asyncArgs => execute((_db) => transaction(asyncArgs)))

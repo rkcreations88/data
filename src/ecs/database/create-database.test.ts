@@ -59,30 +59,31 @@ type Name = FromSchema<typeof nameSchema>;
 function createTestObservableStore() {
     const baseStore = createStore(
         { position: positionSchema, health: healthSchema, name: nameSchema },
-        { time: { default: { delta: 0.016, elapsed: 0 } } }
+        { time: { default: { delta: 0.016, elapsed: 0 } } },
+        {
+            Position: ["position"],
+            Health: ["health"],
+            PositionHealth: ["position", "health"],
+            PositionName: ["position", "name"],
+            Full: ["position", "health", "name"],
+        }
     );
 
-    return createDatabase(baseStore, db => ({
+    return createDatabase(baseStore, store => ({
         createPositionEntity(args: { position: { x: number, y: number, z: number } }) {
-            const archetype = db.ensureArchetype(["id", "position"]);
-            return archetype.insert(args);
+            return store.archetypes.Position.insert(args);
         },
         createPositionHealthEntity(args: { position: { x: number, y: number, z: number }, health: { current: number, max: number } }) {
-            const archetype = db.ensureArchetype(["id", "position", "health"]);
-            return archetype.insert(args);
+            return store.archetypes.PositionHealth.insert(args);
         },
         createPositionNameEntity(args: { position: { x: number, y: number, z: number }, name: string }) {
-            const archetype = db.ensureArchetype(["id", "position", "name"]);
-            return archetype.insert(args);
+            return store.archetypes.PositionName.insert(args);
         },
         createFullEntity(args: { position: { x: number, y: number, z: number }, health: { current: number, max: number }, name: string }) {
-            const archetype = db.ensureArchetype(["id", "position", "health", "name"]);
-            return archetype.insert(args);
+            return store.archetypes.Full.insert(args);
         },
         createEntityAndReturn(args: { position: Position, name: Name }) {
-            const archetype = db.ensureArchetype(["id", "position", "name"]);
-            const entity = archetype.insert(args);
-            return entity;
+            return store.archetypes.PositionName.insert(args);
         },
         updateEntity(args: {
             entity: Entity,
@@ -92,13 +93,13 @@ function createTestObservableStore() {
                 name: string
             }>
         }) {
-            db.update(args.entity, args.values);
+            store.update(args.entity, args.values);
         },
         deleteEntity(args: { entity: Entity }) {
-            db.delete(args.entity);
+            store.delete(args.entity);
         },
         updateTime(args: { delta: number, elapsed: number }) {
-            db.resources.time = args;
+            store.resources.time = args;
         }
     }));
 }
@@ -756,9 +757,8 @@ describe("createDatabase", () => {
                 position: { x: 1, y: 2, z: 3 }
             });
 
-            const positionArchetype = store.ensureArchetype(["id", "position"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.Position)(observer);
 
             // Should receive the entity data since it matches exactly
             expect(observer).toHaveBeenCalledWith(expect.objectContaining({
@@ -778,9 +778,8 @@ describe("createDatabase", () => {
                 health: { current: 100, max: 100 }
             });
 
-            const positionArchetype = store.ensureArchetype(["id", "position"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.Position)(observer);
 
             // Should receive the entity data since it has all required components
             expect(observer).toHaveBeenCalledWith(expect.objectContaining({
@@ -799,9 +798,8 @@ describe("createDatabase", () => {
                 position: { x: 1, y: 2, z: 3 }
             });
 
-            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, positionHealthArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
 
             // Should return null since entity doesn't have health component
             expect(observer).toHaveBeenCalledWith(null);
@@ -818,9 +816,8 @@ describe("createDatabase", () => {
                 name: "Test"
             });
 
-            const healthArchetype = store.ensureArchetype(["id", "health"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, healthArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
 
             // Should return null since entity doesn't have health component
             expect(observer).toHaveBeenCalledWith(null);
@@ -836,9 +833,8 @@ describe("createDatabase", () => {
                 position: { x: 1, y: 2, z: 3 }
             });
 
-            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, positionHealthArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
 
             // Initially should be null
             expect(observer).toHaveBeenCalledWith(null);
@@ -868,9 +864,8 @@ describe("createDatabase", () => {
                 health: { current: 100, max: 100 }
             });
 
-            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, positionHealthArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
 
             // Initially should receive data
             expect(observer).toHaveBeenCalledWith(expect.objectContaining({
@@ -900,9 +895,8 @@ describe("createDatabase", () => {
                 health: { current: 100, max: 100 }
             });
 
-            const positionArchetype = store.ensureArchetype(["id", "position"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
 
             // Initially should receive data
             expect(observer).toHaveBeenCalledWith(expect.objectContaining({
@@ -922,9 +916,8 @@ describe("createDatabase", () => {
         it("should handle non-existent entity with minArchetype", () => {
             const store = createTestObservableStore();
 
-            const positionArchetype = store.ensureArchetype(["id", "position"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(999 as Entity, positionArchetype)(observer);
+            const unsubscribe = store.observe.entity(999 as Entity, store.archetypes.Position)(observer);
 
             // Should return null for non-existent entity
             expect(observer).toHaveBeenCalledWith(null);
@@ -935,9 +928,8 @@ describe("createDatabase", () => {
         it("should handle invalid entity ID with minArchetype", () => {
             const store = createTestObservableStore();
 
-            const positionArchetype = store.ensureArchetype(["id", "position"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(-1, positionArchetype)(observer);
+            const unsubscribe = store.observe.entity(-1, store.archetypes.Position)(observer);
 
             // Should return null for invalid entity ID
             expect(observer).toHaveBeenCalledWith(null);
@@ -954,17 +946,13 @@ describe("createDatabase", () => {
                 health: { current: 100, max: 100 }
             });
 
-            const positionArchetype = store.ensureArchetype(["id", "position"]);
-            const healthArchetype = store.ensureArchetype(["id", "health"]);
-            const positionHealthArchetype = store.ensureArchetype(["id", "position", "health"]);
-
             const positionObserver = vi.fn();
             const healthObserver = vi.fn();
             const fullObserver = vi.fn();
 
-            const unsubscribePosition = store.observe.entity(entity, positionArchetype)(positionObserver);
-            const unsubscribeHealth = store.observe.entity(entity, healthArchetype)(healthObserver);
-            const unsubscribeFull = store.observe.entity(entity, positionHealthArchetype)(fullObserver);
+            const unsubscribePosition = store.observe.entity(entity, store.archetypes.Position)(positionObserver);
+            const unsubscribeHealth = store.observe.entity(entity, store.archetypes.Health)(healthObserver);
+            const unsubscribeFull = store.observe.entity(entity, store.archetypes.PositionHealth)(fullObserver);
 
             // All should receive data since entity has all components
             expect(positionObserver).toHaveBeenCalledWith(expect.objectContaining({
@@ -1010,9 +998,8 @@ describe("createDatabase", () => {
                 health: { current: 100, max: 100 }
             });
 
-            const positionArchetype = store.ensureArchetype(["id", "position"]);
             const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, positionArchetype)(observer);
+            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
 
             // Initially should receive data
             expect(observer).toHaveBeenCalledWith(expect.objectContaining({
