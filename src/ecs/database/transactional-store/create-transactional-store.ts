@@ -24,11 +24,12 @@ import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
 import { Entity } from "../../entity.js";
 import { EntityUpdateValues } from "../../store/core/index.js";
-import { TransactionalStore, TransactionResult, TransactionWriteOperation } from "./transactional-store.js";
+import { Transaction, TransactionalStore, TransactionResult, TransactionWriteOperation } from "./transactional-store.js";
 import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { patchEntityValues } from "./patch-entity-values.js";
+import { Undoable } from "../undoable.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
@@ -166,7 +167,7 @@ export function createTransactionalStore<
 
 
     // Create transaction-aware store
-    const transactionStore: Store<C, R, A> = {
+    const transactionStore = {
         ...store,
         archetypes: Object.fromEntries(Object.entries(store.archetypes).map(([key, value]) => [key, getWrappedArchetype(value)])) as any,
         resources,
@@ -176,15 +177,19 @@ export function createTransactionalStore<
         },
         update: updateEntity,
         delete: deleteEntity,
-    };
+        transient: false as boolean,
+        undoable: null as null | Undoable,
+    } satisfies Transaction<C, R, A>;
 
     // Execute transaction function
     const execute = (
-        transactionFunction: (store: Store<C, R, A>) => Entity | void,
+        transactionFunction: (t: Transaction<C, R, A>) => Entity | void,
         options?: {
             transient?: boolean;
         }
     ): TransactionResult<C> => {
+        transactionStore.transient = options?.transient ?? false;
+        transactionStore.undoable = null;
         // Reset transaction state
         undoOperationsInReverseOrder = [];
         redoOperations = [];
@@ -199,7 +204,8 @@ export function createTransactionalStore<
             // Return the transaction result
             const result: TransactionResult<C> = {
                 value: value ?? undefined,
-                transient: options?.transient ?? false,
+                transient: transactionStore.transient,
+                undoable: transactionStore.undoable,
                 redo: [...redoOperations],
                 undo: [...undoOperationsInReverseOrder.reverse()],
                 changedEntities: new Map(changed.entities),

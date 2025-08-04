@@ -20,30 +20,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { TrueSchema } from "../../../schema/true.js";
-import { createDatabaseSchema } from "./create-database-schema.js";
-
-// just a compile time test which is why we're using -test.ts extension instead of .test.ts
-
-createDatabaseSchema(
-    {
-        velocity: { type: "number" },
-        particle: TrueSchema,
-    },
-    {
-        mousePosition: { type: "number", default: 0 },
-        fooPosition: { type: "number", default: 0 },
-    },
-    {
-        bar: ["particle", "velocity"],
-        // @ts-expect-error
-        foo: ["particle", "velocity2"] // should throw error because velocity2 is not a component
-    },
-    {
-        setMousePosition: (t, position: number) => {
-            t.resources.mousePosition = position;
-            // @ts-expect-error
-            t.resources.mousePosition2 = position;
-        },
-    }
-)
+export type Undoable = {
+    /**
+     * Uniquely identifies this type of operation.
+     * This could be used by an undo/redo manager to find localization strings to display to the user.
+     */
+    id: string;
+    /**
+     * Whether this operation can be combined with the previous operation.
+     * This is useful for operations that are equivalent, such as adding the same component to an entity multiple times.
+     * The value is either a boolean or else a data value that if equals() with the previous operation's coalesce value will cause the operations to be combined.
+     */
+    coalesce: boolean | unknown;
+}

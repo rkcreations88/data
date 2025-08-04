@@ -89,12 +89,9 @@ export type FromSchemas<T> = {
 
 export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends 0
   ? any
-  : T extends { type?: undefined, default: infer D }
-  ? D
-  : T extends { const: infer Const }
-  ? Const
-  : T extends { enum: infer Enum }
-  ? Enum extends ReadonlyArray<any> ? Enum[number] : never
+  : T extends { type?: undefined, default: infer D } ? D
+  : T extends { const: infer Const } ? Const
+  : T extends { enum: infer Enum } ? Enum extends ReadonlyArray<any> ? Enum[number] : never
   : T extends { oneOf: infer Schemas }
   ? Schemas extends ReadonlyArray<Schema> ? FromOneOfSchema<Schemas, Decrement<Depth>> : never
   : T extends { type: 'number' | 'integer' }
@@ -105,12 +102,11 @@ export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends
   ? boolean
   : T extends { type: 'null' }
   ? null
-  : T extends { type: 'blob' }
-  ? Blob
   : T extends { type: 'typed-buffer', items: infer Items }
   ? TypedBuffer<FromSchema<Items>>
   : T extends { type: 'array' } | { items: any }
   ? FromSchemaArray<T, Decrement<Depth>>
+  : T extends { type?: undefined, default: infer D } ? D
   : T extends { type: 'object' } | { properties: any }
   ? FromSchemaObject<T, Decrement<Depth>>
   : any

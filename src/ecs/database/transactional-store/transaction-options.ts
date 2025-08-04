@@ -20,30 +20,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { TrueSchema } from "../../../schema/true.js";
-import { createDatabaseSchema } from "./create-database-schema.js";
+import { Undoable } from "../undoable.js";
 
-// just a compile time test which is why we're using -test.ts extension instead of .test.ts
-
-createDatabaseSchema(
-    {
-        velocity: { type: "number" },
-        particle: TrueSchema,
-    },
-    {
-        mousePosition: { type: "number", default: 0 },
-        fooPosition: { type: "number", default: 0 },
-    },
-    {
-        bar: ["particle", "velocity"],
-        // @ts-expect-error
-        foo: ["particle", "velocity2"] // should throw error because velocity2 is not a component
-    },
-    {
-        setMousePosition: (t, position: number) => {
-            t.resources.mousePosition = position;
-            // @ts-expect-error
-            t.resources.mousePosition2 = position;
-        },
-    }
-)
+export type TransactionOptions = {
+    /**
+     * If this is a transient operation then it should not be persisted.
+     * When an async sequence of operations is executed, they are all transient except the last one.
+     */
+    readonly transient?: boolean;
+    /**
+     * This value must be set fo undoable operations.
+     */
+    undoable?: Undoable;
+}

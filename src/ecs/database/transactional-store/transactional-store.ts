@@ -27,6 +27,16 @@ import { EntityUpdateValues } from "../../store/core/index.js";
 import { Components } from "../../store/components.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { Undoable } from "../undoable.js";
+
+export interface Transaction<
+    C extends Components = never,
+    R extends ResourceComponents = never,
+    A extends ArchetypeComponents<StringKeyof<C>> = never,
+> extends Store<C, R, A> {
+    readonly transient: boolean;
+    undoable: null | Undoable;
+}
 
 export interface TransactionalStore<
     C extends Components = never,
@@ -41,7 +51,7 @@ export interface TransactionalStore<
      * @returns A promise that resolves when the transaction is complete.
      */
     execute(
-        transactionFunction: (store: Store<C, R, A>) => Entity | void,
+        transactionFunction: (t: Transaction<C, R, A>) => Entity | void,
         options?: {
             transient?: boolean;
         }
@@ -77,6 +87,7 @@ export interface TransactionResult<C> {
      */
     readonly value: Entity | void;
     readonly transient: boolean;
+    readonly undoable: null | Undoable;
     readonly redo: TransactionWriteOperation<C>[];
     readonly undo: TransactionWriteOperation<C>[];
     readonly changedEntities: Map<Entity, EntityUpdateValues<C> | null>;
