@@ -40,21 +40,21 @@ describe('observeDependentValue', () => {
         type TestStore = ToReadonlyStore<typeof store>;
 
         // Create the database
-        const database = createDatabase(store, (store) => ({
-            updateA: (value: number) => {
-                store.resources.a = value;
+        const database = createDatabase(store, {
+            updateA: (t, value: number) => {
+                t.resources.a = value;
             },
-            updateB: (value: number) => {
-                store.resources.b = value;
+            updateB: (t, value: number) => {
+                t.resources.b = value;
             },
-            updateC: (value: number) => {
-                store.resources.c = value;
+            updateC: (t, value: number) => {
+                t.resources.c = value;
             },
-            updateAB: (values: { a: number; b: number }) => {
-                store.resources.a = values.a;
-                store.resources.b = values.b;
+            updateAB: (t, values: { a: number; b: number }) => {
+                t.resources.a = values.a;
+                t.resources.b = values.b;
             }
-        }));
+        });
 
         type TestDatabase = typeof database;
 
@@ -116,13 +116,13 @@ describe('observeDependentValue', () => {
 
     it('should handle multiple observers correctly', async () => {
         const store = createStore({}, { a: { default: 1 }, b: { default: 2 }, c: { default: 3 } });
-        const database = createDatabase(store, (store) => ({
-            updateA: (value: number) => { store.resources.a = value; },
-            updateB: (value: number) => { store.resources.b = value; }
-        }));
+        const database = createDatabase(store, {
+            updateA: (t, value: number) => { t.resources.a = value; },
+            updateB: (t, value: number) => { t.resources.b = value; }
+        });
 
-        const sumObservable = observeDependentValue(database, (store) => {
-            return store.resources.a + store.resources.b;
+        const sumObservable = observeDependentValue(database, (t) => {
+            return t.resources.a + t.resources.b;
         });
 
         const values1: number[] = [];
@@ -163,10 +163,10 @@ describe('observeDependentValue', () => {
             multiplier: { default: 2 },
             offset: { default: 10 }
         });
-        const database = createDatabase(store, (store) => ({
-            updateCount: (value: number) => { store.resources.count = value; },
-            updateMultiplier: (value: number) => { store.resources.multiplier = value; }
-        }));
+        const database = createDatabase(store, {
+            updateCount: (t, value: number) => { t.resources.count = value; },
+            updateMultiplier: (t, value: number) => { t.resources.multiplier = value; }
+        });
 
         type TestDatabase = typeof database;
 

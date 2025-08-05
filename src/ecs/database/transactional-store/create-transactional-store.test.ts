@@ -219,16 +219,16 @@ describe("createTransactionalStore", () => {
         const store = createTransactionalStore(baseStore);
 
         // Execute a regular transaction (non-transient)
-        const regularResult = store.execute((transactionStore) => {
-            const archetype = transactionStore.ensureArchetype(["id", "position"]);
+        const regularResult = store.execute((t) => {
+            const archetype = t.ensureArchetype(["id", "position"]);
             archetype.insert({ position: { x: 1, y: 2, z: 3 } });
         });
 
         expect(regularResult.transient).toBe(false);
 
         // Execute a transient transaction
-        const transientResult = store.execute((transactionStore) => {
-            const archetype = transactionStore.ensureArchetype(["id", "position"]);
+        const transientResult = store.execute((t) => {
+            const archetype = t.ensureArchetype(["id", "position"]);
             archetype.insert({ position: { x: 10, y: 20, z: 30 } });
         }, { transient: true });
 

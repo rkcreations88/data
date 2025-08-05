@@ -48,35 +48,35 @@ describe("observeSelectEntities", () => {
         }
         );
 
-        return createDatabase(store, store => ({
-            createPositionEntity(args: { position: number }) {
+        return createDatabase(store, {
+            createPositionEntity(store, args: { position: number }) {
                 return store.archetypes.Position.insert(args);
             },
-            createHealthEntity(args: { health: number }) {
+            createHealthEntity(store, args: { health: number }) {
                 return store.archetypes.Health.insert(args);
             },
-            createNameEntity(args: { name: string }) {
+            createNameEntity(store, args: { name: string }) {
                 return store.archetypes.Name.insert(args);
             },
-            createPositionHealthEntity(args: { position: number, health: number }) {
+            createPositionHealthEntity(store, args: { position: number, health: number }) {
                 return store.archetypes.PositionHealth.insert(args);
             },
-            createPositionNameEntity(args: { position: number, name: string }) {
+            createPositionNameEntity(store, args: { position: number, name: string }) {
                 return store.archetypes.PositionName.insert(args);
             },
-            createHealthNameEntity(args: { health: number, name: string }) {
+            createHealthNameEntity(store, args: { health: number, name: string }) {
                 return store.archetypes.HealthName.insert(args);
             },
-            createFullEntity(args: { position: number, health: number, name: string, score: number, active: boolean }) {
+            createFullEntity(store, args: { position: number, health: number, name: string, score: number, active: boolean }) {
                 return store.archetypes.Full.insert(args);
             },
-            updateEntity(args: { entity: number, values: any }) {
+            updateEntity(store, args: { entity: number, values: any }) {
                 return store.update(args.entity, args.values);
             },
-            deleteEntity(args: { entity: number }) {
+            deleteEntity(store, args: { entity: number }) {
                 return store.delete(args.entity);
             }
-        }));
+        });
     }
 
     beforeEach(() => {

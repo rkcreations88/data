@@ -41,10 +41,10 @@ export function createDatabase<
     C extends Components,
     R extends ResourceComponents,
     A extends ArchetypeComponents<StringKeyof<C>>,
-    TD extends Record<string, TransactionDeclaration>
+    TD extends Record<string, TransactionDeclaration<C, R, A>>
 >(
     store: Store<C, R, A>,
-    transactionDeclarationFactory: (store: Store<C, R, A>) => TD,
+    transactionDeclarations: TD,
 ): Database<C, R, A, ToTransactionFunctions<TD>> {
     type T = ToTransactionFunctions<TD>;
 
@@ -108,8 +108,8 @@ export function createDatabase<
 
     const { execute: transactionDatabaseExecute, resources, ...rest } = transactionalStore;
 
-    const execute = (handler: (db: Store<C, R, A>) => void) => {
-        const result = transactionDatabaseExecute(handler);
+    const execute = (handler: (db: Store<C, R, A>) => void, options?: { transient?: boolean }) => {
+        const result = transactionDatabaseExecute(handler, options);
 
         // Notify transaction observers
         for (const transactionObserver of transactionObservers) {
@@ -152,28 +152,8 @@ export function createDatabase<
 
     const transactions = {} as T;
 
-    function handleNext(
-        asyncArgs: AsyncGenerator<any>,
-        transaction: (args: any) => void,
-        execute: (handler: (db: Store<C, R, A>) => void) => any
-    ) {
-        asyncArgs.next().then((result: IteratorResult<any>) => {
-            const { value, done } = result;
-            if (!done || value !== undefined) {
-                execute((_db) => transaction(value));
-            }
-            if (done) {
-                return;
-            }
-            handleNext(asyncArgs, transaction, execute); // loop
-        }).catch((error: unknown) => {
-            console.error('AsyncGenerator error:', error);
-        });
-    }
-
-    const transactionDeclarations = transactionDeclarationFactory(transactionalStore.transactionStore);
     for (const [name, transactionUntyped] of Object.entries(transactionDeclarations)) {
-        const transaction = transactionUntyped as (args: any) => void;
+        const transaction = transactionUntyped as (store: Store<C, R, A>, args: any) => void;
         Object.defineProperty(transactions, name, {
             value: (args: unknown) => {
                 // Check if args is an AsyncArgsProvider function
@@ -182,23 +162,37 @@ export function createDatabase<
                     const asyncResult = asyncArgsProvider();
 
                     if (isAsyncGenerator(asyncResult)) {
-                        const asyncArgs = asyncResult;
-                        handleNext(asyncArgs, transaction, execute);
+                        (async () => {
+                            try {
+                                let lastArgs: any = undefined;
+                                for await (const asyncArgs of asyncResult) {
+                                    lastArgs = asyncArgs;
+                                    execute(t => transaction(t, asyncArgs), { transient: true });
+                                }
+                                if (lastArgs) {
+                                    execute(t => transaction(t, lastArgs), { transient: false });
+                                }
+                                return lastArgs;
+                            }
+                            catch (error) {
+                                console.error('AsyncGenerator error:', error);
+                            }
+                        })();
                     }
                     else if (isPromise(asyncResult)) {
-                        asyncResult.then(asyncArgs => execute((_db) => transaction(asyncArgs)))
+                        asyncResult.then(asyncArgs => execute(t => transaction(t, asyncArgs)))
                             .catch(error => {
                                 console.error('Promise error:', error);
                             });
                     }
                     else {
                         // Function returned a synchronous value
-                        execute((_db) => transaction(asyncResult));
+                        execute(t => transaction(t, asyncResult));
                     }
                 }
                 else {
                     // Synchronous argument
-                    return execute((_db) => transaction(args));
+                    return execute(t => transaction(t, args));
                 }
             },
             writable: false,

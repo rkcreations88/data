@@ -25,27 +25,31 @@ import { ReadonlyStore, Store } from "../store/index.js";
 import { Entity } from "../entity.js";
 import { EntityReadValues } from "../store/core/index.js";
 import { Observe } from "../../observe/index.js";
-import { TransactionResult } from "./transactional-store/index.js";
+import { Transaction, TransactionResult } from "./transactional-store/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { CoreComponents } from "../core-components.js";
 import { EntitySelectOptions } from "../store/entity-select-options.js";
 
-export type TransactionDeclaration<Input extends any | void = any> = (input: Input) => void | Entity
+export type TransactionDeclaration<
+  C extends Components,
+  R extends ResourceComponents,
+  A extends ArchetypeComponents<StringKeyof<C>>,
+  Input extends any | void = any> = (t: Transaction<C, R, A>, input: Input) => void | Entity
 export type TransactionDeclarations = object
 export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
 
 /**
- * Converts from TransactionDeclarations to TransactionFunctions by removing the initial database argument.
+ * Converts from TransactionDeclarations to TransactionFunctions by removing the initial store argument.
  */
 export type ToTransactionFunctions<T> = {
   [K in keyof T]:
-  T[K] extends () => infer R
+  T[K] extends (store: infer S) => infer R
   ? R extends void | Entity
   ? () => R
   : never
-  : T[K] extends (input: infer Input) => infer R
+  : T[K] extends (store: infer S, input: infer Input) => infer R
   ? R extends void | Entity
   ? (arg: Input | AsyncArgsProvider<Input>) => R
   : never
@@ -53,14 +57,13 @@ export type ToTransactionFunctions<T> = {
 };
 
 export type TransactionFunctions = { readonly [K: string]: (args?: any) => void | Entity };
-
 export interface Database<
   C extends Components = never,
   R extends ResourceComponents = never,
   A extends ArchetypeComponents<StringKeyof<C>> = never,
-  T extends TransactionDeclarations = never,
+  T extends TransactionFunctions = never,
 > extends ReadonlyStore<C, R, A> {
-  readonly transactions: ToTransactionFunctions<T>;
+  readonly transactions: T;
   readonly observe: {
     readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
     readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
