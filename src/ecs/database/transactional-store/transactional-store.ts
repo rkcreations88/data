@@ -28,7 +28,6 @@ import { Components } from "../../store/components.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { Undoable } from "../undoable.js";
-
 export interface Transaction<
     C extends Components = never,
     R extends ResourceComponents = never,
@@ -38,6 +37,7 @@ export interface Transaction<
     undoable: null | Undoable;
 }
 
+export type TransactionFromStore<S extends Store<any, any, any>> = S extends Store<infer C, infer R, infer A> ? Transaction<C, R, A> : never;
 export interface TransactionalStore<
     C extends Components = never,
     R extends ResourceComponents = never,
