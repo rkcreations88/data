@@ -22,11 +22,6 @@ SOFTWARE.*/
 
 export type Undoable = {
     /**
-     * Uniquely identifies this type of operation.
-     * This could be used by an undo/redo manager to find localization strings to display to the user.
-     */
-    id: string;
-    /**
      * Whether this operation can be combined with the previous operation.
      * This is useful for operations that are equivalent, such as adding the same component to an entity multiple times.
      * The value is either a boolean or else a data value that if equals() with the previous operation's coalesce value will cause the operations to be combined.
