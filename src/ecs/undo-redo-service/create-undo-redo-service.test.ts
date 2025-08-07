@@ -19,11 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { createDatabase } from "../database/create-database.js";
 import { createStore } from "../store/create-store.js";
 import { F32Schema } from "../../schema/f32.js";
-import { createUndoRedoActions } from "./create-undo-redo-actions.js";
+import { createUndoRedoService } from "./create-undo-redo-service.js";
 import { applyOperations } from "../database/transactional-store/apply-operations.js";
 import { toPromise } from "../../observe/to-promise.js";
 import { TransactionWriteOperation } from "../database/transactional-store/transactional-store.js";
@@ -84,13 +85,13 @@ function createTestDatabase() {
     });
 }
 
-describe("createUndoRedoActions", () => {
+describe("createUndoRedoService", () => {
     let database: ReturnType<typeof createTestDatabase>;
-    let undoRedo: ReturnType<typeof createUndoRedoActions>;
+    let undoRedo: ReturnType<typeof createUndoRedoService>;
 
     beforeEach(() => {
         database = createTestDatabase();
-        undoRedo = createUndoRedoActions(database);
+        undoRedo = createUndoRedoService(database);
     });
 
     it("should add undoable operations to the undo stack", async () => {

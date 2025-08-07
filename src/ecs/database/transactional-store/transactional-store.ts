@@ -81,7 +81,7 @@ export type TransactionWriteOperation<C> =
     | TransactionUpdateOperation<C>
     | TransactionDeleteOperation;
 
-export interface TransactionResult<C> {
+export interface TransactionResult<C = unknown> {
     /**
      * The Entity value if any returned by the transaction function.
      */

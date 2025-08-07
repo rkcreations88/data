@@ -1,9 +1,34 @@
+/*MIT License
+
+© Copyright 2025 Adobe. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
+
 import { createObservableState } from "../../observe/create-observable-state.js";
 import { TransactionResult, TransactionWriteOperation } from "../database/transactional-store/transactional-store.js";
 import { Database } from "../index.js";
 import { shouldCoalesceTransactions, coalesceTransactions } from "../database/transactional-store/coalesce-transactions.js";
+import { UndoRedoService } from "./undo-redo-service.js";
+import { withMap } from "../../observe/with-map.js";
+import { fromProperties } from "../../observe/from-properties.js";
 
-export const createUndoRedoActions = (database: Database<any, any, any, { applyOperations: (operations: TransactionWriteOperation<any>[]) => void }>) => {
+export const createUndoRedoService = (database: Database<any, any, any, { applyOperations: (operations: TransactionWriteOperation<any>[]) => void }>): UndoRedoService => {
     const undoStack: TransactionResult<any>[] = [];
     let stackIndex = 0;
     const [observeUndoStack, setObserveUndoStack] = createObservableState<TransactionResult<unknown>[]>([]);
@@ -31,9 +56,18 @@ export const createUndoRedoActions = (database: Database<any, any, any, { applyO
             setObserveStackIndex(stackIndex);
         }
     });
+    const undoEnabled = withMap(observeStackIndex, (index) => index > 0);
+    const redoEnabled = withMap(fromProperties({
+        stack: observeUndoStack,
+        index: observeStackIndex,
+    }), ({ stack, index }) => index < stack.length - 1);
+
     return {
+        serviceName: 'UndoRedoService',
         undoStack: observeUndoStack,
         undoStackIndex: observeStackIndex,
+        undoEnabled,
+        redoEnabled,
         undo: () => {
             if (stackIndex > 0) {
                 stackIndex--;
