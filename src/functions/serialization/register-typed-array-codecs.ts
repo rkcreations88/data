@@ -2,8 +2,19 @@ import { Data } from "../../data.js";
 import { registerCodec } from "./codec.js";
 
 export function registerTypedArrayCodecs() {
-    // Built in support for all 32-bit typed arrays and float64 arrays
-    for (const typedArrayConstructor of [Float32Array, Int32Array, Uint32Array, Float64Array]) {
+    // Support for all typed arrays
+    const typedArrayConstructors = [
+        Int8Array,
+        Uint8Array,
+        Int16Array,
+        Uint16Array,
+        Int32Array,
+        Uint32Array,
+        Float32Array,
+        Float64Array
+    ];
+
+    for (const typedArrayConstructor of typedArrayConstructors) {
         registerCodec<any>({
             name: typedArrayConstructor.name,
             predicate: (data: any): data is any => data instanceof typedArrayConstructor,

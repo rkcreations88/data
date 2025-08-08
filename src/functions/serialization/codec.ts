@@ -64,4 +64,3 @@ export function registerCodec<T>(codec: Codec<T>) {
 
 registerTypedArrayCodecs();
 registerTypedBufferCodecs();
-

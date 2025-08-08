@@ -24,7 +24,7 @@ import { ResourceComponents } from "../store/resource-components.js";
 import { Store } from "../store/index.js";
 import { Database, ToTransactionFunctions, TransactionDeclaration } from "./database.js";
 import { Entity } from "../entity.js";
-import { EntityReadValues } from "../store/core/index.js";
+import { EntityReadValues, EntityUpdateValues } from "../store/core/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
 import { mapEntries } from "../../internal/object/index.js";
 import { StringKeyof } from "../../types/types.js";
@@ -108,9 +108,7 @@ export function createDatabase<
 
     const { execute: transactionDatabaseExecute, resources, ...rest } = transactionalStore;
 
-    const execute = (handler: (db: Store<C, R, A>) => void, options?: { transient?: boolean }) => {
-        const result = transactionDatabaseExecute(handler, options);
-
+    const notifyObservers = (result: TransactionResult<C>) => {
         // Notify transaction observers
         for (const transactionObserver of transactionObservers) {
             transactionObserver(result);
@@ -146,7 +144,11 @@ export function createDatabase<
                 }
             }
         }
+    }
 
+    const execute = (handler: (db: Store<C, R, A>) => void, options?: { transient?: boolean }) => {
+        const result = transactionDatabaseExecute(handler, options);
+        notifyObservers(result);
         return result.value;
     }
 
@@ -201,12 +203,42 @@ export function createDatabase<
         });
     }
 
+    const notifyAllObserversStoreReloaded = () => {
+        const notifyResult: TransactionResult<C> = {
+            changedComponents: new Set(componentObservers.keys()),
+            changedArchetypes: new Set(archetypeObservers.keys()),
+            changedEntities: new Map([...entityObservers.keys()].map((entity) => {
+                let values = store.read(entity);
+                let updateValues: EntityUpdateValues<C> | null = null;
+                if (values) {
+                    const { id, ...rest } = values;
+                    updateValues = rest as EntityUpdateValues<C>;
+                }
+                return [
+                    entity,
+                    updateValues
+                ]
+            })),
+            transient: false,
+            value: undefined,
+            undo: [],
+            redo: [],
+            undoable: null,
+        }
+        notifyObservers(notifyResult);
+    }
+
     // Return the complete observable store
     const database = {
         ...rest,
         resources,
         transactions,
         observe,
+        toData: () => store.toData(),
+        fromData: (data: unknown) => {
+            store.fromData(data);
+            notifyAllObserversStoreReloaded();
+        }
     } as Database<C, R, A, T>;
     return database;
 }

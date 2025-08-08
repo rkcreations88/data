@@ -1,2 +1,2 @@
 export * from "./serialize.js";
-export * from "./deserialize.js";
+export * from "./serialize-to-blobs.js";

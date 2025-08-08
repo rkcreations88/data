@@ -112,4 +112,63 @@ describe('createArchetype', () => {
         const location = entityLocationTable.locate(entity);
         expect(location).toEqual({ archetype: id, row: 0 });
     });
+
+    it('should serialize and deserialize archetype data correctly', () => {
+        const entityLocationTable = createEntityLocationTable();
+        const components = {
+            id: EntitySchema,
+            health: U32Schema,
+            mana: U32Schema,
+        };
+        const id = 3;
+
+        const archetype = createArchetype(components, id, entityLocationTable);
+
+        // Add some data
+        archetype.insert({ health: 100, mana: 50 });
+        archetype.insert({ health: 75, mana: 25 });
+
+        // Serialize the archetype
+        const serializedData = archetype.toData();
+
+        // Verify serialized data contains expected properties
+        expect(serializedData).toHaveProperty('rowCount', 2);
+        expect(serializedData).toHaveProperty('columns');
+        expect((serializedData as any).columns).toHaveProperty('id');
+        expect((serializedData as any).columns).toHaveProperty('health');
+        expect((serializedData as any).columns).toHaveProperty('mana');
+
+        // Create a new archetype and restore from serialized data
+        const newArchetype = createArchetype(components, id, entityLocationTable);
+        newArchetype.fromData(serializedData);
+
+        // Verify the restored archetype has the same data
+        expect(newArchetype.rowCount).toBe(2);
+        expect(newArchetype.columns.health.get(0)).toBe(100);
+        expect(newArchetype.columns.health.get(1)).toBe(75);
+        expect(newArchetype.columns.mana.get(0)).toBe(50);
+        expect(newArchetype.columns.mana.get(1)).toBe(25);
+        expect(newArchetype.columns.id.get(0)).toBe(0);
+        expect(newArchetype.columns.id.get(1)).toBe(1);
+    });
+
+    it('should preserve component set during serialization/deserialization', () => {
+        const entityLocationTable = createEntityLocationTable();
+        const components = {
+            id: EntitySchema,
+            value: U32Schema,
+        };
+        const id = 4;
+
+        const archetype = createArchetype(components, id, entityLocationTable);
+        const originalComponentSet = archetype.components;
+
+        // Serialize and deserialize
+        const serializedData = archetype.toData();
+        archetype.fromData(serializedData);
+
+        // Component set should remain unchanged (same reference)
+        expect(archetype.components).toBe(originalComponentSet);
+        expect(archetype.components).toEqual(new Set(['id', 'value']));
+    });
 }); 

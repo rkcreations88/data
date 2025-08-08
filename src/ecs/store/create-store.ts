@@ -61,19 +61,25 @@ export function createStore<
 
     // Each resource will be stored as the only entity in an archetype of [id, <resourceName>]
     // The resource component we added above will contain the resource value
-    for (const [name, resourceSchema] of Object.entries(resourceSchemas)) {
-        const resourceId = name as StringKeyof<C>;
-        const archetype = core.ensureArchetype(["id", resourceId]);
-        archetype.insert({ [resourceId]: resourceSchema.default } as any);
-        const row = 0;
-        Object.defineProperty(resources, name, {
-            get: () => archetype.columns[resourceId]!.get(row),
-            set: (value) => {
-                archetype.columns[resourceId]!.set(row, value);
-            },
-            enumerable: true,
-        });
+    const ensureDefaultResourcesAndPropertiesExist = () => {
+        for (const [name, resourceSchema] of Object.entries(resourceSchemas)) {
+            const resourceId = name as StringKeyof<C>;
+            const archetype = core.ensureArchetype(["id", resourceId]);
+            if (archetype.rowCount === 0) {
+                archetype.insert({ [resourceId]: resourceSchema.default } as any);
+            }
+            const row = 0;
+            Object.defineProperty(resources, name, {
+                get: () => archetype.columns[resourceId]!.get(row),
+                set: (value) => {
+                    archetype.columns[resourceId]!.set(row, value);
+                },
+                enumerable: true,
+                configurable: true,
+            });
+        }
     }
+    ensureDefaultResourcesAndPropertiesExist();
 
     const select = <
         Include extends StringKeyof<C>
@@ -96,6 +102,11 @@ export function createStore<
         resources,
         select,
         archetypes,
+        toData: () => core.toData(),
+        fromData: (data: unknown) => {
+            core.fromData(data);
+            ensureDefaultResourcesAndPropertiesExist();
+        }
     };
 
     return store as any;

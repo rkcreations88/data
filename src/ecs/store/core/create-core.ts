@@ -19,6 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { FromSchema, Schema } from "../../../schema/schema.js";
 import { createEntityLocationTable } from "../../entity-location-table/index.js";
 import * as ARCHETYPE from "../../archetype/index.js";
@@ -26,7 +27,7 @@ import * as TABLE from "../../../table/index.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { CoreComponents } from "../../core-components.js";
 import { Entity, EntitySchema } from "../../entity.js";
-import { Core, EntityUpdateValues, EntityReadValues, ArchetypeQueryOptions } from "./core.js";
+import { Core, EntityUpdateValues, ArchetypeQueryOptions } from "./core.js";
 import { Assert, Equal, Simplify, StringKeyof } from "../../../types/index.js";
 import { ComponentSchemas } from "../../component-schemas.js";
 
@@ -97,7 +98,6 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         if (location !== null) {
             const archetype = archetypes[location.archetype];
             if (!archetype) {
-                console.log("location", location);
                 throw new Error("Archetype not found: " + JSON.stringify(location));
             }
             ARCHETYPE.deleteRow(archetype, location.row, entityLocationTable);
@@ -167,6 +167,20 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         read: readEntity,
         delete: deleteEntity,
         update: updateEntity,
+        toData: () => ({
+            componentSchemas,
+            entityLocationTableData: entityLocationTable.toData(),
+            archetypesData: archetypes.map(archetype => archetype.toData())
+        }),
+        fromData: (data: any) => {
+            Object.assign(componentSchemas, data.componentSchemas);
+            entityLocationTable.fromData(data.entityLocationTableData);
+            for (let i = 0; i < data.archetypesData.length; i++) {
+                const componentNames = Object.keys(data.archetypesData[i].columns);
+                const archetype = ensureArchetype(componentNames as any);
+                archetype.fromData(data.archetypesData[i]);
+            }
+        }
     };
     return core as any;
 }
