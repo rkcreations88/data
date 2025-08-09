@@ -19,13 +19,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from "./database/index.js";
-export * from "./store/index.js";
-export * from "./archetype/index.js";
-export * from "./entity.js";
-export * from "./core-components.js";
-export * from "./component-schemas.js";
-export * from "./resource-schemas.js";
-export * from "./undo-redo-service/index.js";
-export * from "./persistence-service/index.js";
-export { applyOperations } from "./database/transactional-store/apply-operations.js";
+
+export * from "./create-storage-persistence-service.js";
+export * from "./persistence-service.js";
