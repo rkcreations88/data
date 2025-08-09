@@ -45,11 +45,11 @@ export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
  */
 export type ToTransactionFunctions<T> = {
   [K in keyof T]:
-  T[K] extends (store: infer S) => infer R
+  T[K] extends (t: infer S) => infer R
   ? R extends void | Entity
   ? () => R
   : never
-  : T[K] extends (store: infer S, input: infer Input) => infer R
+  : T[K] extends (t: infer S, input: infer Input) => infer R
   ? R extends void | Entity
   ? (arg: Input | AsyncArgsProvider<Input>) => R
   : never

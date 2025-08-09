@@ -37,7 +37,7 @@ export type DatabaseSchema<
     readonly components: CS;
     readonly resources: RS;
     readonly archetypes: A;
-    readonly transactions: (store: Store<FromSchemas<CS>, FromSchemas<RS>, A>) => TD;
+    readonly transactions: TD;
 };
 
 export type DatabaseFromSchema<T> = T extends DatabaseSchema<infer CS, infer RS, infer A, infer TD> ? Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>> : never;

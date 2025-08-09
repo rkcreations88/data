@@ -88,6 +88,15 @@ export function toAsyncGenerator<T>(
         error = e;
     }
 
+    const cleanup = () => {
+        if (!done) {
+            done = true;
+            unobserve();
+        }
+        // Drain queue to free memory.
+        q.length = head = 0;
+    };
+
     const iterator: AsyncGenerator<T> = {
         [Symbol.asyncIterator]() {
             return this;
@@ -107,21 +116,16 @@ export function toAsyncGenerator<T>(
             });
         },
         return(): Promise<IteratorResult<T>> {
-            if (!done) {
-                done = true;
-                unobserve();
-            }
-            // Drain queue to free memory.
-            q.length = head = 0;
+            cleanup();
             return Promise.resolve({ done: true, value: undefined as any });
         },
         throw(e: any): Promise<IteratorResult<T>> {
-            if (!done) {
-                done = true;
-                unobserve();
-            }
-            q.length = head = 0;
+            cleanup();
             return Promise.reject(e);
+        },
+        [Symbol.asyncDispose](): PromiseLike<void> {
+            cleanup();
+            return Promise.resolve();
         }
     };
 

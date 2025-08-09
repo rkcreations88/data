@@ -20,14 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { FromSchemas, Schema } from "../../../schema/schema.js";
+import { FromSchemas } from "../../../schema/schema.js";
 import { StringKeyof } from "../../../types/types.js";
+import { ComponentSchemas } from "../../component-schemas.js";
+import { ResourceSchemas } from "../../resource-schemas.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { TransactionDeclaration } from "../database.js";
+import { DatabaseSchema } from "./database-schema.js";
 
 export function createDatabaseSchema<
-    const CS extends Record<string, Schema>,
-    const RS extends Record<string, Schema & { default?: any }>,
+    const CS extends ComponentSchemas,
+    const RS extends ResourceSchemas,
     const A extends ArchetypeComponents<StringKeyof<CS>>,
     const TD extends Record<string, TransactionDeclaration<FromSchemas<CS>, FromSchemas<RS>, A>>
 >(
@@ -36,5 +39,5 @@ export function createDatabaseSchema<
     archetypes: A,
     transactions: TD,
 ) {
-    return { components, resources, archetypes, transactions };
+    return { components, resources, archetypes, transactions } satisfies DatabaseSchema<CS, RS, A, TD>;
 };
