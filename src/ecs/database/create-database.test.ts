@@ -504,28 +504,21 @@ describe("createDatabase", () => {
             // Wait for all entities to be processed
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            // Verify all entities were created
+            // Verify only the final entity was created (each yield replaces the previous)
             const entities = store.select(["position", "name"]);
             const streamEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Stream");
             });
 
-            expect(streamEntities.length >= 3);
+            expect(streamEntities).toHaveLength(1); // Only the final entity remains
 
-            // Verify each entity has correct data
-            const entity1 = store.read(streamEntities[0]);
-            const entity2 = store.read(streamEntities[1]);
-            const entity3 = store.read(streamEntities[2]);
+            // Verify the final entity has the correct data (from the last yield)
+            const finalEntity = store.read(streamEntities[0]);
+            expect(finalEntity?.position).toEqual({ x: 3, y: 3, z: 3 });
+            expect(finalEntity?.name).toBe("Stream3");
 
-            expect(entity1?.position).toEqual({ x: 1, y: 1, z: 1 });
-            expect(entity1?.name).toBe("Stream1");
-            expect(entity2?.position).toEqual({ x: 2, y: 2, z: 2 });
-            expect(entity2?.name).toBe("Stream2");
-            expect(entity3?.position).toEqual({ x: 3, y: 3, z: 3 });
-            expect(entity3?.name).toBe("Stream3");
-
-            // Verify observer was notified for each entity
+            // Verify observer was notified for each entity creation (even though they were replaced)
             expect(observer.mock.calls.length >= 3);
 
             unsubscribe();
@@ -691,24 +684,21 @@ describe("createDatabase", () => {
             // Wait for processing
             await new Promise(resolve => setTimeout(resolve, 20));
 
-            // Verify only even-numbered entities were created
+            // Verify only the final entity was created (each yield replaces the previous)
             const entities = store.select(["position", "name"]);
             const evenEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Even");
             });
 
-            expect(evenEntities).toHaveLength(3); // Even 0, 2, 4
+            expect(evenEntities).toHaveLength(1); // Only the final entity remains (Even4)
 
-            // Verify correct data for each entity
-            const even0 = store.read(evenEntities.find(e => store.read(e)?.name === "Even0")!);
-            const even2 = store.read(evenEntities.find(e => store.read(e)?.name === "Even2")!);
-            const even4 = store.read(evenEntities.find(e => store.read(e)?.name === "Even4")!);
+            // Verify the final entity has the correct data (from the last yield)
+            const finalEntity = store.read(evenEntities[0]);
+            expect(finalEntity?.position).toEqual({ x: 4, y: 8, z: 12 });
+            expect(finalEntity?.name).toBe("Even4");
 
-            expect(even0?.position).toEqual({ x: 0, y: 0, z: 0 });
-            expect(even2?.position).toEqual({ x: 2, y: 4, z: 6 });
-            expect(even4?.position).toEqual({ x: 4, y: 8, z: 12 });
-
+            // Verify observer was notified for each entity creation (even though they were replaced)
             expect(observer).toHaveBeenCalledTimes(3);
 
             unsubscribe();

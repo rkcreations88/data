@@ -36,6 +36,7 @@ import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { observeSelectEntities } from "./observe-select-entities.js";
 import { CoreComponents } from "../core-components.js";
+import { applyOperations } from "../index.js";
 
 export function createDatabase<
     C extends Components,
@@ -149,7 +150,7 @@ export function createDatabase<
     const execute = (handler: (db: Store<C, R, A>) => void, options?: { transient?: boolean }) => {
         const result = transactionDatabaseExecute(handler, options);
         notifyObservers(result);
-        return result.value;
+        return result;
     }
 
     const transactions = {} as T;
@@ -167,14 +168,21 @@ export function createDatabase<
                         (async () => {
                             try {
                                 let lastArgs: any = undefined;
-                                for await (const asyncArgs of asyncResult) {
+                                let lastTransaction: TransactionResult<C> | undefined;
+                                const executeNext = (asyncArgs: any, transient: boolean) => {
                                     lastArgs = asyncArgs;
-                                    execute(t => transaction(t, asyncArgs), { transient: true });
+                                    if (lastTransaction) {
+                                        // we need to undo the last transaction before executing the next one
+                                        applyOperations(store, lastTransaction.undo);
+                                    }
+                                    lastTransaction = execute(t => transaction(t, asyncArgs), { transient });
+                                }
+                                for await (const asyncArgs of asyncResult) {
+                                    executeNext(asyncArgs, true);
                                 }
                                 if (lastArgs) {
-                                    execute(t => transaction(t, lastArgs), { transient: false });
+                                    executeNext(lastArgs, false);
                                 }
-                                return lastArgs;
                             }
                             catch (error) {
                                 console.error('AsyncGenerator error:', error);
@@ -194,7 +202,7 @@ export function createDatabase<
                 }
                 else {
                     // Synchronous argument
-                    return execute(t => transaction(t, args));
+                    return execute(t => transaction(t, args)).value;
                 }
             },
             writable: false,
