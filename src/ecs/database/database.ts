@@ -79,6 +79,8 @@ export interface Database<
       options?: EntitySelectOptions<C, Pick<C & CoreComponents, T>>
     ): Observe<readonly Entity[]>;
   }
+  toData(): unknown
+  fromData(data: unknown): void
 }
 
 type TestTransactionFunctions = ToTransactionFunctions<{

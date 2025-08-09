@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { describe, it, expect } from 'vitest';
-import { serialize } from './serialize.js';
-import { deserialize } from './deserialize.js';
+import { serialize, deserialize } from './serialize.js';
 import { createTypedBuffer } from '../../typed-buffer/create-typed-buffer.js';
 import { equals } from '../../equals.js';
 import { createTable } from '../../table/create-table.js';

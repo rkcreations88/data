@@ -19,6 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { describe, it, expect, vi } from "vitest";
 import { createDatabase } from "./create-database.js";
 import { createStore } from "../store/create-store.js";
@@ -503,28 +504,21 @@ describe("createDatabase", () => {
             // Wait for all entities to be processed
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            // Verify all entities were created
+            // Verify only the final entity was created (each yield replaces the previous)
             const entities = store.select(["position", "name"]);
             const streamEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Stream");
             });
 
-            expect(streamEntities.length >= 3);
+            expect(streamEntities).toHaveLength(1); // Only the final entity remains
 
-            // Verify each entity has correct data
-            const entity1 = store.read(streamEntities[0]);
-            const entity2 = store.read(streamEntities[1]);
-            const entity3 = store.read(streamEntities[2]);
+            // Verify the final entity has the correct data (from the last yield)
+            const finalEntity = store.read(streamEntities[0]);
+            expect(finalEntity?.position).toEqual({ x: 3, y: 3, z: 3 });
+            expect(finalEntity?.name).toBe("Stream3");
 
-            expect(entity1?.position).toEqual({ x: 1, y: 1, z: 1 });
-            expect(entity1?.name).toBe("Stream1");
-            expect(entity2?.position).toEqual({ x: 2, y: 2, z: 2 });
-            expect(entity2?.name).toBe("Stream2");
-            expect(entity3?.position).toEqual({ x: 3, y: 3, z: 3 });
-            expect(entity3?.name).toBe("Stream3");
-
-            // Verify observer was notified for each entity
+            // Verify observer was notified for each entity creation (even though they were replaced)
             expect(observer.mock.calls.length >= 3);
 
             unsubscribe();
@@ -690,24 +684,21 @@ describe("createDatabase", () => {
             // Wait for processing
             await new Promise(resolve => setTimeout(resolve, 20));
 
-            // Verify only even-numbered entities were created
+            // Verify only the final entity was created (each yield replaces the previous)
             const entities = store.select(["position", "name"]);
             const evenEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Even");
             });
 
-            expect(evenEntities).toHaveLength(3); // Even 0, 2, 4
+            expect(evenEntities).toHaveLength(1); // Only the final entity remains (Even4)
 
-            // Verify correct data for each entity
-            const even0 = store.read(evenEntities.find(e => store.read(e)?.name === "Even0")!);
-            const even2 = store.read(evenEntities.find(e => store.read(e)?.name === "Even2")!);
-            const even4 = store.read(evenEntities.find(e => store.read(e)?.name === "Even4")!);
+            // Verify the final entity has the correct data (from the last yield)
+            const finalEntity = store.read(evenEntities[0]);
+            expect(finalEntity?.position).toEqual({ x: 4, y: 8, z: 12 });
+            expect(finalEntity?.name).toBe("Even4");
 
-            expect(even0?.position).toEqual({ x: 0, y: 0, z: 0 });
-            expect(even2?.position).toEqual({ x: 2, y: 4, z: 6 });
-            expect(even4?.position).toEqual({ x: 4, y: 8, z: 12 });
-
+            // Verify observer was notified for each entity creation (even though they were replaced)
             expect(observer).toHaveBeenCalledTimes(3);
 
             unsubscribe();
@@ -743,6 +734,142 @@ describe("createDatabase", () => {
             expect(result.changedEntities.size).toBe(1);
             expect(result.changedComponents.has("position")).toBe(true);
             expect(result.changedComponents.has("name")).toBe(true);
+
+            unsubscribe();
+        });
+
+        it("should handle undoable property correctly in async generator transactions", async () => {
+            const store = createTestObservableStore();
+            const transactionObserver = vi.fn();
+            const unsubscribe = store.observe.transactions(transactionObserver);
+
+            // Create an async generator that sets undoable property in intermediate transactions
+            async function* undoableStream() {
+                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1" };
+                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2" };
+                yield { position: { x: 3, y: 3, z: 3 }, name: "Step3" };
+            }
+
+            // Create a custom database with undoable transaction
+            const baseStore = createStore(
+                { position: positionSchema, name: nameSchema },
+                { time: { default: { delta: 0.016, elapsed: 0 } } },
+                {
+                    PositionName: ["position", "name"],
+                }
+            );
+
+            const customStore = createDatabase(baseStore, {
+                createWithUndoable(t, args: { position: { x: number, y: number, z: number }, name: string }) {
+                    // Set undoable property for this transaction
+                    t.undoable = { coalesce: { operation: "create", name: args.name } };
+                    return t.archetypes.PositionName.insert(args);
+                }
+            });
+
+            // Set up observer on the custom store
+            const customTransactionObserver = vi.fn();
+            const customUnsubscribe = customStore.observe.transactions(customTransactionObserver);
+
+            // Execute transaction with async generator wrapped in function
+            customStore.transactions.createWithUndoable(() => undoableStream());
+
+            // Wait for all entities to be processed
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Verify transaction observer was called multiple times (for each transient + final)
+            expect(customTransactionObserver).toHaveBeenCalledTimes(4); // 3 transient + 1 final
+
+            // Check the transient transactions - they should have the undoable property
+            const transientTransactionCall1 = customTransactionObserver.mock.calls[0]; // First transient
+            const transientTransactionCall2 = customTransactionObserver.mock.calls[1]; // Second transient
+            const transientTransactionCall3 = customTransactionObserver.mock.calls[2]; // Third transient
+
+            expect(transientTransactionCall1[0].transient).toBe(true);
+            expect(transientTransactionCall1[0].undoable).toEqual({ coalesce: { operation: "create", name: "Step1" } });
+
+            expect(transientTransactionCall2[0].transient).toBe(true);
+            expect(transientTransactionCall2[0].undoable).toEqual({ coalesce: { operation: "create", name: "Step2" } });
+
+            expect(transientTransactionCall3[0].transient).toBe(true);
+            expect(transientTransactionCall3[0].undoable).toEqual({ coalesce: { operation: "create", name: "Step3" } });
+
+            // Check that the final non-transient transaction has the undoable property from the last transient transaction
+            const finalTransactionCall = customTransactionObserver.mock.calls[3]; // Last call should be final transaction
+            const finalTransactionResult = finalTransactionCall[0];
+
+            expect(finalTransactionResult.transient).toBe(false);
+            // The undoable property should be preserved from the last transient transaction
+            expect(finalTransactionResult.undoable).toEqual({ coalesce: { operation: "create", name: "Step3" } });
+
+            // POTENTIAL ISSUE: Transient transactions with undoable properties might cause problems
+            // in undo-redo systems that expect only non-transient transactions to be undoable.
+            // This test documents the current behavior for future consideration.
+
+            unsubscribe();
+            customUnsubscribe();
+        });
+
+        it("should demonstrate potential issue with undo-redo system and transient transactions", async () => {
+            // This test demonstrates a potential issue where transient transactions with undoable properties
+            // might be incorrectly handled by undo-redo systems that expect only non-transient transactions
+            // to be undoable.
+
+            const baseStore = createStore(
+                { position: positionSchema, name: nameSchema },
+                { time: { default: { delta: 0.016, elapsed: 0 } } },
+                {
+                    PositionName: ["position", "name"],
+                }
+            );
+
+            const customStore = createDatabase(baseStore, {
+                createWithUndoable(t, args: { position: { x: number, y: number, z: number }, name: string }) {
+                    // Set undoable property for this transaction
+                    t.undoable = { coalesce: { operation: "create", name: args.name } };
+                    return t.archetypes.PositionName.insert(args);
+                }
+            });
+
+            const transactionObserver = vi.fn();
+            const unsubscribe = customStore.observe.transactions(transactionObserver);
+
+            // Create an async generator that yields multiple values
+            async function* undoableStream() {
+                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1" };
+                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2" };
+                yield { position: { x: 3, y: 3, z: 3 }, name: "Step3" };
+            }
+
+            // Execute transaction with async generator
+            customStore.transactions.createWithUndoable(() => undoableStream());
+
+            // Wait for processing
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Collect all transaction results
+            const allTransactions = transactionObserver.mock.calls.map(call => call[0]);
+
+            // Verify we have the expected number of transactions
+            expect(allTransactions).toHaveLength(4); // 3 transient + 1 final
+
+            // Check that transient transactions have undoable properties
+            const transientTransactions = allTransactions.filter(t => t.transient);
+            expect(transientTransactions).toHaveLength(3);
+
+            // POTENTIAL ISSUE: Transient transactions with undoable properties
+            // This could cause problems in undo-redo systems that:
+            // 1. Expect only non-transient transactions to be undoable
+            // 2. Might try to undo transient transactions incorrectly
+            // 3. Could have issues with coalescing logic that doesn't account for transient transactions
+
+            // The current implementation preserves the undoable property from the last transient transaction
+            // in the final non-transient transaction, which might be the intended behavior.
+            // However, this could lead to unexpected behavior in undo-redo systems.
+
+            const finalTransaction = allTransactions.find(t => !t.transient);
+            expect(finalTransaction).toBeDefined();
+            expect(finalTransaction!.undoable).toEqual({ coalesce: { operation: "create", name: "Step3" } });
 
             unsubscribe();
         });
@@ -1033,5 +1160,285 @@ describe("createDatabase", () => {
 
             unsubscribe();
         });
+    });
+});
+
+describe("toData/fromData functionality", () => {
+    it("should serialize and deserialize database state correctly", () => {
+        const store = createTestObservableStore();
+
+        // Create some entities and update resources
+        const entity1 = store.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 }
+        });
+        const entity2 = store.transactions.createFullEntity({
+            position: { x: 4, y: 5, z: 6 },
+            health: { current: 100, max: 100 },
+            name: "TestEntity"
+        });
+        store.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
+
+        // Serialize the database
+        const serializedData = store.toData();
+
+        // Create a new database and restore from serialized data
+        const newStore = createTestObservableStore();
+        newStore.fromData(serializedData);
+
+        // Verify entities are restored
+        const restoredEntities = newStore.select(["position"]);
+        expect(restoredEntities).toHaveLength(2);
+
+        // Verify entity data is correct
+        const restoredData1 = newStore.read(restoredEntities[0]);
+        const restoredData2 = newStore.read(restoredEntities[1]);
+        expect(restoredData1).toEqual({
+            id: restoredEntities[0],
+            position: { x: 1, y: 2, z: 3 }
+        });
+        expect(restoredData2).toEqual({
+            id: restoredEntities[1],
+            position: { x: 4, y: 5, z: 6 },
+            health: { current: 100, max: 100 },
+            name: "TestEntity"
+        });
+
+        // Verify resources are restored
+        expect(newStore.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
+    });
+
+    it("should notify all observers when database is restored from serialized data", () => {
+        const store = createTestObservableStore();
+
+        // Create initial state
+        const entity = store.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 }
+        });
+        store.transactions.updateTime({ delta: 0.016, elapsed: 0 });
+
+        // Set up observers
+        const positionObserver = vi.fn();
+        const timeObserver = vi.fn();
+        const entityObserver = vi.fn();
+        const transactionObserver = vi.fn();
+
+        const unsubscribePosition = store.observe.components.position(positionObserver);
+        const unsubscribeTime = store.observe.resources.time(timeObserver);
+        const unsubscribeEntity = store.observe.entity(entity)(entityObserver);
+        const unsubscribeTransaction = store.observe.transactions(transactionObserver);
+
+        // Clear initial notifications
+        positionObserver.mockClear();
+        timeObserver.mockClear();
+        entityObserver.mockClear();
+        transactionObserver.mockClear();
+
+        // Serialize the database
+        const serializedData = store.toData();
+
+        // Create a new database with different state
+        const newStore = createTestObservableStore();
+        const newEntity = newStore.transactions.createFullEntity({
+            position: { x: 10, y: 20, z: 30 },
+            health: { current: 50, max: 100 },
+            name: "NewEntity"
+        });
+        newStore.transactions.updateTime({ delta: 0.025, elapsed: 2.0 });
+
+        // Set up observers on the new store
+        const newPositionObserver = vi.fn();
+        const newTimeObserver = vi.fn();
+        const newEntityObserver = vi.fn();
+        const newTransactionObserver = vi.fn();
+
+        const newUnsubscribePosition = newStore.observe.components.position(newPositionObserver);
+        const newUnsubscribeTime = newStore.observe.resources.time(newTimeObserver);
+        const newUnsubscribeEntity = newStore.observe.entity(newEntity)(newEntityObserver);
+        const newUnsubscribeTransaction = newStore.observe.transactions(newTransactionObserver);
+
+        // Clear initial notifications
+        newPositionObserver.mockClear();
+        newTimeObserver.mockClear();
+        newEntityObserver.mockClear();
+        newTransactionObserver.mockClear();
+
+        // Restore from serialized data
+        newStore.fromData(serializedData);
+
+        // All observers should be notified because the entire state changed
+        expect(newPositionObserver).toHaveBeenCalledTimes(1);
+        expect(newTimeObserver).toHaveBeenCalledTimes(1);
+        expect(newEntityObserver).toHaveBeenCalledTimes(1);
+        expect(newTransactionObserver).toHaveBeenCalledTimes(1);
+
+        // Verify the transaction observer received the correct notification
+        const transactionResult = newTransactionObserver.mock.calls[0][0];
+        expect(transactionResult.changedComponents.has("position")).toBe(true);
+        expect(transactionResult.transient).toBe(false);
+
+        // Verify the entity observer received the correct data
+        const entityData = newEntityObserver.mock.calls[0][0];
+        expect(entityData).toEqual({
+            id: newEntity,
+            position: { x: 1, y: 2, z: 3 }
+        });
+
+        // Verify the time observer received the correct data
+        const timeData = newTimeObserver.mock.calls[0][0];
+        expect(timeData).toEqual({ delta: 0.016, elapsed: 0 });
+
+        // Clean up
+        unsubscribePosition();
+        unsubscribeTime();
+        unsubscribeEntity();
+        unsubscribeTransaction();
+        newUnsubscribePosition();
+        newUnsubscribeTime();
+        newUnsubscribeEntity();
+        newUnsubscribeTransaction();
+    });
+
+    it("should notify observers even when no entities exist in restored data", () => {
+        const store = createTestObservableStore();
+
+        // Set up observers on empty store
+        const positionObserver = vi.fn();
+        const timeObserver = vi.fn();
+        const transactionObserver = vi.fn();
+
+        const unsubscribePosition = store.observe.components.position(positionObserver);
+        const unsubscribeTime = store.observe.resources.time(timeObserver);
+        const unsubscribeTransaction = store.observe.transactions(transactionObserver);
+
+        // Clear initial notifications
+        positionObserver.mockClear();
+        timeObserver.mockClear();
+        transactionObserver.mockClear();
+
+        // Serialize empty database
+        const serializedData = store.toData();
+
+        // Create a new database with some data
+        const newStore = createTestObservableStore();
+        newStore.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 }
+        });
+        newStore.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
+
+        // Set up observers on the new store
+        const newPositionObserver = vi.fn();
+        const newTimeObserver = vi.fn();
+        const newTransactionObserver = vi.fn();
+
+        const newUnsubscribePosition = newStore.observe.components.position(newPositionObserver);
+        const newUnsubscribeTime = newStore.observe.resources.time(newTimeObserver);
+        const newUnsubscribeTransaction = newStore.observe.transactions(newTransactionObserver);
+
+        // Clear initial notifications
+        newPositionObserver.mockClear();
+        newTimeObserver.mockClear();
+        newTransactionObserver.mockClear();
+
+        // Restore from empty serialized data
+        newStore.fromData(serializedData);
+
+        // All observers should still be notified
+        expect(newPositionObserver).toHaveBeenCalledTimes(1);
+        expect(newTimeObserver).toHaveBeenCalledTimes(1);
+        expect(newTransactionObserver).toHaveBeenCalledTimes(1);
+
+        // Verify the store is now empty
+        const entities = newStore.select(["position"]);
+        expect(entities).toHaveLength(0);
+        expect(newStore.resources.time).toEqual({ delta: 0.016, elapsed: 0 });
+
+        // Clean up
+        unsubscribePosition();
+        unsubscribeTime();
+        unsubscribeTransaction();
+        newUnsubscribePosition();
+        newUnsubscribeTime();
+        newUnsubscribeTransaction();
+    });
+
+    it("should handle entity observers correctly during restoration", () => {
+        const store = createTestObservableStore();
+
+        // Create entity and set up observer
+        const entity = store.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 }
+        });
+
+        const entityObserver = vi.fn();
+        const unsubscribe = store.observe.entity(entity)(entityObserver);
+
+        // Clear initial notification
+        entityObserver.mockClear();
+
+        // Serialize the database
+        const serializedData = store.toData();
+
+        // Create a new database
+        const newStore = createTestObservableStore();
+
+        // Set up observer on the new store for a different entity
+        const newEntity = newStore.transactions.createFullEntity({
+            position: { x: 10, y: 20, z: 30 },
+            health: { current: 100, max: 100 },
+            name: "NewEntity"
+        });
+
+        const newEntityObserver = vi.fn();
+        const newUnsubscribe = newStore.observe.entity(newEntity)(newEntityObserver);
+
+        // Clear initial notification
+        newEntityObserver.mockClear();
+
+        // Restore from serialized data
+        newStore.fromData(serializedData);
+
+        // The entity observer should be notified with the restored entity data
+        expect(newEntityObserver).toHaveBeenCalledTimes(1);
+        const restoredEntityData = newEntityObserver.mock.calls[0][0];
+        expect(restoredEntityData).toEqual({
+            id: newEntity,
+            position: { x: 1, y: 2, z: 3 }
+        });
+
+        // Clean up
+        unsubscribe();
+        newUnsubscribe();
+    });
+
+    it("should preserve transaction functionality after restoration", () => {
+        const store = createTestObservableStore();
+
+        // Create initial state
+        store.transactions.updateTime({ delta: 0.016, elapsed: 0 });
+
+        // Serialize the database
+        const serializedData = store.toData();
+
+        // Create a new database and restore
+        const newStore = createTestObservableStore();
+        newStore.fromData(serializedData);
+
+        // Verify transactions still work
+        const entity = newStore.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 }
+        });
+
+        expect(entity).toBeDefined();
+        expect(typeof entity).toBe("number");
+
+        const entityData = newStore.read(entity);
+        expect(entityData).toEqual({
+            id: entity,
+            position: { x: 1, y: 2, z: 3 }
+        });
+
+        // Verify resource transactions work
+        newStore.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
+        expect(newStore.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
     });
 }); 

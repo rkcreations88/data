@@ -19,6 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { FromSchema } from "../../schema/schema.js";
 import * as TABLE from "../../table/index.js";
 import { Archetype } from "./archetype.js";
@@ -50,6 +51,15 @@ export const createArchetype = <C extends { id: typeof EntitySchema }>(
         ...table,
         components: componentSet,
         insert: createEntity,
+        toData: () => ({
+            columns: archetype.columns,
+            rowCount: archetype.rowCount,
+            rowCapacity: archetype.rowCapacity,
+        }),
+        fromData: (data: unknown) => {
+            Object.assign(archetype, data);
+            // component set cannot be changed by this as the archetype components should be the same.
+        }
     } as const satisfies Archetype<{ [K in keyof C]: FromSchema<C[K]> }> as Archetype<CoreComponents & { [K in keyof C]: FromSchema<C[K]> }>;
     return archetype;
 }

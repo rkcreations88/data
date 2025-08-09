@@ -1,4 +1,4 @@
-import { findCodec, EncodedValue } from "./codec.js";
+import { findCodec, EncodedValue, getCodec, isEncodedValue } from "./codec.js";
 
 export function serialize<T>(data: T): { json: string, binary: Uint8Array[] } {
     const allBinaries: Uint8Array[] = [];
@@ -15,4 +15,18 @@ export function serialize<T>(data: T): { json: string, binary: Uint8Array[] } {
         return value;
     });
     return { json, binary: allBinaries };
+}
+
+export function deserialize<T>(payload: { json: string, binary: Uint8Array[] }): T {
+    const data = JSON.parse(payload.json, (_key, value) => {
+        if (isEncodedValue(value)) {
+            const codec = getCodec(value.codec);
+            if (codec) {
+                const binary = payload.binary.slice(value.binaryIndex, value.binaryIndex + value.binaryCount);
+                return codec.deserialize({ json: value.json, binary });
+            }
+        }
+        return value;
+    });
+    return data as T;
 }

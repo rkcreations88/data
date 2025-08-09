@@ -1,5 +1,3 @@
-import { Observe, Unobserve } from "./types.js";
-
 /*MIT License
 
 © Copyright 2025 Adobe. All rights reserved.
@@ -21,6 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
+import { Observe, Unobserve } from "./types.js";
 
 /**
  * Converts an Observe function to an AsyncGenerator that will yield values as they are observed.
@@ -75,10 +75,9 @@ export function toAsyncGenerator<T>(
         unobserve = observe(v => {
             if (done || error != null) return;
             try {
+                enqueue(v);
                 if (finished(v)) {
                     done = true;
-                } else {
-                    enqueue(v);
                 }
             } catch (e) {
                 error = e;

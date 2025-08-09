@@ -140,13 +140,10 @@ describe("observeSelectEntities Performance Tests", () => {
                 });
                 updateTimes.push(updateTime);
             }
-            console.log("Update execution times (ms):", updateTimes);
             const sizeRatio1 = sizes[1] / sizes[0];
             const sizeRatio2 = sizes[2] / sizes[1];
             const timeRatio1 = updateTimes[1] / updateTimes[0];
             const timeRatio2 = updateTimes[2] / updateTimes[1];
-            console.log(`Size ratio 1: ${sizeRatio1}, Time ratio 1: ${timeRatio1}`);
-            console.log(`Size ratio 2: ${sizeRatio2}, Time ratio 2: ${timeRatio2}`);
             if (updateTimes.every(time => time === 0)) {
                 console.log("All update times are 0ms; performance is excellent and O(1) as expected.");
                 return;

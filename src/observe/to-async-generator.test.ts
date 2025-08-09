@@ -86,7 +86,12 @@ describe('toAsyncGenerator', () => {
         expect(result.done).toBe(false);
         expect(result.value).toBe(42);
 
-        // Should be done after consuming the value
+        // Should get the finish value before being done
+        const finishResult = await generator.next();
+        expect(finishResult.done).toBe(false);
+        expect(finishResult.value).toBe(null);
+
+        // Should be done after consuming the finish value
         const doneResult = await generator.next();
         expect(doneResult).toEqual({ done: true, value: undefined });
     });
@@ -109,7 +114,12 @@ describe('toAsyncGenerator', () => {
         expect(result.done).toBe(false);
         expect(result.value).toBe(42);
 
-        // Should be done after consuming the value
+        // Should get the finish value before being done
+        const finishResult = await generator.next();
+        expect(finishResult.done).toBe(false);
+        expect(finishResult.value).toBe(null);
+
+        // Should be done after consuming the finish value
         const doneResult = await generator.next();
         expect(doneResult).toEqual({ done: true, value: undefined });
     });
@@ -130,7 +140,12 @@ describe('toAsyncGenerator', () => {
         expect(result.done).toBe(false);
         expect(result.value).toBe(42);
 
-        // Should be done after consuming the value
+        // Should get the finish value before being done
+        const finishResult = await generator.next();
+        expect(finishResult.done).toBe(false);
+        expect(finishResult.value).toBe(999);
+
+        // Should be done after consuming the finish value
         const doneResult = await generator.next();
         expect(doneResult).toEqual({ done: true, value: undefined });
     });
@@ -144,7 +159,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([42]);
+        expect(values).toEqual([42, null]);
     });
 
     it('should yield asynchronous values in order', async () => {
@@ -161,7 +176,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([1, 2, 3]);
+        expect(values).toEqual([1, 2, 3, null]);
     });
 
     it('should yield both sync and async values in correct order', async () => {
@@ -179,7 +194,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([0, 1, 2, 3]);
+        expect(values).toEqual([0, 1, 2, 3, null]);
     });
 
     it('should stop on null/undefined by default', async () => {
@@ -192,7 +207,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([1]);
+        expect(values).toEqual([1, null]);
     });
 
     it('should handle empty observable', async () => {
@@ -203,7 +218,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([]);
+        expect(values).toEqual([null]);
     });
 
     it('should handle immediate finish value', async () => {
@@ -211,7 +226,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([]);
+        expect(values).toEqual([null]);
     });
 
     it('should handle multiple rapid emissions', async () => {
@@ -230,7 +245,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([1, 2, 3, 4, 5]);
+        expect(values).toEqual([1, 2, 3, 4, 5, null]);
     });
 
     it('should handle synchronous finish in observe callback', async () => {
@@ -244,7 +259,7 @@ describe('toAsyncGenerator', () => {
 
         const generator = toAsyncGenerator(observe);
         const values = await collectValues(generator);
-        expect(values).toEqual([1, 2]);
+        expect(values).toEqual([1, 2, null]);
     });
 
     it('should handle errors in finished function', async () => {
@@ -309,8 +324,8 @@ describe('toAsyncGenerator', () => {
         const values1 = await collectValues(generator1);
         const values2 = await collectValues(generator2);
 
-        expect(values1).toEqual([1, 2, 3]);
-        expect(values2).toEqual([1, 2, 3]);
+        expect(values1).toEqual([1, 2, 3, null]);
+        expect(values2).toEqual([1, 2, 3, null]);
     });
 
     it('should handle queue compaction correctly', async () => {
@@ -327,7 +342,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe);
 
         const values = await collectValues(generator);
-        expect(values).toEqual(Array.from({ length: 2000 }, (_, i) => i));
+        expect(values).toEqual([...Array.from({ length: 2000 }, (_, i) => i), null]);
     });
 
     it('should handle custom finished function that never returns true', async () => {
@@ -350,7 +365,7 @@ describe('toAsyncGenerator', () => {
         const result3 = await generator.next();
         expect(result3).toEqual({ done: false, value: 3 });
 
-        // The null value should be ignored since finished function returns false
+        // The null value should be included since finished function returns false
         const result4 = await generator.next();
         expect(result4).toEqual({ done: false, value: null });
     });
@@ -365,7 +380,7 @@ describe('toAsyncGenerator', () => {
         const generator = toAsyncGenerator(observe, () => true);
 
         const values = await collectValues(generator);
-        expect(values).toEqual([]);
+        expect(values).toEqual([1]); // The first value is included before the finished check
     });
 
     it('should handle synchronous observe callback that finishes immediately', async () => {
@@ -376,7 +391,7 @@ describe('toAsyncGenerator', () => {
 
         const generator = toAsyncGenerator(observe);
         const values = await collectValues(generator);
-        expect(values).toEqual([]);
+        expect(values).toEqual([null]); // The null value is included before the finished check
     });
 
     it('should handle mixed sync/async with custom finished function', async () => {
@@ -390,7 +405,7 @@ describe('toAsyncGenerator', () => {
         await doAsync();
 
         const values = await valuesPromise;
-        expect(values).toEqual([0, 1, 2]);
+        expect(values).toEqual([0, 1, 2, 3]); // The finish value (3) is included
     });
 
     it('should handle return() after error', async () => {
@@ -439,7 +454,7 @@ describe('toAsyncGenerator', () => {
             { done: false, value: 1 },
             { done: false, value: 2 },
             { done: false, value: 3 },
-            { done: true, value: undefined }
+            { done: false, value: null } // The null value is included before the finished check
         ]);
     });
 

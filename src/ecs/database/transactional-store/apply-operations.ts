@@ -7,7 +7,7 @@ import { ArchetypeComponents } from "../../store/archetype-components.js";
 
 // Helper function to apply write operations for rollback
 export const applyOperations = (
-    store: Transaction<any, any, any>,
+    store: Transaction<any, any, any> | Store<any, any, any>,
     operations: TransactionWriteOperation<any>[]
 ) => {
     for (const operation of operations) {

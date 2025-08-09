@@ -27,4 +27,6 @@ export interface EntityLocationTable {
     update: (entity: Entity, location: EntityLocation) => void;
     delete: (entity: Entity) => void;
     locate: (entity: Entity) => EntityLocation | null;
+    toData: () => unknown;
+    fromData: (data: unknown) => void;
 }

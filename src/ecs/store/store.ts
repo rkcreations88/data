@@ -37,6 +37,7 @@ interface BaseStore<C extends object = never> {
         include: readonly Include[] | ReadonlySet<string>,
         options?: EntitySelectOptions<C, Pick<C & CoreComponents, T>>
     ): readonly Entity[];
+    toData(): unknown
 }
 
 export interface ReadonlyStore<
@@ -60,5 +61,6 @@ export interface Store<
 > extends BaseStore<C>, Core<C> {
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };
     readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
+    fromData(data: unknown): void
 }
 

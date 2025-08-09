@@ -33,10 +33,13 @@ interface BaseArchetype {
     readonly components: ReadonlySet<string>;
 }
 export interface ReadonlyArchetype<C extends CoreComponents> extends BaseArchetype, ReadonlyTable<C> {
+    toData: () => unknown
 }
 
 export interface Archetype<C extends CoreComponents = CoreComponents> extends BaseArchetype, Table<C> {
     insert: (rowData: EntityInsertValues<C>) => Entity;
+    toData: () => unknown
+    fromData: (data: unknown) => void
 }
 
 export type FromArchetype<T> =

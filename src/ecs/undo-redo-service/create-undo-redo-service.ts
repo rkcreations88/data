@@ -60,7 +60,7 @@ export const createUndoRedoService = (database: Database<any, any, any, { applyO
     const redoEnabled = withMap(fromProperties({
         stack: observeUndoStack,
         index: observeStackIndex,
-    }), ({ stack, index }) => index < stack.length - 1);
+    }), ({ stack, index }) => index < stack.length);
 
     return {
         serviceName: 'UndoRedoService',
