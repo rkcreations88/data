@@ -37,7 +37,9 @@ export type SuccessResult<Result> = Result & {
   readonly progress: 1.0;
 }
 
-export type ProgressiveResult<Result, Error> = IntermediateResult<Result> | SuccessResult<Result> | ErrorResult<Result, Error>;
+export type FinalResult<Result, Error> = SuccessResult<Result> | ErrorResult<Result, Error>;
+
+export type ProgressiveResult<Result, Error> = IntermediateResult<Result> | FinalResult<Result, Error>;
 
 /**
  * Results must be objects as we are going to add error and progress properties to them.
