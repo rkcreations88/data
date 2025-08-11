@@ -29,16 +29,7 @@ import { Components } from "../../store/components.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { Undoable } from "../undoable.js";
-export interface Transaction<
-    C extends Components = never,
-    R extends ResourceComponents = never,
-    A extends ArchetypeComponents<StringKeyof<C>> = never,
-> extends Store<C, R, A> {
-    readonly transient: boolean;
-    undoable: null | Undoable;
-}
 
-export type TransactionFromStore<S extends Store<any, any, any>> = S extends Store<infer C, infer R, infer A> ? Transaction<C, R, A> : never;
 export interface TransactionalStore<
     C extends Components = never,
     R extends ResourceComponents = never,
@@ -52,7 +43,7 @@ export interface TransactionalStore<
      * @returns A promise that resolves when the transaction is complete.
      */
     execute(
-        transactionFunction: (t: Transaction<C, R, A>) => Entity | void,
+        transactionFunction: (t: Store<C, R, A>) => Entity | void,
         options?: {
             transient?: boolean;
         }

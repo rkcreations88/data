@@ -24,7 +24,7 @@ import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
 import { Entity } from "../../entity.js";
 import { EntityUpdateValues } from "../../store/core/index.js";
-import { Transaction, TransactionalStore, TransactionResult, TransactionWriteOperation } from "./transactional-store.js";
+import { TransactionalStore, TransactionResult, TransactionWriteOperation } from "./transactional-store.js";
 import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
@@ -33,6 +33,14 @@ import { Undoable } from "../undoable.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
+
+interface Transaction<
+    C extends Components = never,
+    R extends ResourceComponents = never,
+    A extends ArchetypeComponents<StringKeyof<C>> = never,
+> extends Store<C, R, A> {
+    // readonly transient: boolean;
+}
 
 export function createTransactionalStore<
     C extends Components,
@@ -177,8 +185,8 @@ export function createTransactionalStore<
         },
         update: updateEntity,
         delete: deleteEntity,
-        transient: false as boolean,
-        undoable: null as null | Undoable,
+        // transient: false as boolean,
+        undoable: undefined,
     } satisfies Transaction<C, R, A>;
 
     // Execute transaction function
@@ -188,8 +196,7 @@ export function createTransactionalStore<
             transient?: boolean;
         }
     ): TransactionResult<C> => {
-        transactionStore.transient = options?.transient ?? false;
-        transactionStore.undoable = null;
+        transactionStore.undoable = undefined;
         // Reset transaction state
         undoOperationsInReverseOrder = [];
         redoOperations = [];
@@ -204,8 +211,8 @@ export function createTransactionalStore<
             // Return the transaction result
             const result: TransactionResult<C> = {
                 value: value ?? undefined,
-                transient: transactionStore.transient,
-                undoable: transactionStore.undoable,
+                transient: options?.transient ?? false,
+                undoable: transactionStore.undoable ?? null,
                 redo: [...redoOperations],
                 undo: [...undoOperationsInReverseOrder.reverse()],
                 changedEntities: new Map(changed.entities),
