@@ -37,12 +37,8 @@ const getStructFieldAlignment = (type: StructFieldPrimitiveType | StructLayout):
     if (typeof type === "string") {
         return 4;
     }
-    // Arrays are aligned to vec4 (16 bytes)
-    if (type.type === "array") {
-        return VEC4_SIZE;
-    }
-    // Structs are aligned to 4 bytes within other structs
-    return 4;
+    // Arrays and structs are aligned to vec4 (16 bytes)
+    return VEC4_SIZE;
 };
 
 /**
@@ -52,6 +48,7 @@ const getFieldSize = (type: StructFieldPrimitiveType | StructLayout): number => 
     if (typeof type === "string") {
         return 4;  // All primitives are 4 bytes
     }
+    // For arrays and structs, use their actual size
     return type.size;
 };
 
@@ -122,8 +119,8 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
         if (schema.minItems !== schema.maxItems || !schema.minItems) {
             throw new Error("Array must have fixed length");
         }
-        if (schema.minItems < 2) {
-            throw new Error("Array length must be at least 2");
+        if (schema.minItems < 1) {
+            throw new Error("Array length must be at least 1");
         }
 
         // Special case for vec3
@@ -138,7 +135,7 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
             }
             return {
                 type: "array",
-                size: VEC4_SIZE,  // vec3 is padded to vec4
+                size: 12,  // vec3 is 12 bytes, not padded to vec4
                 fields
             };
         }
@@ -201,7 +198,7 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
         currentOffset += getFieldSize(fieldType);
     }
 
-    // Round up total size to vec4
+    // Round up total size to vec4 (std140 requirement)
     const size = roundUpToAlignment(currentOffset, VEC4_SIZE);
     return {
         type: "object",

@@ -20,5 +20,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export { createDatabaseSchema } from "./create-database-schema.js";
-export * from "./database-schema.js";
+import { StringKeyof } from "../../../types/types.js";
+import { ComponentSchemas } from "../../component-schemas.js";
+import { ResourceSchemas } from "../../resource-schemas.js";
+import { ArchetypeComponents } from "../archetype-components.js";
+import { StoreSchema } from "./store-schema.js";
+
+export function createStoreSchema<
+    const CS extends ComponentSchemas,
+    const RS extends ResourceSchemas,
+    const A extends ArchetypeComponents<StringKeyof<CS>>,
+>(
+    components: CS,
+    resources: RS,
+    archetypes: A,
+) {
+    return { components, resources, archetypes } as const satisfies StoreSchema<CS, RS, A>;
+};

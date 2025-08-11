@@ -28,6 +28,7 @@ import { Components } from "./components.js";
 import { ArchetypeComponents } from "./archetype-components.js";
 import { Archetype, ReadonlyArchetype } from "../archetype/archetype.js";
 import { EntitySelectOptions } from "./entity-select-options.js";
+import { Undoable } from "../database/undoable.js";
 
 interface BaseStore<C extends object = never> {
     select<
@@ -59,6 +60,11 @@ export interface Store<
     R extends ResourceComponents = never,
     A extends ArchetypeComponents<StringKeyof<C>> = never,
 > extends BaseStore<C>, Core<C> {
+    /**
+     * This is used when a store is used to represent a transaction.
+     * For most stores, this is ignored if it is set.
+     */
+    undoable?: Undoable;
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };
     readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
     fromData(data: unknown): void

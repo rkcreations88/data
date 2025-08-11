@@ -31,6 +31,7 @@ import { ResourceSchemas } from "../resource-schemas.js";
 import { ArchetypeComponents } from "./archetype-components.js";
 import { EntitySelectOptions } from "./entity-select-options.js";
 import { selectEntities } from "./core/select-entities.js";
+import { Undoable } from "../database/undoable.js";
 
 export function createStore<
     NC extends ComponentSchemas,

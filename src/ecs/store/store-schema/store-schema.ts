@@ -20,24 +20,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { FromSchemas } from "../../../schema/schema.js";
-import { StringKeyof } from "../../../types/types.js";
+import { FromSchemas } from "@adobe/data/schema";
 import { ComponentSchemas } from "../../component-schemas.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
-import { ArchetypeComponents } from "../../store/archetype-components.js";
-import { TransactionDeclaration } from "../database.js";
-import { DatabaseSchema } from "./database-schema.js";
+import { Store } from "../store.js";
+import { ArchetypeComponents } from "../archetype-components.js";
+import { StringKeyof } from "../../../types/types.js";
 
-export function createDatabaseSchema<
-    const CS extends ComponentSchemas,
-    const RS extends ResourceSchemas,
-    const A extends ArchetypeComponents<StringKeyof<CS>>,
-    const TD extends Record<string, TransactionDeclaration<FromSchemas<CS>, FromSchemas<RS>, A>>
->(
-    components: CS,
-    resources: RS,
-    archetypes: A,
-    transactions: TD,
-) {
-    return { components, resources, archetypes, transactions } satisfies DatabaseSchema<CS, RS, A, TD>;
+export type StoreSchema<
+    CS extends ComponentSchemas,
+    RS extends ResourceSchemas,
+    A extends ArchetypeComponents<StringKeyof<CS>>,
+> = {
+    readonly components: CS;
+    readonly resources: RS;
+    readonly archetypes: A;
 };
+    
+export type StoreFromSchema<T> = T extends StoreSchema<infer CS, infer RS, infer A> ? Store<FromSchemas<CS>, FromSchemas<RS>, A> : never;

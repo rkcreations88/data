@@ -25,7 +25,7 @@ import { ReadonlyStore, Store } from "../store/index.js";
 import { Entity } from "../entity.js";
 import { EntityReadValues } from "../store/core/index.js";
 import { Observe } from "../../observe/index.js";
-import { Transaction, TransactionResult } from "./transactional-store/index.js";
+import { TransactionResult } from "./transactional-store/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
@@ -36,7 +36,7 @@ export type TransactionDeclaration<
   C extends Components,
   R extends ResourceComponents,
   A extends ArchetypeComponents<StringKeyof<C>>,
-  Input extends any | void = any> = (t: Transaction<C, R, A>, input: Input) => void | Entity
+  Input extends any | void = any> = (t: Store<C, R, A>, input: Input) => void | Entity
 export type TransactionDeclarations = object
 export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
 
