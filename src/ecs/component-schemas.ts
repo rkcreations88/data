@@ -21,4 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Schema } from "../schema/schema.js";
 
-export type ComponentSchemas = { readonly [K: string]: Schema };
+export type ComponentSchema = Schema
+
+export type ComponentSchemas = { readonly [K: string]: ComponentSchema };

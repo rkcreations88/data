@@ -19,6 +19,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { Schema } from "../schema/schema.js";
 
-export type ResourceSchemas = { readonly [K: string]: Schema & { default: unknown } };
+export type ResourceSchema = Schema & { default: unknown }
+
+export type ResourceSchemas = { readonly [K: string]: ResourceSchema };

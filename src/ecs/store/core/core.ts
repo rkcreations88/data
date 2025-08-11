@@ -26,6 +26,8 @@ import { Schema } from "../../../schema/schema.js";
 import { CoreComponents } from "../../core-components.js";
 import { StringKeyof } from "../../../types/index.js";
 import { Components } from "../components.js";
+import { ComponentSchemas } from "../../component-schemas.js";
+import { FromSchema } from "../../../schema/schema.js";
 
 export type EntityValues<C> = { readonly [K in (CoreComponents & StringKeyof<C>)]: C[K] }
 export type EntityReadValues<C> = CoreComponents & { readonly [K in StringKeyof<C>]?: C[K] }
@@ -66,6 +68,10 @@ export interface Core<
         options?: ArchetypeQueryOptions<C>
     ): readonly Archetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
     ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
+    /**
+     * Creates new dynamic components with proper type safety. Returns the core typed for the new schemas.
+     */
+    addComponents: <NC extends ComponentSchemas>(newComponentSchemas: NC) => Core<C & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>;
     locate: (entity: Entity) => { archetype: Archetype<CoreComponents>, row: number } | null;
     delete: (entity: Entity) => void;
     update: (entity: Entity, values: EntityUpdateValues<C>) => void;
