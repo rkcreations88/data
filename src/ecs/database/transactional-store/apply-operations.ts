@@ -1,13 +1,10 @@
-import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
-import { Transaction, TransactionWriteOperation } from "./transactional-store.js";
+import { TransactionWriteOperation } from "./transactional-store.js";
 import { StringKeyof } from "../../../types/types.js";
-import { Components } from "../../store/components.js";
-import { ArchetypeComponents } from "../../store/archetype-components.js";
 
 // Helper function to apply write operations for rollback
 export const applyOperations = (
-    store: Transaction<any, any, any> | Store<any, any, any>,
+    store: Store<any, any, any>,
     operations: TransactionWriteOperation<any>[]
 ) => {
     for (const operation of operations) {

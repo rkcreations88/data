@@ -21,11 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { TrueSchema } from "../../../schema/true.js";
-import { createDatabaseSchema } from "./create-database-schema.js";
+import { createStoreSchema } from "./create-store-schema.js";
 
 // just a compile time test which is why we're using -test.ts extension instead of .test.ts
 
-createDatabaseSchema(
+createStoreSchema(
     {
         velocity: { type: "number" },
         particle: TrueSchema,
@@ -38,12 +38,5 @@ createDatabaseSchema(
         bar: ["particle", "velocity"],
         // @ts-expect-error
         foo: ["particle", "velocity2"] // should throw error because velocity2 is not a component
-    },
-    {
-        setMousePosition: (t, position: number) => {
-            t.resources.mousePosition = position;
-            // @ts-expect-error
-            t.resources.mousePosition2 = position;
-        },
     }
 )
