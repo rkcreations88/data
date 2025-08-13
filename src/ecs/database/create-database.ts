@@ -173,15 +173,33 @@ export function createDatabase<
                                     lastArgs = asyncArgs;
                                     if (lastTransaction) {
                                         // we need to undo the last transaction before executing the next one
-                                        applyOperations(store, lastTransaction.undo);
+                                        applyOperations(transactionalStore.transactionStore, lastTransaction.undo);
                                     }
                                     lastTransaction = execute(t => transaction(t, asyncArgs), { transient });
                                 }
-                                for await (const asyncArgs of asyncResult) {
-                                    executeNext(asyncArgs, true);
+
+                                // Manually iterate through the generator to capture both yield and return values
+                                let result = await asyncResult.next();
+
+                                // Process yield values one by one with rollback
+                                // We can't know if a yield is final until the generator completes,
+                                // so we mark all yields as transient initially
+                                while (!result.done) {
+                                    // This is a yield value - always transient initially
+                                    executeNext(result.value, true);
+                                    result = await asyncResult.next();
                                 }
-                                if (lastArgs) {
-                                    executeNext(lastArgs, false);
+
+                                // result.done is true, so this is the return value
+                                if (result.value !== undefined) {
+                                    // Use the return value as the final non-transient transaction
+                                    executeNext(result.value, false);
+                                } else {
+                                    // No return value, so the last yield should be the final non-transient transaction
+                                    // We need to re-execute the last yield value as non-transient
+                                    if (lastArgs) {
+                                        executeNext(lastArgs, false);
+                                    }
                                 }
                             }
                             catch (error) {
