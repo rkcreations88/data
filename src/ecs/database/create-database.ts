@@ -165,17 +165,33 @@ export function createDatabase<
                     const asyncResult = asyncArgsProvider();
 
                     if (isAsyncGenerator(asyncResult)) {
-                        (async () => {
+                        let count = 0;
+                        return new Promise(async (resolve, reject) => {
                             try {
                                 let lastArgs: any = undefined;
                                 let lastTransaction: TransactionResult<C> | undefined;
+
                                 const executeNext = (asyncArgs: any, transient: boolean) => {
                                     lastArgs = asyncArgs;
+
                                     if (lastTransaction) {
-                                        // we need to undo the last transaction before executing the next one
-                                        applyOperations(transactionalStore.transactionStore, lastTransaction.undo);
+                                        // rollback previous transaction.
+                                        execute(t => {
+                                            if (lastTransaction) {
+                                                // Rollback the previous transaction to restore the state before it
+                                                applyOperations(t, lastTransaction.undo);
+                                            }
+                                        }, { transient: true })
                                     }
-                                    lastTransaction = execute(t => transaction(t, asyncArgs), { transient });
+                                    lastTransaction = execute(
+                                        t => transaction(t, asyncArgs),
+                                        { transient }
+                                    );
+
+                                    if (!transient) {
+                                        // this is the last value so we will resolve to it
+                                        resolve(lastTransaction.value);
+                                    }
                                 }
 
                                 // Manually iterate through the generator to capture both yield and return values
@@ -190,32 +206,33 @@ export function createDatabase<
                                     result = await asyncResult.next();
                                 }
 
-                                // result.done is true, so this is the return value
                                 if (result.value !== undefined) {
-                                    // Use the return value as the final non-transient transaction
                                     executeNext(result.value, false);
-                                } else {
-                                    // No return value, so the last yield should be the final non-transient transaction
-                                    // We need to re-execute the last yield value as non-transient
-                                    if (lastArgs) {
-                                        executeNext(lastArgs, false);
-                                    }
+                                } else if (lastArgs !== undefined) {  // Only execute if lastArgs exists
+                                    executeNext(lastArgs, false);
                                 }
                             }
                             catch (error) {
                                 console.error('AsyncGenerator error:', error);
+                                reject(error);
                             }
-                        })();
+                        });
                     }
                     else if (isPromise(asyncResult)) {
-                        asyncResult.then(asyncArgs => execute(t => transaction(t, asyncArgs)))
-                            .catch(error => {
-                                console.error('Promise error:', error);
-                            });
+                        return new Promise(async (resolve, reject) => {
+                            try {
+                                const input = await asyncResult;
+                                const result = execute(t => transaction(t, input));
+                                resolve(result);
+                            }
+                            catch (error) {
+                                reject(error);
+                            }
+                        });
                     }
                     else {
                         // Function returned a synchronous value
-                        execute(t => transaction(t, asyncResult));
+                        return execute(t => transaction(t, asyncResult));
                     }
                 }
                 else {
