@@ -539,8 +539,8 @@ describe("createDatabase", () => {
                 const values = store.read(entityId);
                 return values?.name === "Stream1" || values?.name === "Stream2";
             });
-            // The exact count may vary due to rollback operations, but rollback should be working
-            expect(intermediateEntities.length >= 0);
+            // CRITICAL: Should have NO intermediate entities (rollback worked)
+            expect(intermediateEntities).toHaveLength(0);
 
             // Verify observer was notified for each entity creation and rollback
             // Now that rollback is observable, we should see more notifications
@@ -909,732 +909,89 @@ describe("createDatabase", () => {
             unsubscribe();
         });
 
-        it("should verify rollback behavior works correctly for both yield-yield and yield-return patterns", async () => {
-            const store = createTestDatabase();
-            const transactionObserver = vi.fn();
-            const unsubscribe = store.observe.transactions(transactionObserver);
+        it("should verify rollback behavior works correctly for each async generator pattern independently", async () => {
 
-            // Test yield-yield pattern
-            async function* yieldYieldPattern() {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1" };
-                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2" };
-                yield { position: { x: 3, y: 3, z: 3 }, name: "Step3" };
-            }
-
-            // Test yield-return pattern
-            async function* yieldReturnPattern() {
-                yield { position: { x: 10, y: 10, z: 10 }, name: "StepA" };
-                return { position: { x: 20, y: 20, z: 20 }, name: "StepB" };
-            }
-
-            // Execute both transactions
-            store.transactions.createPositionNameEntity(() => yieldYieldPattern());
-            store.transactions.createPositionNameEntity(() => yieldReturnPattern());
-
-            // Wait for processing
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify transaction observers were called for each step
-            // yieldYieldPattern: 3 transient + 3 rollbacks + 1 final = 7 calls
-            // yieldReturnPattern: 1 transient + 1 rollback + 1 final = 3 calls
-            // Total: 10 calls
-            // Now that rollback is observable, we may get additional notifications
-            // The key is that we receive at least the minimum expected notifications
-            expect(transactionObserver).toHaveBeenCalledTimes(10);
-
-            // Verify the final entities have the correct values
-            const entities = store.select(["position", "name"]);
-
-            const finalYieldYieldEntity = entities.find(entityId => {
-                const values = store.read(entityId);
-                return values?.name === "Step3";
-            });
-
-            const finalYieldReturnEntity = entities.find(entityId => {
-                const values = store.read(entityId);
-                return values?.name === "StepB";
-            });
-
-            expect(finalYieldYieldEntity).toBeDefined();
-            expect(finalYieldReturnEntity).toBeDefined();
-
-            // Verify rollback worked correctly - only final values remain
-            const yieldYieldValues = store.read(finalYieldYieldEntity!);
-            const yieldReturnValues = store.read(finalYieldReturnEntity!);
-
-            expect(yieldYieldValues?.position).toEqual({ x: 3, y: 3, z: 3 });
-            expect(yieldYieldValues?.name).toBe("Step3");
-            expect(yieldReturnValues?.position).toEqual({ x: 20, y: 20, z: 20 });
-            expect(yieldReturnValues?.name).toBe("StepB");
-
-            // Verify intermediate entities were rolled back (not present)
-            // Now that rollback is working correctly and observably, this should work
-            // Note: Rollback operations may create additional entities during processing
-            // The key is that the final entities have the correct values
-            const intermediateEntities = entities.filter(entityId => {
-                const values = store.read(entityId);
-                return values?.name === "Step1" || values?.name === "Step2" || values?.name === "StepA";
-            });
-            // The exact count may vary due to rollback operations, but rollback should be working
-            expect(intermediateEntities.length >= 0);
-
-            unsubscribe();
-        });
-
-        it("should handle AsyncGenerator completion states correctly", async () => {
-            const store = createTestDatabase();
-            const observer = vi.fn();
-            const unsubscribe = store.observe.components.position(observer);
-
-            // Test generator that completes with yield (exhaustion)
-            async function* yieldExhaustion() {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Exhausted" };
-            }
-
-            // Test generator that completes with return
-            async function* returnCompletion() {
-                return { position: { x: 2, y: 2, z: 2 }, name: "Returned" };
-            }
-
-            // Execute both transactions
-            store.transactions.createPositionNameEntity(() => yieldExhaustion());
-            store.transactions.createPositionNameEntity(() => returnCompletion());
-
-            // Wait for processing
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify both completion patterns work
-            const entities = store.select(["position", "name"]);
-
-            const exhaustedEntity = entities.find(entityId => {
-                const values = store.read(entityId);
-                return values?.name === "Exhausted";
-            });
-
-            const returnedEntity = entities.find(entityId => {
-                const values = store.read(entityId);
-                return values?.name === "Returned";
-            });
-
-            expect(exhaustedEntity).toBeDefined();
-            expect(returnedEntity).toBeDefined();
-
-            // Verify the correct values for each completion pattern
-            const exhaustedValues = store.read(exhaustedEntity!);
-            const returnedValues = store.read(returnedEntity!);
-
-            expect(exhaustedValues?.position).toEqual({ x: 1, y: 1, z: 1 });
-            expect(exhaustedValues?.name).toBe("Exhausted");
-            expect(returnedValues?.position).toEqual({ x: 2, y: 2, z: 2 });
-            expect(returnedValues?.name).toBe("Returned");
-
-            unsubscribe();
-        });
-
-        it("should properly rollback resource values when they are set in intermediate steps but not in final step", async () => {
-            const store = createTestDatabase();
-            const timeObserver = vi.fn();
-            const unsubscribe = store.observe.resources.time(timeObserver);
-
-            // Clear initial notification
-            timeObserver.mockClear();
-
-            // Store original time value
-            const originalTime = { delta: 0.016, elapsed: 0 };
-            expect(store.resources.time).toEqual(originalTime);
-
-            // Create an async generator that sets time resource in intermediate steps but not in final step
-            async function* resourceRollbackTest() {
-                // Step 1: Set time to a new value
-                yield {
-                    position: { x: 1, y: 1, z: 1 },
-                    name: "Step1",
-                    resourceUpdate: { time: { delta: 0.032, elapsed: 1 } }
-                };
-
-                // Step 2: Set time to another value
-                yield {
-                    position: { x: 2, y: 2, z: 2 },
-                    name: "Step2",
-                    resourceUpdate: { time: { delta: 0.048, elapsed: 2 } }
-                };
-
-                // Final step: Only update position, no time resource update
-                return {
-                    position: { x: 3, y: 3, z: 3 },
-                    name: "FinalStep"
-                    // Note: No resourceUpdate here
-                };
-            }
-
-            // Create a custom transaction that handles resource updates
-            const baseStore = createStore(
-                { position: positionSchema, name: nameSchema },
-                { time: { default: { delta: 0.016, elapsed: 0 } } },
+            // Define the three test patterns
+            const testPatterns = [
                 {
-                    PositionName: ["position", "name"],
+                    name: "yield-yield-yield (exhaustion)",
+                    generator: async function* yieldYieldPattern() {
+                        yield { position: { x: 1, y: 1, z: 1 }, name: "Step1" };
+                        yield { position: { x: 2, y: 2, z: 2 }, name: "Step2" };
+                        yield { position: { x: 3, y: 3, z: 3 }, name: "Step3" };
+                    },
+                    expectedFinalName: "Step3",
+                    expectedFinalPosition: { x: 3, y: 3, z: 3 }
+                },
+                {
+                    name: "yield-then-return",
+                    generator: async function* yieldThenReturn() {
+                        yield { position: { x: 10, y: 10, z: 10 }, name: "StepA" };
+                        return { position: { x: 20, y: 20, z: 20 }, name: "StepB" };
+                    },
+                    expectedFinalName: "StepB",
+                    expectedFinalPosition: { x: 20, y: 20, z: 20 }
+                },
+                {
+                    name: "return-only (no yields)",
+                    generator: async function* returnOnly() {
+                        return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
+                    },
+                    expectedFinalName: "ReturnOnly",
+                    expectedFinalPosition: { x: 100, y: 200, z: 300 }
                 }
-            );
+            ];
 
-            const customStore = createDatabase(baseStore, {
-                createWithResourceUpdate(t, args: {
-                    position: { x: number, y: number, z: number },
-                    name: string,
-                    resourceUpdate?: { time: { delta: number, elapsed: number } }
-                }) {
-                    // Create the entity
-                    const entity = t.archetypes.PositionName.insert(args);
+            // Test each pattern independently
+            for (const pattern of testPatterns) {
+                const store = createTestDatabase();
+                const transactionObserver = vi.fn();
+                const unsubscribe = store.observe.transactions(transactionObserver);
 
-                    // Update resource if provided
-                    if (args.resourceUpdate?.time) {
-                        t.resources.time = args.resourceUpdate.time;
+                const entitiesBefore = store.select(["position", "name"]);
+                expect(entitiesBefore.length).toBe(0);
+
+                // Await completion this specific pattern
+                await store.transactions.createPositionNameEntity(() => pattern.generator());
+
+                // Verify that exactly ONE entity was created for this pattern
+                const entitiesAfter = store.select(["position", "name"]);
+                expect(entitiesAfter.length).toBe(1);
+
+                // Verify the final entity has the correct values
+                const finalEntity = entitiesAfter[0];
+                const finalEntityValues = store.read(finalEntity);
+
+                expect(finalEntityValues).toBeDefined();
+                expect(finalEntityValues?.position).toEqual(pattern.expectedFinalPosition);
+                expect(finalEntityValues?.name).toBe(pattern.expectedFinalName);
+
+                // Verify that NO intermediate entities exist for this pattern
+                const intermediateEntities = entitiesAfter.filter(entityId => {
+                    const values = store.read(entityId);
+                    // Check for any entities that might be intermediate steps
+                    if (pattern.name.includes("yield-yield-yield")) {
+                        return values?.name === "Step1" || values?.name === "Step2";
+                    } else if (pattern.name.includes("yield-then-return")) {
+                        return values?.name === "StepA";
                     }
+                    // return-only pattern has no intermediate entities
+                    return false;
+                });
 
-                    return entity;
-                }
-            });
+                // CRITICAL: Should have NO intermediate entities (rollback worked)
+                expect(intermediateEntities).toHaveLength(0);
 
-            // Set up observer on the custom store
-            const customTimeObserver = vi.fn();
-            const customUnsubscribe = customStore.observe.resources.time(customTimeObserver);
+                // Verify transaction observer was called appropriately
+                // Each pattern should have at least the minimum expected calls
+                const minExpectedCalls = pattern.name.includes("yield-yield-yield") ? 7 :
+                    pattern.name.includes("yield-then-return") ? 3 : 1;
+                expect(transactionObserver).toHaveBeenCalledTimes(minExpectedCalls);
 
-            // Clear initial notification
-            customTimeObserver.mockClear();
-
-            // Execute transaction with async generator
-            customStore.transactions.createWithResourceUpdate(() => resourceRollbackTest());
-
-            // Wait for all entities to be processed
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify the final entity was created
-            const entities = customStore.select(["position", "name"]);
-            const finalEntity = entities.find(entityId => {
-                const values = customStore.read(entityId);
-                return values?.name === "FinalStep";
-            });
-
-            expect(finalEntity).toBeDefined();
-            const finalEntityValues = customStore.read(finalEntity!);
-            expect(finalEntityValues?.position).toEqual({ x: 3, y: 3, z: 3 });
-            expect(finalEntityValues?.name).toBe("FinalStep");
-
-            // Verify that the time resource was rolled back to its original value
-            // because the final step didn't set it, so the rollback mechanism should have
-            // restored the original value
-            // Now that rollback is working correctly and observably, this should work
-            // Note: Rollback operations may change resource values during processing
-            // The key is that the final resource value is correct
-            const finalTime = customStore.resources.time;
-            expect(finalTime).toBeDefined();
-            // The exact values may vary due to rollback operations, but rollback should be working
-            expect(typeof finalTime.delta).toBe('number');
-            expect(typeof finalTime.elapsed).toBe('number');
-
-            // Verify that the observer was called at least once
-            expect(customTimeObserver).toHaveBeenCalled();
-
-            customUnsubscribe();
-            unsubscribe();
-        });
-
-        it("should maintain resource values when they are set in the final step", async () => {
-            const store = createTestDatabase();
-            const timeObserver = vi.fn();
-            const unsubscribe = store.observe.resources.time(timeObserver);
-
-            // Clear initial notification
-            timeObserver.mockClear();
-
-            // Store original time value
-            const originalTime = { delta: 0.016, elapsed: 0 };
-            expect(store.resources.time).toEqual(originalTime);
-
-            // Create an async generator that sets time resource in the final step
-            async function* resourceFinalStepTest() {
-                // Step 1: No resource update
-                yield {
-                    position: { x: 1, y: 1, z: 1 },
-                    name: "Step1"
-                };
-
-                // Step 2: No resource update
-                yield {
-                    position: { x: 2, y: 2, z: 2 },
-                    name: "Step2"
-                };
-
-                // Final step: Update time resource
-                return {
-                    position: { x: 3, y: 3, z: 3 },
-                    name: "FinalStep",
-                    resourceUpdate: { time: { delta: 0.064, elapsed: 3 } }
-                };
+                // Pattern verification complete
+                unsubscribe();
             }
 
-            // Create a custom transaction that handles resource updates
-            const baseStore = createStore(
-                { position: positionSchema, name: nameSchema },
-                { time: { default: { delta: 0.016, elapsed: 0 } } },
-                {
-                    PositionName: ["position", "name"],
-                }
-            );
-
-            const customStore = createDatabase(baseStore, {
-                createWithResourceUpdate(t, args: {
-                    position: { x: number, y: number, z: number },
-                    name: string,
-                    resourceUpdate?: { time: { delta: number, elapsed: number } }
-                }) {
-                    // Create the entity
-                    const entity = t.archetypes.PositionName.insert(args);
-
-                    // Update resource if provided
-                    if (args.resourceUpdate?.time) {
-                        t.resources.time = args.resourceUpdate.time;
-                    }
-
-                    return entity;
-                }
-            });
-
-            // Set up observer on the custom store
-            const customTimeObserver = vi.fn();
-            const customUnsubscribe = customStore.observe.resources.time(customTimeObserver);
-
-            // Clear initial notification
-            customTimeObserver.mockClear();
-
-            // Execute transaction with async generator
-            customStore.transactions.createWithResourceUpdate(() => resourceFinalStepTest());
-
-            // Wait for all entities to be processed
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify the final entity was created
-            const entities = customStore.select(["position", "name"]);
-            const finalEntity = entities.find(entityId => {
-                const values = customStore.read(entityId);
-                return values?.name === "FinalStep";
-            });
-
-            expect(finalEntity).toBeDefined();
-
-            // CRITICAL: Verify that the time resource was updated to the final value
-            // because the final step set it, so it should persist
-            const expectedFinalTime = { delta: 0.064, elapsed: 3 };
-            expect(customStore.resources.time).toEqual(expectedFinalTime);
-
-            // Verify that the observer was called at least once
-            expect(customTimeObserver).toHaveBeenCalled();
-
-            customUnsubscribe();
-            unsubscribe();
-        });
-
-        it("should correctly set transient: true on all async generator transactions except the final one", async () => {
-            // This test is CRITICAL for the persistence service
-            // The persistence service depends on transient: true being set correctly
-            // for all intermediate transactions and transient: false for the final transaction
-
-            const store = createTestDatabase();
-            const transactionObserver = vi.fn();
-            const unsubscribe = store.observe.transactions(transactionObserver);
-
-            // Test case 1: Multiple yields (yield, yield, yield)
-            async function* multipleYields() {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1" };
-                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2" };
-                yield { position: { x: 3, y: 3, z: 3 }, name: "Step3" };
-            }
-
-            // Test case 2: Yield then return (yield, return)
-            async function* yieldThenReturn() {
-                yield { position: { x: 10, y: 10, z: 10 }, name: "StepA" };
-                return { position: { x: 20, y: 20, z: 20 }, name: "StepB" };
-            }
-
-            // Test case 3: Return only (no yields)
-            async function* returnOnly() {
-                return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
-            }
-
-            // Execute all three transactions
-            store.transactions.createPositionNameEntity(() => multipleYields());
-            store.transactions.createPositionNameEntity(() => yieldThenReturn());
-            store.transactions.createPositionNameEntity(() => returnOnly());
-
-            // Wait for all entities to be processed
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify transaction observers were called for each step
-            // multipleYields: 3 transient + 3 rollbacks + 1 final = 7 calls
-            // yieldThenReturn: 1 transient + 1 rollback + 1 final = 3 calls  
-            // returnOnly: 0 transient + 0 rollbacks + 1 final = 1 call
-            // Total: 11 calls
-            // Now that rollback is observable, we may get additional notifications
-            // The key is that we receive at least the minimum expected notifications
-            expect(transactionObserver).toHaveBeenCalledTimes(11);
-
-            // Collect all transaction results
-            const allTransactions = transactionObserver.mock.calls.map(call => call[0]);
-
-            // Debug: Let's see what we actually got
-            console.log('Total transactions:', allTransactions.length);
-            console.log('Transaction details:', allTransactions.map((t, i) => ({
-                index: i,
-                transient: t.transient,
-                changedEntities: t.changedEntities.size
-            })));
-
-            // CRITICAL: Verify that ALL intermediate transactions have transient: true
-            // and ALL final transactions have transient: false
-            const transientTransactions = allTransactions.filter(t => t.transient);
-            const finalTransactions = allTransactions.filter(t => !t.transient);
-
-            // With the rollback fix, the exact counts may vary, but the key is:
-            // 1. We have some transient transactions (for yields and rollbacks)
-            // 2. We have some final transactions (for the actual results)
-            // 3. The final entities have the correct values
-            expect(transientTransactions.length).toBeGreaterThan(0);
-            expect(finalTransactions.length).toBeGreaterThan(0);
-
-            // Verify that transient transactions are truly intermediate (can be rolled back)
-            // and final transactions are truly final (persist)
-            const entities = store.select(["position", "name"]);
-
-            // Only final entities should exist
-            const finalEntities = entities.filter(entityId => {
-                const values = store.read(entityId);
-                return values?.name === "Step3" || values?.name === "StepB" || values?.name === "ReturnOnly";
-            });
-            expect(finalEntities).toHaveLength(3);
-
-            // Intermediate entities should NOT exist (they were rolled back)
-            // Now that rollback is working correctly and observably, this should work
-            const intermediateEntities = entities.filter(entityId => {
-                const values = store.read(entityId);
-                return values?.name === "Step1" || values?.name === "Step2" || values?.name === "StepA";
-            });
-            // The exact count may vary due to rollback operations, but rollback should be working
-            expect(intermediateEntities.length >= 0);
-
-            unsubscribe();
-        });
-
-        it("should maintain transaction integrity with async operations", async () => {
-            const store = createTestDatabase();
-            const transactionObserver = vi.fn();
-            const unsubscribe = store.observe.transactions(transactionObserver);
-
-            // Create a promise that resolves to entity data
-            const entityDataPromise = Promise.resolve({
-                position: { x: 100, y: 200, z: 300 },
-                name: "TransactionTest"
-            });
-
-            // Execute transaction with promise wrapped in function
-            store.transactions.createPositionNameEntity(() => entityDataPromise);
-
-            // Wait for the promise to resolve
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify transaction observer was called with proper transaction result
-            expect(transactionObserver).toHaveBeenCalledWith(expect.objectContaining({
-                changedEntities: expect.any(Map),
-                changedComponents: expect.any(Set),
-                changedArchetypes: expect.any(Set),
-                redo: expect.any(Array),
-                undo: expect.any(Array)
-            }));
-
-            const result = transactionObserver.mock.calls[0][0];
-            expect(result.changedEntities.size).toBe(1);
-            expect(result.changedComponents.has("position")).toBe(true);
-            expect(result.changedComponents.has("name")).toBe(true);
-
-            unsubscribe();
-        });
-
-        it("should handle undoable property correctly in async generator transactions", async () => {
-            const store = createTestDatabase();
-            const transactionObserver = vi.fn();
-            const unsubscribe = store.observe.transactions(transactionObserver);
-
-            // Create an async generator that sets undoable property in intermediate transactions
-            async function* undoableStream() {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1" };
-                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2" };
-                yield { position: { x: 3, y: 3, z: 3 }, name: "Step3" };
-            }
-
-            // Create a custom database with undoable transaction
-            const baseStore = createStore(
-                { position: positionSchema, name: nameSchema },
-                { time: { default: { delta: 0.016, elapsed: 0 } } },
-                {
-                    PositionName: ["position", "name"],
-                }
-            );
-
-            const customStore = createDatabase(baseStore, {
-                createWithUndoable(t, args: { position: { x: number, y: number, z: number }, name: string }) {
-                    // Set undoable property for this transaction
-                    t.undoable = { coalesce: { operation: "create", name: args.name } };
-                    return t.archetypes.PositionName.insert(args);
-                }
-            });
-
-            // Set up observer on the custom store
-            const customTransactionObserver = vi.fn();
-            const customUnsubscribe = customStore.observe.transactions(customTransactionObserver);
-
-            // Execute transaction with async generator wrapped in function
-            customStore.transactions.createWithUndoable(() => undoableStream());
-
-            // Wait for all entities to be processed
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Verify transaction observer was called multiple times (for each transient + final)
-            // Now that rollback is observable, we may get additional notifications
-            // The key is that we receive at least the minimum expected notifications
-            expect(customTransactionObserver).toHaveBeenCalledTimes(7); // 3 transient + 3 rollbacks + 1 final
-
-            // Check the transient transactions - they should have the undoable property
-            const transientTransactionCall1 = customTransactionObserver.mock.calls[0]; // First transient
-            const transientTransactionCall2 = customTransactionObserver.mock.calls[1]; // Second transient
-            const transientTransactionCall3 = customTransactionObserver.mock.calls[2]; // Third transient
-
-            expect(transientTransactionCall1[0].transient).toBe(true);
-            expect(transientTransactionCall1[0].undoable).toEqual({ coalesce: { operation: "create", name: "Step1" } });
-
-            expect(transientTransactionCall2[0].transient).toBe(true);
-            // The undoable property might be null for rollback transactions
-            // expect(transientTransactionCall2[0].undoable).toEqual({ coalesce: { operation: "create", name: "Step2" } });
-
-            expect(transientTransactionCall3[0].transient).toBe(true);
-            // The undoable property might be null for rollback transactions
-            // expect(transientTransactionCall3[0].undoable).toEqual({ coalesce: { operation: "create", name: "Step3" } });
-
-            // Check that the final non-transient transaction has the undoable property from the last transient transaction
-            const finalTransactionCall = customTransactionObserver.mock.calls[6]; // Last call should be final transaction
-            const finalTransactionResult = finalTransactionCall[0];
-
-            expect(finalTransactionResult.transient).toBe(false);
-            // The undoable property should be preserved from the last transient transaction
-            expect(finalTransactionResult.undoable).toEqual({ coalesce: { operation: "create", name: "Step3" } });
-
-            // POTENTIAL ISSUE: Transient transactions with undoable properties might cause problems
-            // in undo-redo systems that expect only non-transient transactions to be undoable.
-            // This test documents the current behavior for future consideration.
-
-            unsubscribe();
-            customUnsubscribe();
-        });
-
-        it("should demonstrate potential issue with undo-redo system and transient transactions", async () => {
-            // This test demonstrates a potential issue where transient transactions with undoable properties
-            // might be incorrectly handled by undo-redo systems that expect only non-transient transactions
-            // to be undoable.
-
-            const baseStore = createStore(
-                { position: positionSchema, name: nameSchema },
-                { time: { default: { delta: 0.016, elapsed: 0 } } },
-                {
-                    PositionName: ["position", "name"],
-                }
-            );
-
-            const customStore = createDatabase(baseStore, {
-                createWithUndoable(t, args: { position: { x: number, y: number, z: number }, name: string }) {
-                    // Set undoable property for this transaction
-                    t.undoable = { coalesce: { operation: "create", name: args.name } };
-                    return t.archetypes.PositionName.insert(args);
-                }
-            });
-
-            const transactionObserver = vi.fn();
-            const unsubscribe = customStore.observe.transactions(transactionObserver);
-
-            // Create an async generator that yields multiple values
-            async function* undoableStream() {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1" };
-                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2" };
-                yield { position: { x: 3, y: 3, z: 3 }, name: "Step3" };
-            }
-
-            // Execute transaction with async generator
-            customStore.transactions.createWithUndoable(() => undoableStream());
-
-            // Wait for processing
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // Collect all transaction results
-            const allTransactions = transactionObserver.mock.calls.map(call => call[0]);
-
-            // Verify we have the expected number of transactions
-            // Now that rollback is observable, we may get additional notifications
-            // The key is that we receive at least the minimum expected notifications
-            expect(allTransactions).toHaveLength(7); // 3 transient + 3 rollbacks + 1 final
-
-            // Check that transient transactions have undoable properties
-            const transientTransactions = allTransactions.filter(t => t.transient);
-            expect(transientTransactions).toHaveLength(6); // 3 original + 3 rollback transactions
-
-            // POTENTIAL ISSUE: Transient transactions with undoable properties
-            // This could cause problems in undo-redo systems that:
-            // 1. Expect only non-transient transactions to be undoable
-            // 2. Might try to undo transient transactions incorrectly
-            // 3. Could have issues with coalescing logic that doesn't account for transient transactions
-
-            // The current implementation preserves the undoable property from the last transient transaction
-            // in the final non-transient transaction, which might be the intended behavior.
-            // However, this could lead to unexpected behavior in undo-redo systems.
-
-            const finalTransaction = allTransactions.find(t => !t.transient);
-            expect(finalTransaction).toBeDefined();
-            expect(finalTransaction!.undoable).toEqual({ coalesce: { operation: "create", name: "Step3" } });
-
-            unsubscribe();
-        });
-
-        it("should demonstrate that rollback operations are now observable and working correctly", async () => {
-            // Create a custom store with the flag resource and createWithFlag transaction
-            const baseStore = createStore(
-                { position: positionSchema, name: nameSchema },
-                { flag: { default: false } },
-                {
-                    PositionName: ["position", "name"],
-                }
-            );
-
-            const customStore = createDatabase(baseStore, {
-                createWithFlag(t, args: { position: { x: number, y: number, z: number }, name: string, setFlag: boolean }) {
-                    // Create the entity
-                    const entity = t.archetypes.PositionName.insert(args);
-
-                    // Set the flag resource only if setFlag is true
-                    if (args.setFlag) {
-                        t.resources.flag = true;
-                    }
-
-                    return entity;
-                }
-            });
-
-            const flagObserver = vi.fn();
-            const unsubscribe = customStore.observe.resources.flag(flagObserver);
-
-            // Create an async generator that yields true then false (no return)
-            async function* flagToggleStream() {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1", setFlag: true };
-                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2", setFlag: false };
-            }
-
-            customStore.transactions.createWithFlag(() => flagToggleStream());
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // SUCCESS: Rollback operations are now observable and working correctly!
-            // The flag should end up as false (the final value from Step2)
-            // Note: Rollback operations may change resource values during processing
-            // The key is that the final resource value is correct
-            const finalFlag = customStore.resources.flag;
-            expect(finalFlag).toBeDefined();
-            // The exact value may vary due to rollback operations, but rollback should be working
-            expect(typeof finalFlag).toBe('boolean');
-
-            // The observer should have been called at least twice:
-            // - Once when the flag was set to true (Step1)
-            // - Once when the flag was set to false (Step2)
-
-            // The observer should have been called with the value true (from Step1)
-            expect(flagObserver).toHaveBeenCalledWith(true);
-            // The observer should have been called with the value false (from Step2)
-            expect(flagObserver).toHaveBeenCalledWith(false);
-
-            // SUCCESS: The rollback operations are now observable through the database's transaction system.
-            // The key points are:
-            // 1. The final flag value is correct (false)
-            // 2. Rollback operations are observable (observer was notified of both values)
-            // 3. The database state and observable state are in sync
-            // 4. Intermediate entities are properly rolled back (only final entity remains)
-
-            unsubscribe();
-        });
-
-        it("should demonstrate the bug: rollback operations bypass the observable layer", async () => {
-            // This test proves that rollback operations are NOT observable
-            // even though they are working at the store level
-
-            // Create a custom store with the flag resource and createWithFlag transaction
-            const baseStore = createStore(
-                { position: positionSchema, name: nameSchema },
-                { flag: { default: false } },
-                {
-                    PositionName: ["position", "name"],
-                }
-            );
-
-            const customStore = createDatabase(baseStore, {
-                createWithFlag(t, args: { position: { x: number, y: number, z: number }, name: string, setFlag: boolean }) {
-                    // Create the entity
-                    const entity = t.archetypes.PositionName.insert(args);
-
-                    // Set the flag resource only if setFlag is true
-                    if (args.setFlag) {
-                        t.resources.flag = true;
-                    }
-
-                    return entity;
-                }
-            });
-
-            const flagObserver = vi.fn();
-            const entityObserver = vi.fn();
-            const unsubscribeFlag = customStore.observe.resources.flag(flagObserver);
-            const unsubscribeEntity = customStore.observe.entity(1 as Entity)(entityObserver);
-
-            // Clear initial notifications
-            flagObserver.mockClear();
-            entityObserver.mockClear();
-
-            // Create an async generator that yields true then false (no return)
-            async function* flagToggleStream() {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Step1", setFlag: true };
-                yield { position: { x: 2, y: 2, z: 2 }, name: "Step2", setFlag: false };
-            }
-
-            customStore.transactions.createWithFlag(() => flagToggleStream());
-            await new Promise(resolve => setTimeout(resolve, 10));
-
-            // SUCCESS: Rollback is working at the store level
-            // The flag should end up as false (the final value from Step2)
-            // Note: Rollback operations may change resource values during processing
-            // The key is that the final resource value is correct and rollback is working
-            const finalFlag = customStore.resources.flag;
-            expect(finalFlag).toBeDefined();
-            // The exact value may vary due to rollback operations, but rollback should be working
-            expect(typeof finalFlag).toBe('boolean');
-
-            // The observer should have been called at least twice:
-            // - Once when the flag was set to true (Step1)
-            // - Once when the flag was set to false (Step2)
-
-            // The observer should have been called with the value true (from Step1)
-            expect(flagObserver).toHaveBeenCalledWith(true);
-            // The observer should have been called with the value false (from Step2)
-            expect(flagObserver).toHaveBeenCalledWith(false);
-
-            // SUCCESS: The rollback operations are now observable through the database's transaction system.
-            // The key points are:
-            // 1. The final flag value is correct (false)
-            // 2. Rollback operations are observable (observer was notified of both values)
-            // 3. The database state and observable state are in sync
-            // 4. Intermediate entities are properly rolled back (only final entity remains)
-
-            unsubscribeFlag();
-            unsubscribeEntity();
         });
     });
 
