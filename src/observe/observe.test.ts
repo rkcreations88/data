@@ -350,7 +350,7 @@ describe("observable", () => {
   test("withDefault", async () => {
     await testObservableFilter({
       given: "an Observable withDefault",
-      filter: observable => withDefault(observable, 0),
+      filter: observable => withDefault(0, observable),
       input: [undefined, [1, undefined, 3]],
       output: [0, [1, 0, 3]],
     });
