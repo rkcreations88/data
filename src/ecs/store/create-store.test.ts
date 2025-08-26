@@ -551,6 +551,25 @@ describe("createStore", () => {
             store.resources.complex = updatedComplex;
             expect(store.resources.complex).toEqual(updatedComplex);
         });
+
+        it("should handle array resource schemas", () => {
+            const store = createStore(
+                { position: positionSchema },
+                {
+                    tags: {
+                        type: "array",
+                        items: { type: "string" },
+                        default: ["player", "active"]
+                    }
+                }
+            );
+
+            expect(store.resources.tags).toEqual(["player", "active"]);
+
+            // Update array resource
+            store.resources.tags = ["enemy", "boss", "elite"];
+            expect(store.resources.tags).toEqual(["enemy", "boss", "elite"]);
+        });
     });
 
     describe("Archetype functionality", () => {
