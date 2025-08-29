@@ -37,9 +37,7 @@ export type SuccessResult<Result> = Result & {
   readonly progress: 1.0;
 }
 
-export type FinalResult<Result, Error> = SuccessResult<Result> | ErrorResult<Result, Error>;
-
-export type ProgressiveResult<Result, Error> = IntermediateResult<Result> | FinalResult<Result, Error>;
+export type ProgressiveResult<Result, Error> = IntermediateResult<Result> | SuccessResult<Result> | ErrorResult<Result, Error>;
 
 /**
  * Results must be objects as we are going to add error and progress properties to them.
@@ -109,7 +107,7 @@ export function ProgressiveResultSchema<T extends ResultSchema, E extends Result
 /**
  * Checks if the result is an error result.
  */
-export function isErrorResult<FinalValue extends ResultSchema, ErrorValue>(
+export function isErrorResult<FinalValue, ErrorValue>(
   result: ProgressiveResult<FinalValue, ErrorValue>
 ): result is ErrorResult<FinalValue, ErrorValue> {
   return result.error !== null && result.error !== undefined;
@@ -118,7 +116,7 @@ export function isErrorResult<FinalValue extends ResultSchema, ErrorValue>(
 /**
  * Checks if the result is not started. We check progress < 0.0 to mean not started.
  */
-export function isNotStarted<FinalValue extends ResultSchema, ErrorValue>(
+export function isNotStarted<FinalValue, ErrorValue>(
   result: ProgressiveResult<FinalValue, ErrorValue>
 ): result is IntermediateResult<FinalValue> {
   return !isErrorResult(result) && result.progress < 0.0;
@@ -127,7 +125,7 @@ export function isNotStarted<FinalValue extends ResultSchema, ErrorValue>(
 /**
  * Checks if the result is an intermediate result.
  */
-export function isIntermediateResult<FinalValue extends ResultSchema, ErrorValue>(
+export function isIntermediateResult<FinalValue, ErrorValue>(
   result: ProgressiveResult<FinalValue, ErrorValue>
 ): result is IntermediateResult<FinalValue> {
   return !isErrorResult(result) && result.progress !== 1.0;
@@ -136,7 +134,7 @@ export function isIntermediateResult<FinalValue extends ResultSchema, ErrorValue
 /**
  * Checks if the result is a final result.
  */
-export function isSuccessResult<FinalValue extends ResultSchema, ErrorValue>(
+export function isSuccessResult<FinalValue, ErrorValue>(
   result: ProgressiveResult<FinalValue, ErrorValue>
 ): result is SuccessResult<FinalValue> {
   return !isErrorResult(result) && result.progress === 1.0;
