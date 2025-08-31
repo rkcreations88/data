@@ -20,17 +20,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export * from "./component/component.js";
-export * from "./component/stack.js";
-export * from "./use-state.js";
-export * from "./use-effect.js";
-export * from "./use-connected.js";
-export * from "./use-memo.js";
-export * from "./use-ref.js";
-export * from "./use-observable-values.js";
-export * from "./use-observable.js";
-export * from "./use-window-event.js";
-export * from "./use-resize-observer.js";
-export * from "./use-element.js";
-export * from "./with-hooks.js";
-export * from "./attach-decorator.js";
+import { LitElement } from 'lit';
+import { property } from 'lit/decorators.js';
+import { attachDecorator, withHooks } from '../hooks/index.js';
+import { iterateSelfAndAncestors } from '../functions/index.js';
+import { Service, isService } from '../../service/index.js';
+
+export class ApplicationElement<MainService extends Service> extends LitElement {
+  @property({ type: Object, reflect: false })
+  service!: MainService;
+
+  constructor() {
+    super();
+    attachDecorator(this, 'render', withHooks);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    if (!this.service) {
+      const service = this.findAncestorService();
+      if (service) {
+        this.service = service;
+      }
+    }
+  }
+
+  protected findAncestorService(): MainService | void {
+    for (const element of iterateSelfAndAncestors(this)) {
+      const { service } = element as Partial<ApplicationElement<MainService>>;
+      if (isService(service)) {
+        return service;
+      }
+    }
+  }
+
+  render() {
+    throw new Error('render function must be overridden');
+  }
+
+}

@@ -20,17 +20,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export * from "./component/component.js";
-export * from "./component/stack.js";
-export * from "./use-state.js";
-export * from "./use-effect.js";
-export * from "./use-connected.js";
-export * from "./use-memo.js";
-export * from "./use-ref.js";
-export * from "./use-observable-values.js";
-export * from "./use-observable.js";
-export * from "./use-window-event.js";
-export * from "./use-resize-observer.js";
-export * from "./use-element.js";
-export * from "./with-hooks.js";
-export * from "./attach-decorator.js";
+/**
+ * Attacheds a decorator to a method on an object and reassigns the resulting value back to the object.
+ */
+export function attachDecorator<T, K extends keyof T>(
+    obj: T,
+    property: K,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- This is a generic type
+    decorator: (target: any, propertyKey: string, descriptor: TypedPropertyDescriptor<T[K]>) => PropertyDescriptor
+): void {
+    // Get the descriptor of the property
+    let descriptor = Object.getOwnPropertyDescriptor(obj, property);
+
+    if (!descriptor) {
+        if (!obj[property]) {
+            throw new Error(`Property ${property.toString()} does not exist on object`);
+        }
+        descriptor = {
+            value: obj[property],
+            writable: true,
+            enumerable: true,
+            configurable: true,
+        };
+    }
+
+    // Apply the decorator to the descriptor
+    const decoratedDescriptor = decorator(obj, String(property), descriptor);
+
+    // Reassign the decorated method back to the object
+    obj[property] = decoratedDescriptor.value;
+}

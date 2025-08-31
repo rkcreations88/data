@@ -20,17 +20,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export * from "./component/component.js";
-export * from "./component/stack.js";
-export * from "./use-state.js";
-export * from "./use-effect.js";
-export * from "./use-connected.js";
-export * from "./use-memo.js";
-export * from "./use-ref.js";
-export * from "./use-observable-values.js";
-export * from "./use-observable.js";
-export * from "./use-window-event.js";
-export * from "./use-resize-observer.js";
-export * from "./use-element.js";
-export * from "./with-hooks.js";
-export * from "./attach-decorator.js";
+export function* iterateSelfAndAncestors(element: Element): IterableIterator<Element> {
+    let current: Element | null = element;
+
+    while (current) {
+        yield current;
+
+        if (current instanceof HTMLSlotElement && current.assignedSlot) {
+            // Move to the slot's parent if the current element is assigned to a slot
+            current = current.assignedSlot;
+        } else if (current.parentNode instanceof Element) {
+            // Move up to the parent node if it is an element
+            current = current.parentNode;
+        } else if ((current.getRootNode() as ShadowRoot).host) {
+            // Move to the host element if we're at a shadow root
+            current = (current.getRootNode() as ShadowRoot).host;
+        } else {
+            // If no more ancestors, stop the iteration
+            current = null;
+        }
+    }
+}
