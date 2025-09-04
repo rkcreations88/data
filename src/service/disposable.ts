@@ -20,17 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-/**
- * A service is an object that provides functionality to an application.
- * Services are never dependent upon user interface components.
- * Services come in several varieties:
- * - Frontend Services
- *   - Only contain void actions and observe functions.
- *   - Async nature enforces unidirectional control flow and decouples the service from the UI.
- * - Backend Services
- *   - Usually consumed by other services.
- *   - May also contain Promise<Data> or AsyncGenerator<Data> functions.
- */
-export interface Service {
-  readonly serviceName: string;
+export interface Disposable {
+    dispose: () => void;
 }
+
+export function isDisposable(value: unknown): value is Disposable {
+    return value !== null && typeof value === "object" && "dispose" in value && typeof value.dispose === "function";
+}
+

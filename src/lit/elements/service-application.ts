@@ -25,6 +25,7 @@ import { property } from "lit/decorators.js";
 import { provide } from "@lit/context";
 import { serviceContext } from "./service-context.js";
 import { Service } from "../../service/index.js";
+import { isDisposable } from "../../service/disposable.js";
 
 export abstract class ServiceApplication<S extends Service> extends LitElement {
 
@@ -41,7 +42,9 @@ export abstract class ServiceApplication<S extends Service> extends LitElement {
 
     override disconnectedCallback() {
         super.disconnectedCallback();
-        this.service?.dispose?.();
+        if (isDisposable(this.service)) {
+            this.service.dispose();
+        }
         this.service = null as any;
     }
 
