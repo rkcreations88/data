@@ -52,6 +52,7 @@ export interface ReadonlyCore<
     locate: (entity: Entity) => { archetype: ReadonlyArchetype<CoreComponents>, row: number } | null;
     read<T extends CoreComponents>(entity: Entity, minArchetype: ReadonlyArchetype<T> | Archetype<T>): { readonly [K in (StringKeyof<CoreComponents & T>)]: (CoreComponents & T)[K] } & EntityReadValues<C> | null;
     read(entity: Entity): { readonly [K in (StringKeyof<CoreComponents & C>)]: (CoreComponents & C)[K] } | null;
+    get<K extends StringKeyof<C>>(entity: Entity, component: K): C[K] | undefined;
     toData(): unknown
 }
 

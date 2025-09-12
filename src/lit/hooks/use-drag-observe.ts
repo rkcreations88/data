@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { DraggableProps, Vector2, useDraggable } from './use-draggable.js';
 import { useElement } from './use-element.js';
-import { createObservableEvent } from '@adobe/data/observe';
+import { createObservableEvent } from '../../observe/index.js';
 
 export type DragObserveProps = Pick<
     DraggableProps,

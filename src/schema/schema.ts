@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { TypedBuffer } from "../typed-buffer/typed-buffer.js";
-import { DeepReadonly, EquivalentTypes, False, True } from "../types/types.js";
+import { DeepReadonly, EquivalentTypes, True } from "../types/types.js";
 
 type JSONPath = string;
 type JSONMergePatch = unknown;
@@ -61,6 +61,7 @@ export interface Schema {
   conditionals?: readonly Conditional[];
   ui?: UIProperties;
   transient?: boolean;
+  mutable?: boolean; // defaults to false
   default?: any;
   precision?: 1 | 2;
   multipleOf?: number;
@@ -87,10 +88,14 @@ export type FromSchemas<T> = {
   [K in keyof T]: FromSchema<T[K]>;
 };
 
-export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends 0
-  ? any
-  : T extends { type?: undefined, default: infer D } ? D
-  : T extends { const: infer Const } ? Const
+export type FromSchema<T, Depth extends number = 5> =
+  T extends { mutable: true } ? FromSchemaInternal<T> :
+  DeepReadonly<Depth extends 0
+    ? any
+    : FromSchemaInternal<T, Depth>
+  >;
+
+type FromSchemaInternal<T, Depth extends number = 5> = T extends { const: infer Const } ? Const
   : T extends { enum: infer Enum } ? Enum extends ReadonlyArray<any> ? Enum[number] : never
   : T extends { oneOf: infer Schemas }
   ? Schemas extends ReadonlyArray<Schema> ? FromOneOfSchema<Schemas, Decrement<Depth>> : never
@@ -103,14 +108,14 @@ export type FromSchema<T, Depth extends number = 5> = DeepReadonly<Depth extends
   : T extends { type: 'null' }
   ? null
   : T extends { type: 'typed-buffer', items: infer Items }
-  ? TypedBuffer<FromSchema<Items>>
+  ? TypedBuffer<FromSchemaInternal<Items>>
   : T extends { type: 'array' } | { items: any }
   ? FromSchemaArray<T, Decrement<Depth>>
   : T extends { type?: undefined, default: infer D } ? D
   : T extends { type: 'object' } | { properties: any }
   ? FromSchemaObject<T, Decrement<Depth>>
   : any
->;
+  ;
 
 type Decrement<N extends number> = ((...x: any[]) => void) extends (
   arg: any,
@@ -286,3 +291,6 @@ type TestNoPropsExplicitTrue = FromSchema<{
   additionalProperties: true;
 }>; // { [key: string]: any }
 type CheckNoPropsExplicitTrue = True<EquivalentTypes<TestNoPropsExplicitTrue, { [key: string]: any }>>;
+
+type TestMutable = FromSchema<{ mutable: true, default: number[][] }>;
+type CheckMutable = True<EquivalentTypes<TestMutable, number[][]>>;
