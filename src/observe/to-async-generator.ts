@@ -122,6 +122,10 @@ export function toAsyncGenerator<T>(
         throw(e: any): Promise<IteratorResult<T>> {
             cleanup();
             return Promise.reject(e);
+        },
+        [Symbol.asyncDispose](): PromiseLike<void> {
+            cleanup();
+            return Promise.resolve();
         }
     };
 

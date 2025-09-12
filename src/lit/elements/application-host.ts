@@ -20,43 +20,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { LitElement } from 'lit';
-import { property } from 'lit/decorators.js';
-import { attachDecorator, withHooks } from '../hooks/index.js';
-import { iterateSelfAndAncestors } from '../functions/index.js';
-import { Service, isService } from '../../service/index.js';
+import { LitElement, nothing, TemplateResult } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { Service } from '../../service/index.js';
+import { ApplicationElement } from './application-element.js';
 
-export class ApplicationElement<MainService extends Service> extends LitElement {
-  @property({ type: Object, reflect: false })
-  service!: MainService;
+const tagName = "application-host";
 
-  constructor() {
-    super();
-    attachDecorator(this, 'render', withHooks);
-  }
+declare global {
+   interface HTMLElementTagNameMap {
+      'application-element': ApplicationElement<Service>;
+   }
+}
 
-  connectedCallback(): void {
-    super.connectedCallback();
+@customElement(tagName)
+export class ApplicationHost<MainService extends Service = Service> extends LitElement {
 
-    if (!this.service) {
-      const service = this.findAncestorService();
-      if (service) {
-        this.service = service;
-      }
-    }
-  }
+   @property()
+   createService!: () => Promise<MainService>;
 
-  protected findAncestorService(): MainService | void {
-    for (const element of iterateSelfAndAncestors(this)) {
-      const { service } = element as Partial<ApplicationElement<MainService>>;
-      if (isService(service)) {
-        return service;
-      }
-    }
-  }
+   @property({})
+   renderElement!: () => TemplateResult;
 
-  public override render() {
-    throw new Error('render function must be overridden');
-  }
+   @property({ attribute: false })
+   public service!: MainService;
+
+   override async connectedCallback() {
+      super.connectedCallback();
+      this.service = await this.createService();
+   }
+
+   override render() {
+      return this.service ? this.renderElement() : nothing;
+   }
 
 }

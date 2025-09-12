@@ -34,3 +34,6 @@ export * from "./use-resize-observer.js";
 export * from "./use-element.js";
 export * from "./with-hooks.js";
 export * from "./attach-decorator.js";
+export * from "./use-drag-transaction.js";
+export * from "./use-drag-observe.js";
+export * from "./use-draggable.js";

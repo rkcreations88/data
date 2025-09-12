@@ -22,18 +22,17 @@ SOFTWARE.*/
 
 import { DragEnd, DragMove, DragObserveProps, useDragObserve } from './use-drag-observe.js';
 import { useEffect } from "./use-effect.js";
-import { AsyncArgsProvider } from '@adobe/data/ecs';
-import { toAsyncGenerator, withFilter } from '@adobe/data/observe';
+import { AsyncArgsProvider } from '../../ecs/index.js';
+import { toAsyncGenerator, withFilter } from '../../observe/index.js';
 
 export type DragTransactionProps<T> = DragObserveProps & {
     transaction: (asyncArgs: AsyncArgsProvider<T>) => void;
-    update: (drag: DragMove) => T;
-    finish: (drag: DragEnd) => T;
+    update: (drag: DragMove | DragEnd) => T;
 };
 
 export function useDragTransaction<T>(propsFactory: () => DragTransactionProps<T>, dependencies: unknown[]) {
     const props = propsFactory();
-    const { transaction, update, finish } = props;
+    const { transaction, update } = props;
     const dragObserve = useDragObserve(props, dependencies);
     const startDragTransaction = () => {
         let done = false;
@@ -47,7 +46,7 @@ export function useDragTransaction<T>(propsFactory: () => DragTransactionProps<T
                     withFilter(dragObserve, value => {
                         if (value.type === 'end') {
                             done = true;
-                            return finish(value);
+                            return update(value);
                         }
                         if (value.type === 'move') {
                             return update(value);

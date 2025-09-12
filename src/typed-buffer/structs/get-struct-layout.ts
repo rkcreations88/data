@@ -115,12 +115,15 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
     if (schema.type === "array") {
         if (!schema.items || Array.isArray(schema.items)) {
             return null;
+            // throw new Error("Array schema must have single item type");
         }
         if (schema.minItems !== schema.maxItems || !schema.minItems) {
             return null;
+            // throw new Error("Array must have fixed length");
         }
         if (schema.minItems < 1) {
             return null;
+            // throw new Error("Array length must be at least 1");
         }
 
         // Special case for vec3

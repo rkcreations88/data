@@ -158,6 +158,16 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         return core as Core<C & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>;
     }
 
+    const getComponent = <K extends StringKeyof<C>>(entity: Entity, component: K): C[K] | undefined => {
+        const location = locate(entity);
+        if (location === null) {
+            return undefined;
+        }
+        const archetype = archetypes[location.archetype];
+        const column = archetype.columns[component];
+        return column?.get(location.row)
+    }
+
     const core: Core<C> = {
         componentSchemas: componentSchemas,
         queryArchetypes,
@@ -170,6 +180,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
             }
             return { archetype: archetypes[location.archetype] as any, row: location.row };
         },
+        get: getComponent,
         read: readEntity,
         delete: deleteEntity,
         update: updateEntity,
