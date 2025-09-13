@@ -22,13 +22,13 @@ SOFTWARE.*/
 
 
 import { FromSchema, Schema } from "../../schema/index.js";
-import { Vec2Schema } from "../vec2/vec2.js";
+import { Vec2 } from "../index.js";
 
 export const Line2Schema = {
     type: 'object',
     properties: {
-        a: Vec2Schema,
-        b: Vec2Schema,
+        a: Vec2.schema,
+        b: Vec2.schema,
     },
     required: ['a', 'b'],
     additionalProperties: false,

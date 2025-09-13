@@ -22,9 +22,9 @@ SOFTWARE.*/
 
 
 import type { Quat } from './quat.js';
-import type { Vec3 } from '../vec3/vec3.js';
+import { Vec3 } from '../vec3/vec3.js';
 import type { Mat4x4 } from '../mat4x4/mat4x4.js';
-import { normalize as normalizeVec3, cross } from '../vec3/functions.js';
+import { normalize as normalizeVec3, cross } from '../vec3/index.js';
 
 // Basic Quaternion Operations
 export const add = ([x1, y1, z1, w1]: Quat, [x2, y2, z2, w2]: Quat): Quat => [

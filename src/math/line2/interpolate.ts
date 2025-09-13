@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 
-import { Vec2 } from "../vec2/index.js";
+import { Vec2 } from "../index.js";
 import { Line2 } from "./line2.js";
 
 export const interpolate = (line: Line2, alpha: number): Vec2 => {
