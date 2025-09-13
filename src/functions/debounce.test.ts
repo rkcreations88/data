@@ -367,7 +367,7 @@ describe('debounce', () => {
         });
 
         it('should handle functions that throw errors', () => {
-            const fn = vi.fn(() => {
+            const fn = vi.fn((arg: string) => {
                 throw new Error('Test error');
             });
             const debounced = debounce(fn, 100);

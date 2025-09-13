@@ -116,7 +116,7 @@ export const debounce = <TFunc extends (...args: any[]) => any>(
         lastArgs = undefined;
         lastInvokeTime = time;
         result = func(...args);
-        return result;
+        return result as ReturnType<TFunc>;
     };
 
     const leadingEdge = (time: number): void => {
@@ -132,7 +132,15 @@ export const debounce = <TFunc extends (...args: any[]) => any>(
         const timeSinceLastCall = time - (lastCallTime ?? 0);
         const timeSinceLastInvoke = time - lastInvokeTime;
 
-        if (timeSinceLastCall >= wait || (maxWait !== undefined && timeSinceLastInvoke >= maxWait)) {
+        // If we have maxWait active, don't fire the regular timer - let maxWait handle it
+        if (maxTimeoutId !== undefined && maxWait !== undefined && timeSinceLastInvoke < maxWait) {
+            // Still within maxWait period, don't execute yet
+            timeoutId = setTimeout(timerExpired, wait);
+            return;
+        }
+
+        // Only execute if we've waited long enough
+        if (timeSinceLastCall >= wait) {
             trailingEdge(time);
         } else {
             timeoutId = setTimeout(timerExpired, wait - timeSinceLastCall);
