@@ -123,7 +123,7 @@ export function toAsyncGenerator<T>(
             cleanup();
             return Promise.reject(e);
         },
-        [Symbol.asyncDispose](): PromiseLike<void> {
+        [Symbol.asyncDispose as any](): PromiseLike<void> {
             cleanup();
             return Promise.resolve();
         }
