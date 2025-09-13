@@ -22,11 +22,8 @@ SOFTWARE.*/
 
 
 import { Table } from "../../table/index.js";
-import { Aabb } from "../aabb/aabb.js";
-import { center } from "../aabb/center.js";
-import { lineIntersection } from "../aabb/line-intersection.js";
-import { Line3 } from "../line3/line3.js";
-import { closestPointOnLine, interpolate } from "../line3/index.js";
+import { Aabb } from "../index.js";
+import { Line3 } from "../index.js";
 import { Vec3 } from "../index.js";
 import { Entity } from "../../ecs/index.js";
 import { PickResult } from "./pick-result.js";
@@ -38,7 +35,7 @@ import { PickResult } from "./pick-result.js";
  * @returns Face index: 0=POS_Z, 1=POS_X, 2=NEG_Z, 3=NEG_X, 4=POS_Y, 5=NEG_Y
  */
 function determineFaceFromPosition(position: Vec3, aabb: Aabb): number {
-    const aabbCenter = center(aabb);
+    const aabbCenter = Aabb.center(aabb);
     const localPos = [
         position[0] - aabbCenter[0],
         position[1] - aabbCenter[1],
@@ -73,7 +70,7 @@ function getIntersectingEntities<T extends Table<{ id: Entity, boundingBox: Aabb
     for (const table of tables) {
         for (let row = 0; row < table.rowCount; row++) {
             const boundingBox = table.columns.boundingBox.get(row);
-            if (lineIntersection(boundingBox, line, radius) !== -1 && (predicate?.(table, row) ?? true)) {
+            if (Aabb.lineIntersection(boundingBox, line, radius) !== -1 && (predicate?.(table, row) ?? true)) {
                 rows.set(table.columns.id.get(row), boundingBox);
             }
         }
@@ -86,7 +83,7 @@ function getClosestEntityToPoint(rows: Map<Entity, Aabb>, point: Vec3): PickResu
     let closestDistanceSquared = Infinity;
     let closestAabb: Aabb | null = null;
     for (const [row, aabb] of rows) {
-        const distSquared = Vec3.distanceSquared(point, center(aabb));
+        const distSquared = Vec3.distanceSquared(point, Aabb.center(aabb));
         if (distSquared < closestDistanceSquared) {
             closestDistanceSquared = distSquared;
             closestRow = row;
@@ -95,9 +92,9 @@ function getClosestEntityToPoint(rows: Map<Entity, Aabb>, point: Vec3): PickResu
     }
     if (closestRow !== -1 && closestAabb) {
         // For direct intersection, use the intersection point if possible
-        // We'll use the intersection alpha from lineIntersection
+        // We'll use the intersection alpha from Aabb.lineIntersection
         // If the line starts inside, alpha=0, so position is line.a
-        // Otherwise, interpolate at alpha
+        // Otherwise, Line3.interpolate at alpha
         return {
             entity: closestRow,
             position: point,
@@ -113,9 +110,9 @@ function getClosestEntityToLine(rows: Map<Entity, Aabb>, line: Line3): PickResul
     let closestAlpha = Infinity;
     let pickedPosition: Vec3 | null = null;
     for (const [id, aabb] of rows) {
-        const aabbCenter = center(aabb);
-        const alpha = closestPointOnLine(line, aabbCenter);
-        const closestPointOnLineSegment = interpolate(line, alpha);
+        const aabbCenter = Aabb.center(aabb);
+        const alpha = Line3.closestPointOnLine(line, aabbCenter);
+        const closestPointOnLineSegment = Line3.interpolate(line, alpha);
         const distSquared = Vec3.distanceSquared(aabbCenter, closestPointOnLineSegment);
         if (
             distSquared < closestDistanceSquared ||
@@ -153,7 +150,7 @@ export function pickFromTables<T extends Table<{ id: Entity, boundingBox: Aabb }
         // For direct intersection, find the alpha for the closest intersecting entity
         let best: { id: Entity, alpha: number } | null = null;
         for (const [id, aabb] of rows) {
-            const alpha = lineIntersection(aabb, line, 0);
+            const alpha = Aabb.lineIntersection(aabb, line, 0);
             if (alpha !== -1 && (best === null || alpha < best.alpha)) {
                 best = { id, alpha };
             }
@@ -161,8 +158,8 @@ export function pickFromTables<T extends Table<{ id: Entity, boundingBox: Aabb }
         if (best) {
             return {
                 entity: best.id,
-                position: interpolate(line, best.alpha),
-                face: determineFaceFromPosition(interpolate(line, best.alpha), rows.get(best.id)!),
+                position: Line3.interpolate(line, best.alpha),
+                face: determineFaceFromPosition(Line3.interpolate(line, best.alpha), rows.get(best.id)!),
             };
         }
         // fallback (should not happen):

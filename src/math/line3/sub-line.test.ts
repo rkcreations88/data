@@ -22,16 +22,15 @@ SOFTWARE.*/
 
 
 import { describe, it, expect } from 'vitest';
-import { subLine } from './sub-line.js';
-import { Line3 } from './line3.js';
+import { Line3 } from '../index.js';
 
-describe('subLine', () => {
+describe('Line3.subLine', () => {
     it('should create a sub-line from alpha=0 to beta=1', () => {
         const line: Line3 = {
             a: [0, 0, 0],
             b: [2, 4, 6]
         };
-        const result = subLine(line, 0, 1);
+        const result = Line3.subLine(line, 0, 1);
         expect(result).toEqual({
             a: [0, 0, 0],
             b: [2, 4, 6]
@@ -43,7 +42,7 @@ describe('subLine', () => {
             a: [0, 0, 0],
             b: [4, 8, 12]
         };
-        const result = subLine(line, 0.25, 0.75);
+        const result = Line3.subLine(line, 0.25, 0.75);
         expect(result).toEqual({
             a: [1, 2, 3],
             b: [3, 6, 9]
@@ -55,7 +54,7 @@ describe('subLine', () => {
             a: [0, 0, 0],
             b: [2, 4, 6]
         };
-        const result = subLine(line, 0.75, 0.25);
+        const result = Line3.subLine(line, 0.75, 0.25);
         expect(result).toEqual({
             a: [1.5, 3, 4.5],
             b: [0.5, 1, 1.5]
@@ -67,7 +66,7 @@ describe('subLine', () => {
             a: [-2, -4, -6],
             b: [2, 4, 6]
         };
-        const result = subLine(line, 0.25, 0.75);
+        const result = Line3.subLine(line, 0.25, 0.75);
         expect(result).toEqual({
             a: [-1, -2, -3],
             b: [1, 2, 3]

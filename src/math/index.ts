@@ -40,4 +40,24 @@ export * as Vec3 from "./vec3/vec3.js";
 export type Vec4 = import("./vec4/vec4.js").Type;
 // Export the namespace Vec4
 export * as Vec4 from "./vec4/vec4.js";
+
+// Export the type Quat
+export type Quat = import("./quat/quat.js").Type;
+// Export the namespace Quat
+export * as Quat from "./quat/quat.js";
+
+// Export the type Aabb  
+export type Aabb = import("./aabb/aabb.js").Type;
+// Export the namespace Aabb
+export * as Aabb from "./aabb/aabb.js";
+
+// Export the type Line2
+export type Line2 = import("./line2/line2.js").Type;
+// Export the namespace Line2
+export * as Line2 from "./line2/line2.js";
+
+// Export the type Line3
+export type Line3 = import("./line3/line3.js").Type;
+// Export the namespace Line3
+export * as Line3 from "./line3/line3.js";
 export * from "./picking/index.js";

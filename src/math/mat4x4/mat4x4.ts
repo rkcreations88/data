@@ -36,7 +36,7 @@ type Mat4x4 = Type;
 
 export const layout = getStructLayout(schema);
 
-export type Mat4x4Index = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+export type Index = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
 
 // Basic Matrix Operations
 export const identity = (): Mat4x4 => [
@@ -74,7 +74,7 @@ export const multiply = (a: Mat4x4, b: Mat4x4): Mat4x4 => {
         for (let j = 0; j < 4; j++) {
             let sum = 0;
             for (let k = 0; k < 4; k++) {
-                sum += a[k * 4 + i as Mat4x4Index] * b[j * 4 + k as Mat4x4Index];
+                sum += a[k * 4 + i as Index] * b[j * 4 + k as Index];
             }
             result[j * 4 + i] = sum;
         }
