@@ -24,7 +24,7 @@ SOFTWARE.*/
 import { describe, it, expect } from 'vitest';
 import { closestPointOnLine } from './closest-point-on-line.js';
 import { Line3 } from './line3.js';
-import { Vec3 } from '../vec3/vec3.js';
+import { Vec3 } from '../index.js';
 
 describe('closestPointOnLine', () => {
     const line: Line3 = {
@@ -98,7 +98,7 @@ describe('closestPointOnLine', () => {
     it('should not clamp alpha to [0, 1] range', () => {
         const point: Vec3 = [5, 0, 0];
         expect(closestPointOnLine(line, point)).toBe(2.5); // alpha = (5-0)/(2-0) = 2.5
-        
+
         const point2: Vec3 = [-5, 0, 0];
         expect(closestPointOnLine(line, point2)).toBe(-2.5); // alpha = (-5-0)/(2-0) = -2.5
     });
@@ -107,13 +107,13 @@ describe('closestPointOnLine', () => {
         // Two points at equal distance from the line but different alpha values
         const point1: Vec3 = [0.5, 2, 0]; // alpha = 0.25, distance = 2
         const point2: Vec3 = [1.5, 2, 0]; // alpha = 0.75, distance = 2
-        
+
         const alpha1 = closestPointOnLine(line, point1);
         const alpha2 = closestPointOnLine(line, point2);
-        
+
         expect(alpha1).toBe(0.25);
         expect(alpha2).toBe(0.75);
-        
+
         // The tie-breaking logic in getClosestRowToLine should prefer point1 (lower alpha)
         // when both have the same distance to the line
     });

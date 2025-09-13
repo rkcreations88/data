@@ -27,8 +27,7 @@ import { center } from "../aabb/center.js";
 import { lineIntersection } from "../aabb/line-intersection.js";
 import { Line3 } from "../line3/line3.js";
 import { closestPointOnLine, interpolate } from "../line3/index.js";
-import { distanceSquared } from "../vec3/functions.js";
-import { Vec3 } from "../vec3/vec3.js";
+import { Vec3 } from "../index.js";
 import { Entity } from "../../ecs/index.js";
 import { PickResult } from "./pick-result.js";
 
@@ -45,12 +44,12 @@ function determineFaceFromPosition(position: Vec3, aabb: Aabb): number {
         position[1] - aabbCenter[1],
         position[2] - aabbCenter[2]
     ];
-    
+
     // Find the face with the largest absolute coordinate (closest to cube surface)
     const absX = Math.abs(localPos[0]);
     const absY = Math.abs(localPos[1]);
     const absZ = Math.abs(localPos[2]);
-    
+
     if (absX >= absY && absX >= absZ) {
         // X-axis face (NEG_X or POS_X)
         return localPos[0] > 0 ? 1 : 3; // 1=POS_X, 3=NEG_X
@@ -87,7 +86,7 @@ function getClosestEntityToPoint(rows: Map<Entity, Aabb>, point: Vec3): PickResu
     let closestDistanceSquared = Infinity;
     let closestAabb: Aabb | null = null;
     for (const [row, aabb] of rows) {
-        const distSquared = distanceSquared(point, center(aabb));
+        const distSquared = Vec3.distanceSquared(point, center(aabb));
         if (distSquared < closestDistanceSquared) {
             closestDistanceSquared = distSquared;
             closestRow = row;
@@ -117,7 +116,7 @@ function getClosestEntityToLine(rows: Map<Entity, Aabb>, line: Line3): PickResul
         const aabbCenter = center(aabb);
         const alpha = closestPointOnLine(line, aabbCenter);
         const closestPointOnLineSegment = interpolate(line, alpha);
-        const distSquared = distanceSquared(aabbCenter, closestPointOnLineSegment);
+        const distSquared = Vec3.distanceSquared(aabbCenter, closestPointOnLineSegment);
         if (
             distSquared < closestDistanceSquared ||
             (distSquared === closestDistanceSquared && alpha < closestAlpha)

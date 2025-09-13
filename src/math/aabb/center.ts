@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 
-import { Vec3 } from "../vec3/vec3.js";
+import { Vec3 } from "../index.js";
 import { Aabb } from "./aabb.js";
 
 export function center(aabb: Aabb): Vec3 {

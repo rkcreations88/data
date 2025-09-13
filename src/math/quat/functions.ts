@@ -22,9 +22,8 @@ SOFTWARE.*/
 
 
 import type { Quat } from './quat.js';
-import { Vec3 } from '../vec3/vec3.js';
-import type { Mat4x4 } from '../mat4x4/mat4x4.js';
-import { normalize as normalizeVec3, cross } from '../vec3/index.js';
+import { Vec3 } from '../index.js';
+import { Mat4x4 } from '../index.js';
 
 // Basic Quaternion Operations
 export const add = ([x1, y1, z1, w1]: Quat, [x2, y2, z2, w2]: Quat): Quat => [
@@ -64,7 +63,7 @@ export const normalize = (q: Quat): Quat => {
     return len === 0 ? [0, 0, 0, 1] : scale(q, 1 / len);
 };
 
-export const dot = ([x1, y1, z1, w1]: Quat, [x2, y2, z2, w2]: Quat): number => 
+export const dot = ([x1, y1, z1, w1]: Quat, [x2, y2, z2, w2]: Quat): number =>
     x1 * x2 + y1 * y2 + z1 * z2 + w1 * w2;
 
 export const distance = (a: Quat, b: Quat): number => length(subtract(b, a));
@@ -132,8 +131,8 @@ export const toEuler = ([x, y, z, w]: Quat): Vec3 => {
 export const rotateVec3 = ([x, y, z, w]: Quat, v: Vec3): Vec3 => {
     // q * v * q^-1
     const qv: Vec3 = [x, y, z];
-    const uv = cross(qv, v);
-    const uuv = cross(qv, uv);
+    const uv = Vec3.cross(qv, v);
+    const uuv = Vec3.cross(qv, uv);
     const scaleFactor = 2 * w;
     return [
         v[0] + scaleFactor * uv[0] + 2 * uuv[0],
@@ -145,21 +144,21 @@ export const rotateVec3 = ([x, y, z, w]: Quat, v: Vec3): Vec3 => {
 // Interpolation
 export const slerp = (q1: Quat, q2: Quat, t: number): Quat => {
     const dotProduct = dot(q1, q2);
-    
+
     // If the dot product is negative, slerp won't take the shorter route
     const q2Adjusted = dotProduct < 0 ? negate(q2) : q2;
     const adjustedDot = Math.abs(dotProduct);
-    
+
     // If the inputs are too close for comfort, linearly interpolate
     if (adjustedDot > 0.9995) {
         return normalize(add(scale(q1, 1 - t), scale(q2Adjusted, t)));
     }
-    
+
     const theta = Math.acos(adjustedDot);
     const sinTheta = Math.sin(theta);
     const factor1 = Math.sin((1 - t) * theta) / sinTheta;
     const factor2 = Math.sin(t * theta) / sinTheta;
-    
+
     return normalize(add(scale(q1, factor1), scale(q2Adjusted, factor2)));
 };
 
@@ -198,17 +197,17 @@ export const inverse = (q: Quat): Quat => {
 
 export const lookAt = (forward: Vec3, up: Vec3): Quat => {
     // Normalize forward vector
-    const f = normalizeVec3(forward);
-    
+    const f = Vec3.normalize(forward);
+
     // Calculate right vector
-    const r = normalizeVec3(cross(f, up));
-    
+    const r = Vec3.normalize(Vec3.cross(f, up));
+
     // Recalculate up vector
-    const u = cross(r, f);
-    
+    const u = Vec3.cross(r, f);
+
     // Convert to quaternion
     const trace = r[0] + u[1] + f[2];
-    
+
     if (trace > 0) {
         const s = Math.sqrt(trace + 1) * 2;
         return [

@@ -22,8 +22,7 @@ SOFTWARE.*/
 
 
 import { Line3 } from "./line3.js";
-import { Vec3 } from "../vec3/vec3.js";
-import { dot, subtract } from "../vec3/functions.js";
+import { Vec3 } from "../index.js";
 
 /**
  * Calculates the alpha value (0-1) representing the closest point on a line to a given point.
@@ -34,22 +33,22 @@ import { dot, subtract } from "../vec3/functions.js";
  */
 export function closestPointOnLine(line: Line3, point: Vec3): number {
     const { a, b } = line;
-    
+
     // Calculate the direction vector of the line
-    const lineDirection = subtract(b, a);
-    
+    const lineDirection = Vec3.subtract(b, a);
+
     // Calculate the vector from line start to the point
-    const pointToStart = subtract(point, a);
-    
+    const pointToStart = Vec3.subtract(point, a);
+
     // Calculate the dot product to find the projection
-    const dotProduct = dot(pointToStart, lineDirection);
-    const lineLengthSquared = dot(lineDirection, lineDirection);
-    
+    const dotProduct = Vec3.dot(pointToStart, lineDirection);
+    const lineLengthSquared = Vec3.dot(lineDirection, lineDirection);
+
     // Avoid division by zero
     if (lineLengthSquared === 0) {
         return 0;
     }
-    
+
     // Calculate alpha (projection parameter)
     const alpha = dotProduct / lineLengthSquared;
 

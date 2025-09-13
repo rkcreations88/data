@@ -22,7 +22,9 @@ SOFTWARE.*/
 
 
 import { FromSchema, Schema } from "../../schema/index.js";
-import { Vec3Schema } from "../vec3/vec3.js";
+import { Vec3 } from "../index.js";
+
+const { schema: Vec3Schema } = Vec3;
 
 export const AabbSchema = {
     type: 'object',

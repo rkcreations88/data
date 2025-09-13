@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 
 import { Entity } from "../../ecs/index.js";
-import { Vec3 } from "../vec3/vec3.js";
+import { Vec3 } from "../index.js";
 
 // Returns the entity, picked position (Vec3), and face index (0-5 for cubes) or null if not found
 

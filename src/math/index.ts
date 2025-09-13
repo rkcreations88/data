@@ -22,13 +22,22 @@ SOFTWARE.*/
 
 
 export * from "./constants.js";
-export { type Mat4x4, Mat4x4Schema } from "./mat4x4/index.js";
+// Export the type Mat4x4
+export type Mat4x4 = import("./mat4x4/mat4x4.js").Type;
+// Export the namespace Mat4x4
+export * as Mat4x4 from "./mat4x4/mat4x4.js";
 
 // Export the type Vec2
 export type Vec2 = import("./vec2/vec2.js").Type;
 // Export the namespace Vec2
 export * as Vec2 from "./vec2/vec2.js";
 
-export { Vec3Schema, type Vec3 } from "./vec3/index.js";
-export { Vec4Schema, type Vec4 } from "./vec4/index.js";
+// Export the type Vec3
+export type Vec3 = import("./vec3/vec3.js").Type;
+// Export the namespace Vec3
+export * as Vec3 from "./vec3/vec3.js";
+// Export the type Vec4
+export type Vec4 = import("./vec4/vec4.js").Type;
+// Export the namespace Vec4
+export * as Vec4 from "./vec4/vec4.js";
 export * from "./picking/index.js";
