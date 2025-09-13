@@ -74,9 +74,6 @@
       ],
       "typed-buffer": [
         "./dist/typed-buffer/index.d.ts"
-      ],
-      "math": [
-        "./dist/math/index.d.ts"
       ]
     }
   },
@@ -132,10 +129,6 @@
     "./typed-buffer": {
       "import": "./dist/typed-buffer/index.js",
       "types": "./dist/typed-buffer/index.d.ts"
-    },
-    "./math": {
-      "import": "./dist/math/index.js",
-      "types": "./dist/math/index.d.ts"
     }
   },
   "devDependencies": {
