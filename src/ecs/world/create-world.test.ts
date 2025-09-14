@@ -211,21 +211,18 @@ describe("createWorld", () => {
     describe("synchronous vs asynchronous execution", () => {
         it("should handle all synchronous systems", async () => {
             const { store, database } = createTestWorld();
-            const executionOrder: string[] = [];
 
             // Define second system first to test dependency resolution
             const world = createWorld(store, database, {
                 sync2: {
                     type: "store",
                     run: (s: TestStore) => {
-                        executionOrder.push("sync2");
                         s.resources.result += "2";
                     }
                 },
                 sync1: {
                     type: "store",
                     run: (s: TestStore) => {
-                        executionOrder.push("sync1");
                         s.resources.result += "1";
                     },
                     schedule: { before: ["sync2"] }
@@ -235,13 +232,12 @@ describe("createWorld", () => {
             // Pass in reverse order - dependency resolution should fix it
             await world.runSystems(["sync2", "sync1"]);
 
+            // Result "12" proves sync1 ran before sync2
             expect(store.resources.result).toBe("12");
-            expect(executionOrder).toEqual(["sync1", "sync2"]);
         });
 
         it("should properly await asynchronous systems", async () => {
             const { store, database } = createTestWorld();
-            const executionOrder: string[] = [];
 
             // Define second async system first to test dependency resolution
             const world = createWorld(store, database, {
@@ -249,7 +245,6 @@ describe("createWorld", () => {
                     type: "store",
                     run: async (s: TestStore) => {
                         await new Promise(resolve => setTimeout(resolve, 5));
-                        executionOrder.push("async2");
                         s.resources.result += "B";
                     }
                 },
@@ -257,7 +252,6 @@ describe("createWorld", () => {
                     type: "store",
                     run: async (s: TestStore) => {
                         await new Promise(resolve => setTimeout(resolve, 10));
-                        executionOrder.push("async1");
                         s.resources.result += "A";
                     },
                     schedule: { before: ["async2"] }
@@ -267,20 +261,18 @@ describe("createWorld", () => {
             // Pass in wrong order - should still execute A then B due to dependencies
             await world.runSystems(["async2", "async1"]);
 
+            // Result "AB" proves async1 awaited before async2 started
             expect(store.resources.result).toBe("AB");
-            expect(executionOrder).toEqual(["async1", "async2"]);
         });
 
         it("should handle mixed sync and async systems", async () => {
             const { store, database } = createTestWorld();
-            const executionOrder: string[] = [];
 
             // Define systems in completely reverse dependency order
             const world = createWorld(store, database, {
                 syncAfter: {
                     type: "store",
                     run: (s: TestStore) => {
-                        executionOrder.push("syncAfter");
                         s.resources.result += "E";
                     }
                 },
@@ -288,7 +280,6 @@ describe("createWorld", () => {
                     type: "database",
                     run: async (db: TestDatabase) => {
                         await new Promise(resolve => setTimeout(resolve, 10));
-                        executionOrder.push("async");
                         db.transactions.appendToResult("A");
                     },
                     schedule: { before: ["syncAfter"] }
@@ -296,7 +287,6 @@ describe("createWorld", () => {
                 sync: {
                     type: "store",
                     run: (s: TestStore) => {
-                        executionOrder.push("sync");
                         s.resources.result += "S";
                     },
                     schedule: { before: ["async"] }
@@ -306,8 +296,8 @@ describe("createWorld", () => {
             // Pass in completely wrong order - dependency resolution must fix it
             await world.runSystems(["syncAfter", "async", "sync"]);
 
+            // Result "SAE" proves execution order: sync → async → syncAfter
             expect(store.resources.result).toBe("SAE");
-            expect(executionOrder).toEqual(["sync", "async", "syncAfter"]);
         });
     });
 
