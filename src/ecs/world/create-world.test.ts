@@ -236,6 +236,34 @@ describe("createWorld", () => {
             expect(store.resources.result).toBe("12");
         });
 
+        it("should complete synchronously when all systems are sync", () => {
+            const { store, database } = createTestWorld();
+
+            const world = createWorld(store, database, {
+                syncA: {
+                    type: "store",
+                    run: (s: TestStore) => {
+                        s.resources.result += "A";
+                    }
+                },
+                syncB: {
+                    type: "store",
+                    run: (s: TestStore) => {
+                        s.resources.result += "B";
+                    }
+                }
+            });
+
+            // Time the execution to ensure it's immediate for sync systems
+            const startTime = performance.now();
+            world.runSystems(["syncA", "syncB"]);
+            const endTime = performance.now();
+
+            expect(store.resources.result).toBe("AB");
+            // Sync systems should complete in < 1ms (no waiting for timers/promises)
+            expect(endTime - startTime).toBeLessThan(1);
+        });
+
         it("should properly await asynchronous systems", async () => {
             const { store, database } = createTestWorld();
 
@@ -263,6 +291,151 @@ describe("createWorld", () => {
 
             // Result "AB" proves async1 awaited before async2 started
             expect(store.resources.result).toBe("AB");
+        });
+
+        it("should fully await async systems completion", async () => {
+            const { store, database } = createTestWorld();
+            const timestamps: number[] = [];
+
+            const world = createWorld(store, database, {
+                delayedSystem: {
+                    type: "store",
+                    run: async (s: TestStore) => {
+                        timestamps.push(performance.now());
+                        await new Promise(resolve => setTimeout(resolve, 20));
+                        timestamps.push(performance.now());
+                        s.resources.result += "DONE";
+                    }
+                }
+            });
+
+            const startTime = performance.now();
+            await world.runSystems(["delayedSystem"]);
+            const endTime = performance.now();
+
+            // Verify the system actually completed its async work
+            expect(store.resources.result).toBe("DONE");
+            expect(timestamps).toHaveLength(2);
+
+            // Verify we waited for the full async operation (at least 20ms)
+            expect(endTime - startTime).toBeGreaterThanOrEqual(19);
+
+            // Verify the async operation completed before runSystems returned
+            expect(timestamps[1]).toBeLessThanOrEqual(endTime);
+        });
+
+        it("should demonstrate sync systems complete immediately without Promise overhead", () => {
+            const { store, database } = createTestWorld();
+            let syncExecuted = false;
+
+            const world = createWorld(store, database, {
+                syncSystem: {
+                    type: "store",
+                    run: (s: TestStore) => {
+                        syncExecuted = true;
+                        s.resources.result += "SYNC";
+                        // Return a non-Promise value to test sync behavior
+                        return undefined;
+                    }
+                }
+            });
+
+            // Call runSystems but don't await it initially
+            const promise = world.runSystems(["syncSystem"]);
+
+            // For truly sync systems, the execution should have completed synchronously
+            expect(syncExecuted).toBe(true);
+            expect(store.resources.result).toBe("SYNC");
+
+            // The promise should still be returned for consistent API
+            expect(promise).toBeInstanceOf(Promise);
+        });
+
+        it("should demonstrate that async systems don't complete until awaited", async () => {
+            const { store, database } = createTestWorld();
+            let asyncStarted = false;
+            let asyncCompleted = false;
+
+            const world = createWorld(store, database, {
+                asyncSystem: {
+                    type: "store",
+                    run: async (s: TestStore) => {
+                        asyncStarted = true;
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                        asyncCompleted = true;
+                        s.resources.result += "ASYNC";
+                    }
+                }
+            });
+
+            // Start the async operation but don't await it
+            const promise = world.runSystems(["asyncSystem"]);
+
+            // The async system might have started but shouldn't be completed
+            expect(asyncStarted).toBe(true);
+            expect(asyncCompleted).toBe(false);
+            expect(store.resources.result).toBe(""); // Should be empty until completion
+
+            // Now await the promise
+            await promise;
+
+            // Now it should be completed
+            expect(asyncCompleted).toBe(true);
+            expect(store.resources.result).toBe("ASYNC");
+        });
+
+        it("should prove sync systems complete before Promise resolves but async systems don't", async () => {
+            const { store, database } = createTestWorld();
+            const executionLog: string[] = [];
+
+            const world = createWorld(store, database, {
+                syncFirst: {
+                    type: "store",
+                    run: (s: TestStore) => {
+                        executionLog.push("sync-start");
+                        s.resources.result += "S";
+                        executionLog.push("sync-end");
+                        // Intentionally not returning a Promise
+                    },
+                    schedule: { before: ["asyncSecond"] }
+                },
+                asyncSecond: {
+                    type: "store",
+                    run: async (s: TestStore) => {
+                        executionLog.push("async-start");
+                        await new Promise(resolve => {
+                            setTimeout(() => {
+                                executionLog.push("timeout-fired");
+                                resolve(undefined);
+                            }, 15);
+                        });
+                        executionLog.push("async-end");
+                        s.resources.result += "A";
+                    }
+                }
+            });
+
+            const startTime = performance.now();
+
+            // This should wait for BOTH systems to complete
+            await world.runSystems(["syncFirst", "asyncSecond"]);
+
+            const endTime = performance.now();
+
+            // Verify both systems completed
+            expect(store.resources.result).toBe("SA");
+
+            // Verify execution order in log
+            expect(executionLog).toEqual([
+                "sync-start",
+                "sync-end",
+                "async-start",
+                "timeout-fired",
+                "async-end"
+            ]);
+
+            // Verify we waited for the async operation (at least 15ms)
+            expect(endTime - startTime).toBeGreaterThanOrEqual(14);
         });
 
         it("should handle mixed sync and async systems", async () => {

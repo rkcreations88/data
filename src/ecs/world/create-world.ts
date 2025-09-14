@@ -24,7 +24,7 @@ import { ArchetypeComponents, Database, Store, TransactionFunctions } from "../i
 import { Components } from "../store/components.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { System } from "./system.js";
-import { SystemNames, World } from "./world.js";
+import { World } from "./world.js";
 import { topologicalSort, type Edge } from "../../internal/array/index.js";
 
 export function createWorld<
@@ -44,25 +44,78 @@ export function createWorld<
     // Cache for topological sort results to avoid re-computing for same system sets
     const topologicalSortCache = new Map<(keyof SD & string)[], (keyof SD & string)[]>();
 
-    const runSystems = async (systemNames: (keyof SD & string)[]) => {
-        // Default to all systems if none specified
-        if (systemNames.length === 0) {
-            systemNames = allSystems;
+    const runSystems = (systemNames: (keyof SD & string)[]): Promise<void> => {
+        try {
+            // Default to all systems if none specified
+            if (systemNames.length === 0) {
+                systemNames = allSystems;
+            }
+
+            // Check cache first (by array identity)
+            let sortedSystems = topologicalSortCache.get(systemNames);
+            if (!sortedSystems) {
+                // Build dependency graph for system scheduling
+                const edges = buildSystemEdges(systemNames, systems);
+                sortedSystems = topologicalSort(systemNames, edges) as (keyof SD & string)[];
+
+                // Cache the result
+                topologicalSortCache.set(systemNames, sortedSystems);
+            }
+
+            // Track if any system is async
+            const asyncPromises: Promise<void>[] = [];
+
+            // Execute systems in dependency order
+            for (const systemName of sortedSystems) {
+                const system = systems[systemName];
+
+                try {
+                    let result: void | Promise<void> = undefined;
+
+                    if (system.type === "store") {
+                        result = system.run(store);
+                    } else if (system.type === "database") {
+                        result = system.run(database);
+                    }
+
+                    // Check if the result is a Promise
+                    if (result && typeof result === 'object' && 'then' in result) {
+                        // If we find any async system, we need to handle all remaining systems async
+                        asyncPromises.push(result as Promise<void>);
+
+                        // Switch to async mode for remaining systems
+                        return executeRemainingAsync(sortedSystems, systemName, asyncPromises);
+                    }
+                    // If result is not a Promise, continue synchronously
+                } catch (error) {
+                    console.error(`System ${String(systemName)} failed:`, error);
+                    return Promise.reject(error);
+                }
+            }
+
+            // If we reach here, all systems were synchronous
+            return Promise.resolve();
+        } catch (error) {
+            // Handle errors from topological sort (e.g., circular dependencies)
+            return Promise.reject(error);
         }
+    };
 
-        // Check cache first (by array identity)
-        let sortedSystems = topologicalSortCache.get(systemNames);
-        if (!sortedSystems) {
-            // Build dependency graph for system scheduling
-            const edges = buildSystemEdges(systemNames, systems);
-            sortedSystems = topologicalSort(systemNames, edges) as (keyof SD & string)[];
+    // Helper function to handle async execution once we encounter the first async system
+    const executeRemainingAsync = async (
+        sortedSystems: (keyof SD & string)[],
+        currentSystemName: keyof SD & string,
+        pendingPromises: Promise<void>[]
+    ): Promise<void> => {
+        // Wait for the current async system to complete
+        await Promise.all(pendingPromises);
 
-            // Cache the result
-            topologicalSortCache.set(systemNames, sortedSystems);
-        }
+        // Find the index of current system to continue from next one
+        const currentIndex = sortedSystems.indexOf(currentSystemName);
 
-        // Execute systems in dependency order
-        for (const systemName of sortedSystems) {
+        // Execute remaining systems asynchronously
+        for (let i = currentIndex + 1; i < sortedSystems.length; i++) {
+            const systemName = sortedSystems[i];
             const system = systems[systemName];
 
             try {
