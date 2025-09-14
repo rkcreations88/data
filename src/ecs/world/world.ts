@@ -19,8 +19,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import { ResourceComponents } from "../store/resource-components.js";
+import { StringKeyof } from "../../types/types.js";
+import { Components } from "../store/components.js";
+import { ArchetypeComponents } from "../store/archetype-components.js";
+import { Database, TransactionFunctions } from "../database/database.js";
 
-export * from "./apply-args.js";
-export * from "./serialization/index.js";
-export * from "./blit.js";
-export * from "./copy-view-bytes.js";
+export type SystemNames = string;
+
+export interface World<
+  C extends Components = never,
+  R extends ResourceComponents = never,
+  A extends ArchetypeComponents<StringKeyof<C>> = never,
+  T extends TransactionFunctions = never,
+  S extends SystemNames = never,
+> extends Database<C, R, A, T> {
+  runSystems(systems: readonly S[]): Promise<void>;
+}

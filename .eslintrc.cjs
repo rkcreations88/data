@@ -1,11 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-
-// Define a concise header format
+// Define a concise header format with dynamic year
+const currentYear = new Date().getFullYear();
 const headerLines = [
   'MIT License',
   '',
-  '© Copyright 2025 Adobe. All rights reserved.',
+  `© Copyright ${currentYear} Adobe. All rights reserved.`,
   '',
   'Permission is hereby granted, free of charge, to any person obtaining a copy',
   'of this software and associated documentation files (the "Software"), to deal',
@@ -34,7 +32,7 @@ module.exports = {
   plugins: ['header'],
   rules: {
     'header/header': [
-      'warn',
+      'error',
       'block',
       headerLines,
     ],
