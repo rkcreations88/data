@@ -27,7 +27,7 @@ import { toAsyncGenerator, withFilter } from '../../observe/index.js';
 
 export type DragTransactionProps<T> = DragObserveProps & {
     transaction: (asyncArgs: AsyncArgsProvider<T>) => void;
-    update: (drag: DragMove | DragEnd) => T;
+    update: (drag: DragMove | DragEnd) => T | void;
 };
 
 export function useDragTransaction<T>(propsFactory: () => DragTransactionProps<T>, dependencies: unknown[]) {

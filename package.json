@@ -3,7 +3,7 @@
   "version": "0.5.4",
   "description": "Adobe data oriented programming library",
   "type": "module",
-  "sideEffects": true,
+  "sideEffects": false,
   "private": false,
   "files": [
     "dist",
@@ -16,8 +16,10 @@
     "build:apidocs": "typedoc",
     "build-assembly": "run-p asbuild:release",
     "clean": "rm -rf dist build node_modules",
+    "clean-cache": "rm -rf node_modules/.cache",
     "deploy-docs": "pnpm build && ./scripts/deploy-docs.sh",
-    "dev": "run-p dev:*",
+    "dev": "pnpm clean-cache && run-p dev:* dev:serve",
+    "dev:serve": "vite",
     "dev:build": "tsc -b -w --preserveWatchOutput",
     "dev:test": "pnpm test",
     "dev:apidocs": "nodemon -w README.md -w dist -x typedoc --delay 100",
@@ -185,6 +187,14 @@
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
     "@lit/context": "^1.1.5",
+    "@spectrum-web-components/action-button": "^1.7.0",
+    "@spectrum-web-components/action-group": "^1.7.0",
+    "@spectrum-web-components/button": "^1.7.0",
+    "@spectrum-web-components/card": "^1.7.0",
+    "@spectrum-web-components/checkbox": "^1.7.0",
+    "@spectrum-web-components/icons-workflow": "^1.7.0",
+    "@spectrum-web-components/styles": "^1.7.0",
+    "@spectrum-web-components/theme": "^1.7.0",
     "jsonpath": "^1.1.1",
     "lit": "^3.3.0"
   }

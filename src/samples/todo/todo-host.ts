@@ -20,44 +20,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { LitElement, nothing, TemplateResult, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { Service } from '../../service/index.js';
-import { ApplicationElement } from './application-element.js';
+import { LitElement, html, css } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { createMainService } from './services/main-service/create-main-service.js';
+import './todo-main-element.js';  // Side effect: registers custom elements
+import '../../lit/elements/application-host.js';  // Side effect: registers application-host
 
-const tagName = "application-host";
-
-declare global {
-   interface HTMLElementTagNameMap {
-      'application-element': ApplicationElement<Service>;
-   }
-}
+export const tagName = 'todo-host';
 
 @customElement(tagName)
-export class ApplicationHost<MainService extends Service = Service> extends LitElement {
-   static styles = css`
+export class TodoHost extends LitElement {
+    static styles = css`
         :host {
             display: flex;
             flex: 1 1 auto;
+            color: red;
         }
     `;
 
-   @property()
-   createService!: () => Promise<MainService>;
-
-   @property({})
-   renderElement!: () => TemplateResult;
-
-   @property({ attribute: false })
-   public service!: MainService;
-
-   override async connectedCallback() {
-      super.connectedCallback();
-      this.service = await this.createService();
-   }
-
-   override render() {
-      return this.service ? this.renderElement() : nothing;
-   }
-
+    render() {
+        return html`
+            <application-host 
+                .createService=${createMainService} 
+                .renderElement=${() => html`<data-todo></data-todo>`}>
+            </application-host>
+        `;
+    }
 }
