@@ -20,31 +20,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
+import { FromSchemas } from "../../../schema/schema.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ComponentSchemas } from "../../component-schemas.js";
+import { System, ToTransactionFunctions, TransactionDeclarations, createDatabase, createStoreFromSchema, createWorld } from "../../index.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
-import { ArchetypeComponents } from "../archetype-components.js";
-import { createStore } from "../create-store.js";
-import { StoreSchema } from "./store-schema.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { WorldFromSchema, WorldSchema } from "./world-schema.js";
 
-export function createStoreSchema<
+export function createWorldSchema<
     const CS extends ComponentSchemas,
     const RS extends ResourceSchemas,
     const A extends ArchetypeComponents<StringKeyof<CS>>,
+    const TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
+    const SD extends { readonly [K: string]: System<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, StringKeyof<SD>> }
 >(
     components: CS,
     resources: RS,
     archetypes: A,
+    transactions: TD,
+    systems: SD,
 ) {
-    return { components, resources, archetypes } as const satisfies StoreSchema<CS, RS, A>;
+    return { components, resources, archetypes, transactions, systems } as const satisfies WorldSchema<CS, RS, A, TD, SD>;
 };
 
-export function createStoreFromSchema<
+export function createWorldFromSchema<
     const CS extends ComponentSchemas,
     const RS extends ResourceSchemas,
     const A extends ArchetypeComponents<StringKeyof<CS>>,
+    const TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
+    const SD extends { readonly [K: string]: System<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, StringKeyof<SD>> }
 >(
-    schema: StoreSchema<CS, RS, A>,
-) {
-    return createStore(schema.components, schema.resources, schema.archetypes);
+    schema: WorldSchema<CS, RS, A, TD, SD>,
+): WorldFromSchema<typeof schema> {
+    const store = createStoreFromSchema(schema);
+    const database = createDatabase(store, schema.transactions as any);
+    return createWorld(
+        store,
+        database as any,
+        schema.systems as any
+    ) as any;
 };

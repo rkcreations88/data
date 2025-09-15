@@ -153,11 +153,6 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         }
     }
 
-    const createComponents = <NC extends ComponentSchemas>(newComponentSchemas: NC) => {
-        Object.assign(componentSchemas, newComponentSchemas);
-        return core as Core<C & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>;
-    }
-
     const getComponent = <K extends StringKeyof<C>>(entity: Entity, component: K): C[K] | undefined => {
         const location = locate(entity);
         if (location === null) {
@@ -172,7 +167,6 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         componentSchemas: componentSchemas,
         queryArchetypes,
         ensureArchetype,
-        addComponents: createComponents,
         locate: (entity) => {
             const location = locate(entity);
             if (location === null) {

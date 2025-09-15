@@ -22,7 +22,7 @@ SOFTWARE.*/
 import { Archetype, ArchetypeId, ReadonlyArchetype } from "../archetype/index.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { Store } from "../store/index.js";
-import { Database, ToTransactionFunctions, TransactionDeclaration } from "./database.js";
+import { Database, ToTransactionFunctions, TransactionDeclaration, TransactionDeclarations } from "./database.js";
 import { Entity } from "../entity.js";
 import { EntityReadValues, EntityUpdateValues } from "../store/core/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
@@ -39,10 +39,10 @@ import { CoreComponents } from "../core-components.js";
 import { applyOperations } from "../index.js";
 
 export function createDatabase<
-    C extends Components,
-    R extends ResourceComponents,
-    A extends ArchetypeComponents<StringKeyof<C>>,
-    TD extends Record<string, TransactionDeclaration<C, R, A>>
+    const C extends Components,
+    const R extends ResourceComponents,
+    const A extends ArchetypeComponents<StringKeyof<C>>,
+    const TD extends TransactionDeclarations<C, R, A>
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,

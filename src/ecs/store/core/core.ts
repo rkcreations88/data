@@ -69,10 +69,6 @@ export interface Core<
         options?: ArchetypeQueryOptions<C>
     ): readonly Archetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
     ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[]) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
-    /**
-     * Creates new dynamic components with proper type safety. Returns the core typed for the new schemas.
-     */
-    addComponents: <NC extends ComponentSchemas>(newComponentSchemas: NC) => Core<C & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>;
     locate: (entity: Entity) => { archetype: Archetype<CoreComponents>, row: number } | null;
     delete: (entity: Entity) => void;
     update: (entity: Entity, values: EntityUpdateValues<C>) => void;

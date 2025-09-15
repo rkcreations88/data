@@ -20,4 +20,5 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export type ArchetypeComponents<ComponentNames> = { readonly [K: string]: readonly ComponentNames[] };
+export * from "./create-database-schema.js";
+export * from "./database-schema.js";
