@@ -20,14 +20,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Assert } from "../../../types/assert.js";
-import { Equal } from "../../../types/equal.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ComponentSchemas } from "../../component-schemas.js";
-import { Archetype, CoreComponents } from "../../index.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
 import { ArchetypeComponents } from "../archetype-components.js";
-import { StoreFromSchema, StoreSchema } from "./store-schema.js";
+import { createStore } from "../create-store.js";
+import { StoreSchema } from "./store-schema.js";
 
 export function createStoreSchema<
     const CS extends ComponentSchemas,
@@ -41,26 +39,12 @@ export function createStoreSchema<
     return { components, resources, archetypes } as const satisfies StoreSchema<CS, RS, A>;
 };
 
-const storeSchema = createStoreSchema(
-    {
-        velocity: { type: "number" },
-        particle: { type: "boolean" },
-    },
-    {
-        mousePosition: { type: "number", default: 0 },
-        fooPosition: { type: "number", default: 0 },
-    },
-    {
-        Particle: ["particle"],
-        DynamicParticle: ["particle", "velocity"],
-    }
-)
-
-type TestStore = StoreFromSchema<typeof storeSchema>;
-type CheckParticle = Assert<Equal<TestStore["archetypes"]["Particle"], Archetype<CoreComponents & {
-    particle: boolean;
-}>>>;
-type CheckDynamicParticle = Assert<Equal<TestStore["archetypes"]["DynamicParticle"], Archetype<CoreComponents & {
-    particle: boolean;
-    velocity: number;
-}>>>;
+export function createStoreFromSchema<
+    const CS extends ComponentSchemas,
+    const RS extends ResourceSchemas,
+    const A extends ArchetypeComponents<StringKeyof<CS>>,
+>(
+    schema: StoreSchema<CS, RS, A>,
+) {
+    return createStore(schema.components, schema.resources, schema.archetypes);
+};

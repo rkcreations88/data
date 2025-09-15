@@ -22,3 +22,4 @@ SOFTWARE.*/
 export * from "./world.js";
 export * from "./system.js";
 export * from "./create-world.js";
+export * from "./world-schema/index.js";

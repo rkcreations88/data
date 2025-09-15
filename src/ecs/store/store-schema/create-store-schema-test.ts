@@ -22,11 +22,7 @@ SOFTWARE.*/
 
 import { Assert } from "../../../types/assert.js";
 import { Equal } from "../../../types/equal.js";
-import { StringKeyof } from "../../../types/types.js";
-import { ComponentSchemas } from "../../component-schemas.js";
 import { Archetype, CoreComponents } from "../../index.js";
-import { ResourceSchemas } from "../../resource-schemas.js";
-import { ArchetypeComponents } from "../archetype-components.js";
 import { StoreFromSchema } from "./store-schema.js";
 import { createStoreSchema } from "./create-store-schema.js";
 

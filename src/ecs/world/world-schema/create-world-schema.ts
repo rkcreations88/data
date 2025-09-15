@@ -23,10 +23,10 @@ SOFTWARE.*/
 import { FromSchemas } from "../../../schema/schema.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ComponentSchemas } from "../../component-schemas.js";
-import { System, ToTransactionFunctions, TransactionDeclarations } from "../../index.js";
+import { System, ToTransactionFunctions, TransactionDeclarations, createDatabase, createStoreFromSchema, createWorld } from "../../index.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
-import { WorldSchema } from "./world-schema.js";
+import { WorldFromSchema, WorldSchema } from "./world-schema.js";
 
 export function createWorldSchema<
     const CS extends ComponentSchemas,
@@ -42,4 +42,22 @@ export function createWorldSchema<
     systems: SD,
 ) {
     return { components, resources, archetypes, transactions, systems } as const satisfies WorldSchema<CS, RS, A, TD, SD>;
+};
+
+export function createWorldFromSchema<
+    const CS extends ComponentSchemas,
+    const RS extends ResourceSchemas,
+    const A extends ArchetypeComponents<StringKeyof<CS>>,
+    const TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
+    const SD extends { readonly [K: string]: System<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, StringKeyof<SD>> }
+>(
+    schema: WorldSchema<CS, RS, A, TD, SD>,
+): WorldFromSchema<typeof schema> {
+    const store = createStoreFromSchema(schema);
+    const database = createDatabase(store, schema.transactions as any);
+    return createWorld(
+        store,
+        database as any,
+        schema.systems as any
+    ) as any;
 };
