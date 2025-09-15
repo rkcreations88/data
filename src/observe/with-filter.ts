@@ -27,7 +27,7 @@ import { Observe } from "./types.js";
  */
 export function withFilter<T, U>(
   observable: Observe<T>,
-  filter: (value: T) => U | undefined
+  filter: (value: T) => U | undefined | void
 ): Observe<U> {
   return (observer) => {
     return observable((value) => {

@@ -4,6 +4,14 @@ import { defineConfig } from 'vite'
 const IS_RUNNING_VSCODE_DEBUG = typeof process.env.VSCODE_INSPECTOR_OPTIONS === 'string';
 
 export default defineConfig({
+  root: '.',
+  build: {
+    outDir: 'dist'
+  },
+  server: {
+    port: 3000,
+    open: false
+  },
   test: {
     tsconfig: './tsconfig-base.json',
     browser: IS_RUNNING_VSCODE_DEBUG ? {} : {

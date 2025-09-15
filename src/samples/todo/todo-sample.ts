@@ -20,44 +20,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { LitElement, nothing, TemplateResult, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { Service } from '../../service/index.js';
-import { ApplicationElement } from './application-element.js';
+import { Sample } from '../index.js';
+import './todo-host.js';  // Side effect: registers todo-host
 
-const tagName = "application-host";
-
-declare global {
-   interface HTMLElementTagNameMap {
-      'application-element': ApplicationElement<Service>;
-   }
-}
-
-@customElement(tagName)
-export class ApplicationHost<MainService extends Service = Service> extends LitElement {
-   static styles = css`
-        :host {
-            display: flex;
-            flex: 1 1 auto;
-        }
-    `;
-
-   @property()
-   createService!: () => Promise<MainService>;
-
-   @property({})
-   renderElement!: () => TemplateResult;
-
-   @property({ attribute: false })
-   public service!: MainService;
-
-   override async connectedCallback() {
-      super.connectedCallback();
-      this.service = await this.createService();
-   }
-
-   override render() {
-      return this.service ? this.renderElement() : nothing;
-   }
-
-}
+export const todoSample: Sample = {
+    id: 'todo',
+    title: 'Todo Application',
+    description: 'A complete todo application demonstrating ECS architecture, state management, undo/redo, and persistence.',
+    category: 'Application Examples',
+    difficulty: 'intermediate',
+    features: [
+        'Entity-Component-System (ECS)',
+        'State Management',
+        'Undo/Redo System',
+        'Local Storage Persistence',
+        'Drag and Drop Reordering',
+        'Reactive UI Updates'
+    ],
+    elementTag: 'todo-host'
+};
