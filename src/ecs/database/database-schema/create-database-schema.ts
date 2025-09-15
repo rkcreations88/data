@@ -20,28 +20,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
+import { FromSchemas } from "../../../schema/schema.js";
 import { Assert } from "../../../types/assert.js";
 import { Equal } from "../../../types/equal.js";
 import { StringKeyof } from "../../../types/types.js";
+import { ReadonlyArchetype } from "../../archetype/archetype.js";
 import { ComponentSchemas } from "../../component-schemas.js";
-import { Archetype, CoreComponents } from "../../index.js";
+import { CoreComponents } from "../../core-components.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
-import { ArchetypeComponents } from "../archetype-components.js";
-import { StoreFromSchema, StoreSchema } from "./store-schema.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { AsyncArgsProvider, TransactionDeclarations } from "../database.js";
+import { DatabaseFromSchema, DatabaseSchema } from "./database-schema.js";
 
-export function createStoreSchema<
+export function createDatabaseSchema<
     const CS extends ComponentSchemas,
     const RS extends ResourceSchemas,
     const A extends ArchetypeComponents<StringKeyof<CS>>,
+    const TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
 >(
     components: CS,
     resources: RS,
     archetypes: A,
+    transactions: TD,
 ) {
-    return { components, resources, archetypes } as const satisfies StoreSchema<CS, RS, A>;
+    return { components, resources, archetypes, transactions } as const satisfies DatabaseSchema<CS, RS, A, TD>;
 };
 
-const storeSchema = createStoreSchema(
+const databaseSchema = createDatabaseSchema(
     {
         velocity: { type: "number" },
         particle: { type: "boolean" },
@@ -53,14 +58,33 @@ const storeSchema = createStoreSchema(
     {
         Particle: ["particle"],
         DynamicParticle: ["particle", "velocity"],
+    },
+    {
+        createParticle(t, args: { particle: boolean }) {
+        },
+        createDynamicParticle(t, args: { particle: boolean, velocity: number }) {
+        }
     }
 )
 
-type TestStore = StoreFromSchema<typeof storeSchema>;
-type CheckParticle = Assert<Equal<TestStore["archetypes"]["Particle"], Archetype<CoreComponents & {
-    particle: boolean;
-}>>>;
-type CheckDynamicParticle = Assert<Equal<TestStore["archetypes"]["DynamicParticle"], Archetype<CoreComponents & {
+type CheckDatabaseFromSchema = DatabaseFromSchema<typeof databaseSchema>;
+declare const testDatabase: CheckDatabaseFromSchema;
+type CheckDynamicParticle = Assert<Equal<typeof testDatabase.archetypes.DynamicParticle, ReadonlyArchetype<CoreComponents & {
     particle: boolean;
     velocity: number;
 }>>>;
+type CheckParticle = Assert<Equal<typeof testDatabase.archetypes.Particle, ReadonlyArchetype<CoreComponents & {
+    particle: boolean;
+}>>>;
+type CheckCreateParticle = Assert<Equal<typeof testDatabase.transactions.createParticle, (arg: {
+    particle: boolean;
+} | AsyncArgsProvider<{
+    particle: boolean;
+}>) => void>>;
+type CheckCreateDynamicParticle = Assert<Equal<typeof testDatabase.transactions.createDynamicParticle, (arg: {
+    particle: boolean;
+    velocity: number;
+} | AsyncArgsProvider<{
+    particle: boolean;
+    velocity: number;
+}>) => void>>;

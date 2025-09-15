@@ -19,6 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { ComponentSchemas } from "../component-schemas.js";
 import { StringKeyof } from "../../types/types.js";
 import { CoreComponents } from "../core-components.js";
@@ -31,7 +32,6 @@ import { ResourceSchemas } from "../resource-schemas.js";
 import { ArchetypeComponents } from "./archetype-components.js";
 import { EntitySelectOptions } from "./entity-select-options.js";
 import { selectEntities } from "./core/select-entities.js";
-import { Undoable } from "../database/undoable.js";
 
 export function createStore<
     NC extends ComponentSchemas,

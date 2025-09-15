@@ -37,8 +37,12 @@ export type TransactionDeclaration<
   R extends ResourceComponents,
   A extends ArchetypeComponents<StringKeyof<C>>,
   Input extends any | void = any> = (t: Store<C, R, A>, input: Input) => void | Entity
-export type TransactionDeclarations = object
 export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
+
+export type TransactionDeclarations<
+  C extends Components,
+  R extends ResourceComponents,
+  A extends ArchetypeComponents<StringKeyof<C>>> = { readonly [K: string]: TransactionDeclaration<C, R, A> }
 
 /**
  * Converts from TransactionDeclarations to TransactionFunctions by removing the initial store argument.

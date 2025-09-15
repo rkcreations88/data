@@ -20,4 +20,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export type ArchetypeComponents<ComponentNames> = { readonly [K: string]: readonly ComponentNames[] };
+import { FromSchemas } from "../../../schema/schema.js";
+import { StringKeyof } from "../../../types/types.js";
+import { ComponentSchemas } from "../../component-schemas.js";
+import { System, ToTransactionFunctions, TransactionDeclarations } from "../../index.js";
+import { ResourceSchemas } from "../../resource-schemas.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { WorldSchema } from "./world-schema.js";
+
+export function createWorldSchema<
+    const CS extends ComponentSchemas,
+    const RS extends ResourceSchemas,
+    const A extends ArchetypeComponents<StringKeyof<CS>>,
+    const TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
+    const SD extends { readonly [K: string]: System<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, StringKeyof<SD>> }
+>(
+    components: CS,
+    resources: RS,
+    archetypes: A,
+    transactions: TD,
+    systems: SD,
+) {
+    return { components, resources, archetypes, transactions, systems } as const satisfies WorldSchema<CS, RS, A, TD, SD>;
+};
