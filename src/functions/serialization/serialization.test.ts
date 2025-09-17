@@ -26,6 +26,7 @@ import { createTypedBuffer } from '../../typed-buffer/create-typed-buffer.js';
 import { equals } from '../../equals.js';
 import { createTable } from '../../table/create-table.js';
 import { addRow } from '../../table/add-row.js';
+import { createStructBuffer } from '../../typed-buffer/create-struct-buffer.js';
 
 
 describe('serialize/deserialize', () => {
@@ -84,5 +85,100 @@ describe('serialize/deserialize', () => {
     const payload = serialize(table);
     const roundTrip = deserialize<typeof table>(payload);
     expect(equals(roundTrip, table)).toBe(true);
+  });
+
+  it('should NOT serialize data for transient number buffers and reset to defaults on deserialize', () => {
+    // Create transient number buffer with default value
+    const numberBuffer = createTypedBuffer({
+      type: "number",
+      precision: 1,
+      transient: true,
+      default: 42
+    }, 3);
+
+    // Set custom values
+    numberBuffer.set(0, 100);
+    numberBuffer.set(1, 200);
+    numberBuffer.set(2, 300);
+
+    // Serialize and deserialize
+    const payload = serialize({ numberBuffer });
+    const roundTrip = deserialize<{ numberBuffer: typeof numberBuffer }>(payload);
+
+    // Verify capacity is preserved
+    expect(roundTrip.numberBuffer.capacity).toBe(3);
+
+    // Verify data has been reset to default values
+    expect(roundTrip.numberBuffer.get(0)).toBe(42);
+    expect(roundTrip.numberBuffer.get(1)).toBe(42);
+    expect(roundTrip.numberBuffer.get(2)).toBe(42);
+
+    // Verify original custom data was NOT preserved
+    expect(roundTrip.numberBuffer.get(0)).not.toBe(100);
+    expect(roundTrip.numberBuffer.get(1)).not.toBe(200);
+    expect(roundTrip.numberBuffer.get(2)).not.toBe(300);
+  });
+
+  it('should NOT serialize data for transient array buffers and reset to defaults on deserialize', () => {
+    // Create transient array buffer with default value
+    const arrayBuffer = createTypedBuffer({
+      type: "array",
+      items: { type: "string" },
+      transient: true,
+      default: ["defaultValue1", "defaultValue2"]
+    }, 2);
+
+    // Set custom values
+    arrayBuffer.set(0, ["customValue1", "customValue2"]);
+    arrayBuffer.set(1, ["customValue3", "customValue4"]);
+
+    // Serialize and deserialize
+    const payload = serialize({ arrayBuffer });
+    const roundTrip = deserialize<{ arrayBuffer: typeof arrayBuffer }>(payload);
+
+    // Verify capacity is preserved
+    expect(roundTrip.arrayBuffer.capacity).toBe(2);
+
+    // Verify data has been reset to default values
+    expect(roundTrip.arrayBuffer.get(0)).toEqual(["defaultValue1", "defaultValue2"]);
+    expect(roundTrip.arrayBuffer.get(1)).toEqual(["defaultValue1", "defaultValue2"]);
+
+    // Verify original custom data was NOT preserved
+    expect(roundTrip.arrayBuffer.get(0)).not.toEqual(["customValue1", "customValue2"]);
+    expect(roundTrip.arrayBuffer.get(1)).not.toEqual(["customValue3", "customValue4"]);
+  });
+
+  it('should NOT serialize data for transient struct buffers and reset to defaults on deserialize', () => {
+    // Create transient struct buffer with default value
+    const structBuffer = createStructBuffer({
+      type: "object",
+      transient: true,
+      default: { x: 10, y: 20 },
+      properties: {
+        x: { type: "number", precision: 1 },
+        y: { type: "number", precision: 1 }
+      },
+      required: ["x", "y"],
+      additionalProperties: false
+    }, 2);
+
+    // Set custom values
+    structBuffer.set(0, { x: 999, y: 888 });
+    structBuffer.set(1, { x: 777, y: 666 });
+
+    // Serialize and deserialize
+    const payload = serialize({ structBuffer });
+    const roundTrip = deserialize<{ structBuffer: typeof structBuffer }>(payload);
+
+    // Verify capacity is preserved
+    expect(roundTrip.structBuffer.capacity).toBe(2);
+
+    // Verify data has been reset to default values
+    expect(roundTrip.structBuffer.get(0)).toEqual({ x: 10, y: 20 });
+    expect(roundTrip.structBuffer.get(1)).toEqual({ x: 10, y: 20 });
+
+    // Verify original custom data was NOT preserved
+    expect(roundTrip.structBuffer.get(0)).not.toEqual({ x: 999, y: 888 });
+    expect(roundTrip.structBuffer.get(1)).not.toEqual({ x: 777, y: 666 });
   });
 }); 

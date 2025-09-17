@@ -37,15 +37,18 @@ export function registerTypedBufferCodecs() {
         serialize: (data: TypedBuffer<any>) => {
             const { type, schema, capacity } = data;
             try {
-                switch (type) {
-                    case "const":
-                        return { json: { type, schema, capacity } };
-                    case "array":
-                        return { json: { type, schema, capacity, array: data.slice() as unknown as any[] } };
-                    case "number":
-                    case "struct":
-                        const typedArray = data.getTypedArray();
-                        return { json: { type, schema, capacity }, binary: [new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength)] };
+                if (type === "const" || schema.transient) {
+                    return { json: { type, schema, capacity } };
+                }
+                else if (type === "array") {
+                    return { json: { type, schema, capacity, array: data.slice() as unknown as any[] } };
+                }
+                else if (type === "number" || type === "struct") {
+                    const typedArray = data.getTypedArray();
+                    return { json: { type, schema, capacity }, binary: [new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength)] };
+                }
+                else {
+                    throw new Error(`Unknown type: ${type}`);
                 }
             }
             catch (e) {
@@ -56,27 +59,41 @@ export function registerTypedBufferCodecs() {
         deserialize: ({ json, binary }: { json?: any, binary: Uint8Array[] }) => {
             const encoded = json as { type: TypedBufferType, schema: Schema, capacity: number, array?: any[] };
             const { type, schema, capacity, array } = encoded;
-            switch (type) {
-                case "const": {
-                    return createConstBuffer(schema, capacity);
+            if (type === "const") {
+                return createConstBuffer(schema, capacity);
+            }
+            else if (type === "array") {
+                const buffer = createArrayBuffer(schema, capacity);
+                if (schema.transient) {
+                    if (schema.default !== undefined && schema.default !== 0) {
+                        for (let i = 0; i < capacity; i++) {
+                            buffer.set(i, schema.default);
+                        }
+                    }
                 }
-                case "array": {
-                    const buffer = createArrayBuffer(schema, capacity);
+                else {
                     for (let i = 0; i < capacity; i++) {
                         buffer.set(i, array![i]);
                     }
-                    return buffer;
                 }
-                case "number": {
-                    const buffer = createNumberBuffer(schema, capacity);
+                return buffer;
+            }
+            else if (type === "number" || type === "struct") {
+                const buffer = type === "number" ? createNumberBuffer(schema, capacity) : createStructBuffer(schema, capacity);
+                if (schema.transient) {
+                    if (schema.default !== undefined && schema.default !== 0) {
+                        for (let i = 0; i < capacity; i++) {
+                            buffer.set(i, schema.default);
+                        }
+                    }
+                }
+                else {
                     copyViewBytes(binary[0], buffer.getTypedArray());
-                    return buffer;
                 }
-                case "struct": {
-                    const buffer = createStructBuffer(schema, capacity);
-                    copyViewBytes(binary[0], buffer.getTypedArray());
-                    return buffer;
-                }
+                return buffer;
+            }
+            else {
+                throw new Error(`Unknown type: ${type}`);
             }
         },
     });
