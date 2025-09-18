@@ -52,4 +52,40 @@ describe("Schema", () => {
       Extends<{ name: "foo"; aspect: "landscape"; agewrong: 1 }, MyType>
     >;
   });
+
+  it("should support allOf schema composition", () => {
+    const baseSchema = {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    } as const;
+
+    const personSchema = {
+      type: "object", 
+      properties: {
+        name: { type: "string" },
+        age: { type: "integer", minimum: 0 },
+      },
+      required: ["name"],
+    } as const;
+
+    const allOfSchema = {
+      allOf: [baseSchema, personSchema],
+    } as const satisfies Schema;
+
+    type AllOfType = FromSchema<typeof allOfSchema>;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- compile time type check
+    type ShouldBeValid = True<
+      Extends<{ id: "123"; name: "John"; age: 30 }, AllOfType>
+    >;
+    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- compile time type check  
+    type MissingRequired = False<Extends<{ id: "123" }, AllOfType>>;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- compile time type check
+    type MissingId = False<Extends<{ name: "John" }, AllOfType>>;
+  });
 });

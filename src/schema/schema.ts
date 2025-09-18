@@ -80,6 +80,7 @@ export interface Schema {
   required?: readonly string[];
   additionalProperties?: boolean | Schema;
   oneOf?: readonly Schema[];
+  allOf?: readonly Schema[];
   const?: any;
   enum?: readonly any[];
 }
@@ -99,6 +100,8 @@ type FromSchemaInternal<T, Depth extends number = 5> = T extends { const: infer 
   : T extends { enum: infer Enum } ? Enum extends ReadonlyArray<any> ? Enum[number] : never
   : T extends { oneOf: infer Schemas }
   ? Schemas extends ReadonlyArray<Schema> ? FromOneOfSchema<Schemas, Decrement<Depth>> : never
+  : T extends { allOf: infer Schemas }
+  ? Schemas extends ReadonlyArray<Schema> ? FromAllOfSchema<Schemas, Decrement<Depth>> : never
   : T extends { type: 'number' | 'integer' }
   ? number
   : T extends { type: 'string' }
@@ -193,6 +196,15 @@ type FromOneOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number
   ? FromSchema<S, Depth>
   : never
   : never;
+
+type FromAllOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number> = 
+  Schemas extends readonly [infer First, ...infer Rest]
+    ? First extends Schema
+      ? Rest extends ReadonlyArray<Schema>
+        ? FromSchema<First, Depth> & FromAllOfSchema<Rest, Depth>
+        : FromSchema<First, Depth>
+      : never
+    : {};
 
 //  type check tests
 
@@ -294,3 +306,36 @@ type CheckNoPropsExplicitTrue = True<EquivalentTypes<TestNoPropsExplicitTrue, { 
 
 type TestMutable = FromSchema<{ mutable: true, default: number[][] }>;
 type CheckMutable = True<EquivalentTypes<TestMutable, number[][]>>;
+
+// Test allOf functionality
+type TestAllOfBasic = FromSchema<{
+  allOf: [
+    { type: 'object'; properties: { name: { type: 'string' } }; required: ['name'] },
+    { type: 'object'; properties: { age: { type: 'number' } }; required: ['age'] }
+  ]
+}>; // { name: string; age: number }
+type CheckAllOfBasic = True<EquivalentTypes<TestAllOfBasic, { name: string; age: number }>>;
+
+type TestAllOfWithOptional = FromSchema<{
+  allOf: [
+    { type: 'object'; properties: { id: { type: 'string' } }; required: ['id'] },
+    { type: 'object'; properties: { email: { type: 'string' } } }
+  ]
+}>; // { id: string; email?: string }
+type CheckAllOfWithOptional = True<EquivalentTypes<TestAllOfWithOptional, { id: string; email?: string }>>;
+
+type TestAllOfWithConstraints = FromSchema<{
+  allOf: [
+    { type: 'object'; properties: { value: { type: 'number' } } },
+    { type: 'object'; properties: { value: { minimum: 0, maximum: 100 } } }
+  ]
+}>; // { value?: number } (constraints are merged)
+type CheckAllOfWithConstraints = True<EquivalentTypes<TestAllOfWithConstraints, { value?: number }>>;
+
+type TestAllOfEmpty = FromSchema<{ allOf: [] }>; // {}
+type CheckAllOfEmpty = True<EquivalentTypes<TestAllOfEmpty, {}>>;
+
+type TestAllOfSingle = FromSchema<{
+  allOf: [{ type: 'object'; properties: { name: { type: 'string' } } }]
+}>; // { name?: string }
+type CheckAllOfSingle = True<EquivalentTypes<TestAllOfSingle, { name?: string }>>;
