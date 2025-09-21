@@ -26,6 +26,7 @@ import { ResourceComponents } from "../store/resource-components.js";
 import { System } from "./system.js";
 import { World } from "./world.js";
 import { topologicalSort, type Edge } from "../../internal/array/index.js";
+import { SystemPhase, SystemPhaseSchema } from "./system-phase.js";
 
 export function createWorld<
     C extends Components,
@@ -39,18 +40,11 @@ export function createWorld<
     systems: SD,
 ): World<C, R, A, T, keyof SD & string> {
 
-    const allSystems = Object.keys(systems) as (keyof SD & string)[];
-
     // Cache for topological sort results to avoid re-computing for same system sets
     const topologicalSortCache = new Map<(keyof SD & string)[], (keyof SD & string)[]>();
 
     const runSystems = (systemNames: (keyof SD & string)[]): Promise<void> => {
         try {
-            // Default to all systems if none specified
-            if (systemNames.length === 0) {
-                systemNames = allSystems;
-            }
-
             // Check cache first (by array identity)
             let sortedSystems = topologicalSortCache.get(systemNames);
             if (!sortedSystems) {
@@ -98,6 +92,15 @@ export function createWorld<
         } catch (error) {
             // Handle errors from topological sort (e.g., circular dependencies)
             return Promise.reject(error);
+        }
+    };
+
+    const runPhases = async (phases?: readonly SystemPhase[]): Promise<void> => {
+        if (phases) {
+            return runSystems(Object.keys(systems).filter(name => systems[name].phase && phases.includes(systems[name].phase)));
+        }
+        for (const phase of SystemPhaseSchema.enum) {
+            await runPhases([phase]);
         }
     };
 
@@ -161,6 +164,7 @@ export function createWorld<
 
     return {
         ...database,
+        runPhases,
         runSystems,
     }
 }

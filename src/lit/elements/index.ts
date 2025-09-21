@@ -20,8 +20,5 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export * from "./service-application.js";
-export * from "./service-context.js";
-export * from "./service-element.js";
 export * from "./application-host.js";
 export * from "./application-element.js";

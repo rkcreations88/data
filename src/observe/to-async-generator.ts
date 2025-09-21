@@ -123,10 +123,10 @@ export function toAsyncGenerator<T>(
             cleanup();
             return Promise.reject(e);
         },
-        [Symbol.asyncDispose as any](): PromiseLike<void> {
-            cleanup();
-            return Promise.resolve();
-        }
+        // [Symbol.asyncDispose](): PromiseLike<void> {
+        //     cleanup();
+        //     return Promise.resolve();
+        // }
     };
 
     return iterator;
