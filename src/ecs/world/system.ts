@@ -24,6 +24,7 @@ import { Database, Store, TransactionFunctions } from "../index.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { Components } from "../store/components.js";
 import { ResourceComponents } from "../store/resource-components.js";
+import { SystemPhase } from "./system-phase.js";
 import { SystemNames } from "./world.js";
 
 export type StoreSystem<
@@ -50,8 +51,12 @@ export type System<
     R extends ResourceComponents,
     A extends ArchetypeComponents<StringKeyof<C>>,
     T extends TransactionFunctions,
-    S extends SystemNames
+    S extends SystemNames,
 > = (StoreSystem<C, R, A> | DatabaseSystem<C, R, A, T>) & {
+    /**
+     * If not specified then the system will never run unless explicitly called.
+     */
+    phase?: SystemPhase;
     schedule?: {
         before?: readonly S[];
         after?: readonly S[];

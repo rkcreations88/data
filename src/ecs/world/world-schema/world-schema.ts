@@ -67,11 +67,11 @@ type CheckWorldFromSchema = WorldFromSchema<WorldSchema<{
 }, {
     readonly foo: {
         type: "store";
-        run: ((store: Store<any, any, any>) => void)
+        run: ((store: Store<any, any, any>) => void),
     }
     readonly bar: {
         type: "database";
-        run: ((database: Database<any, any, any, any>) => void)
+        run: ((database: Database<any, any, any, any>) => void),
     }
 }>>;
 declare const testWorld: CheckWorldFromSchema;

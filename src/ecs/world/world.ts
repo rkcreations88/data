@@ -24,6 +24,7 @@ import { StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { Database, TransactionFunctions } from "../database/database.js";
+import { SystemPhase } from "./system-phase.js";
 
 export type SystemNames = string;
 
@@ -34,5 +35,6 @@ export interface World<
   T extends TransactionFunctions = never,
   S extends SystemNames = never,
 > extends Database<C, R, A, T> {
+  runPhases(phases?: readonly SystemPhase[]): Promise<void>;
   runSystems(systems: readonly S[]): Promise<void>;
 }
