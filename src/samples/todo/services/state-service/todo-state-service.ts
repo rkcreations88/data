@@ -16,7 +16,7 @@
  * from Adobe.
  **************************************************************************/
 import { type TodoDatabase } from './create-todo-database.js';
-import { FromArchetype } from '@adobe/data/ecs';
+import { FromArchetype } from '../../../../ecs/index.js';
 
 export type TodoStateService = TodoDatabase;
 

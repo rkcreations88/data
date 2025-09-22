@@ -17,7 +17,7 @@
  **************************************************************************/
 import * as presentation from './todo-toolbar-presentation.js';
 import { styles } from './todo-toolbar.css.js';
-import { withMap } from '@adobe/data/observe';
+import { withMap } from '../../../../observe/index.js';
 import { customElement } from 'lit/decorators.js';
 import { css } from 'lit';
 

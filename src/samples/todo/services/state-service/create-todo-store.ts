@@ -15,8 +15,8 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Adobe.
  **************************************************************************/
-import { createStore } from '@adobe/data/ecs';
-import { F32Schema, Nullable, TrueSchema } from '@adobe/data/schema';
+import { createStore } from '../../../../ecs/index.js';
+import { F32Schema, Nullable, TrueSchema } from '../../../../schema/index.js';
 
 // Increment this value if you change the schema in a non-backwards compatible way
 export const todoStoreSchemaVersion = 1;

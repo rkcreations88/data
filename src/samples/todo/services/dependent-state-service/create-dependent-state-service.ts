@@ -15,7 +15,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Adobe.
  **************************************************************************/
-import { applyArg } from '@adobe/data/functions';
+import { applyArg } from '../../../../functions/index.js';
 
 import * as dependentState from './dependent-state/index.js';
 

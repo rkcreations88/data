@@ -16,7 +16,7 @@
  * from Adobe.
  **************************************************************************/
 import { reorderTodos } from './reorder-todos.js';
-import { type Entity } from '@adobe/data/ecs';
+import { type Entity } from '../../../../../ecs/index.js';
 
 import { type TodoStore } from '../create-todo-store.js';
 
