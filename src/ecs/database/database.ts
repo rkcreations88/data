@@ -31,6 +31,7 @@ import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { CoreComponents } from "../core-components.js";
 import { EntitySelectOptions } from "../store/entity-select-options.js";
+import { Service } from "../../service/service.js";
 
 export type TransactionDeclaration<
   C extends Components,
@@ -66,7 +67,7 @@ export interface Database<
   R extends ResourceComponents = never,
   A extends ArchetypeComponents<StringKeyof<C>> = never,
   T extends TransactionFunctions = never,
-> extends ReadonlyStore<C, R, A> {
+> extends ReadonlyStore<C, R, A>, Service {
   readonly transactions: T;
   readonly observe: {
     readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };

@@ -273,6 +273,7 @@ export function createDatabase<
 
     // Return the complete observable store
     const database = {
+        serviceName: "ecs-database-service",
         ...rest,
         resources,
         transactions,
@@ -281,7 +282,7 @@ export function createDatabase<
         fromData: (data: unknown) => {
             store.fromData(data);
             notifyAllObserversStoreReloaded();
-        }
+        },
     } as Database<C, R, A, T>;
     return database;
 }
