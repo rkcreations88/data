@@ -15,7 +15,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Adobe.
  **************************************************************************/
-import { type Entity } from '@adobe/data/ecs';
+import { type Entity } from '../../../../../ecs/index.js';
 
 import { type TodoStore } from '../create-todo-store.js';
 

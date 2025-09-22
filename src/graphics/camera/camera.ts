@@ -1,4 +1,4 @@
-import { F32Schema, FromSchema, Schema } from "@adobe/data/schema";
+import { F32Schema, FromSchema, Schema } from "../../schema/index.js";
 import { Vec3 } from "../../math/index.js";
 
 export const CameraSchema = {

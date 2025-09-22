@@ -17,7 +17,7 @@
  **************************************************************************/
 import * as presentation from './todo-row-presentation.js';
 import { styles } from './todo-row.css.js';
-import { Entity } from '@adobe/data/ecs';
+import { Entity } from '../../../../ecs/index.js';
 import { customElement, property } from 'lit/decorators.js';
 
 import { useObservableValues } from '../../../../lit/hooks/index.js';

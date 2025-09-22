@@ -21,4 +21,4 @@ export * from './toggle-complete.js';
 export * from './create-bulk-todos.js';
 export * from './drag-todo.js';
 // This is used by the undo-redo actions, the implementation is in the data package.
-export { applyOperations } from '@adobe/data/ecs';
+export { applyOperations } from '../../../../../ecs/index.js';

@@ -19,22 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { ResourceComponents } from "../store/resource-components.js";
-import { StringKeyof } from "../../types/types.js";
-import { Components } from "../store/components.js";
-import { ArchetypeComponents } from "../store/archetype-components.js";
-import { Database, TransactionFunctions } from "../database/database.js";
-import { SystemPhase } from "./system-phase.js";
 
-export type SystemNames = string;
-
-export interface World<
-  C extends Components = never,
-  R extends ResourceComponents = never,
-  A extends ArchetypeComponents<StringKeyof<C>> = never,
-  T extends TransactionFunctions = never,
-  S extends SystemNames = never,
-> extends Database<C, R, A, T> {
-  runPhases(phases?: readonly SystemPhase[]): Promise<void>;
-  runSystems(systems: readonly S[]): Promise<void>;
-}
+import { I32Schema, FromSchema } from "../../schema/index.js";
+export const schema = I32Schema
+export type Type = FromSchema<typeof schema>;

@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 export * from "./store/index.js";
 export * from "./database/index.js";
-export * from "./world/index.js";
 export * from "./archetype/index.js";
 export * from "./entity.js";
 export * from "./core-components.js";

@@ -16,7 +16,7 @@
  * from Adobe.
  **************************************************************************/
 import { createTodoStore } from './create-todo-store.js';
-import { createDatabase } from '@adobe/data/ecs';
+import { createDatabase } from '../../../../ecs/index.js';
 
 import * as transactions from './transactions/index.js';
 

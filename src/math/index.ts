@@ -20,12 +20,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-
 export * from "./constants.js";
 // Export the type Mat4x4
 export type Mat4x4 = import("./mat4x4/mat4x4.js").Type;
 // Export the namespace Mat4x4
 export * as Mat4x4 from "./mat4x4/mat4x4.js";
+
+// Export the type F32
+export type F32 = import("./f32/f32.js").Type;
+// Export the namespace F32
+export * as F32 from "./f32/f32.js";
+
+// Export the type F32
+export type U32 = import("./u32/u32.js").Type;
+// Export the namespace F32
+export * as U32 from "./u32/u32.js";
+
+// Export the type F32
+export type I32 = import("./i32/i32.js").Type;
+// Export the namespace F32
+export * as I32 from "./i32/i32.js";
 
 // Export the type Vec2
 export type Vec2 = import("./vec2/vec2.js").Type;

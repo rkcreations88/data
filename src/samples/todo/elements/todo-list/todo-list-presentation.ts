@@ -15,7 +15,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Adobe.
  **************************************************************************/
-import { Entity } from '@adobe/data/ecs';
+import { Entity } from '../../../../ecs/index.js';
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import '@spectrum-web-components/action-button/sp-action-button.js';
