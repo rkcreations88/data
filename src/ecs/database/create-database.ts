@@ -37,6 +37,7 @@ import { ArchetypeComponents } from "../store/archetype-components.js";
 import { observeSelectEntities } from "./observe-select-entities.js";
 import { CoreComponents } from "../core-components.js";
 import { applyOperations } from "../index.js";
+import { Service } from "../../service/service.js";
 
 export function createDatabase<
     const C extends Components,
@@ -47,7 +48,7 @@ export function createDatabase<
     store: Store<C, R, A>,
     transactionDeclarations: TD,
 ): Database<C, R, A, ToTransactionFunctions<TD>> {
-    type T = ToTransactionFunctions<TD>;
+    type T = ToTransactionFunctions<TD> & Service;
 
     const transactionalStore = createTransactionalStore(store);
 
@@ -153,7 +154,9 @@ export function createDatabase<
         return result;
     }
 
-    const transactions = {} as T;
+    const transactions = {
+        serviceName: "ecs-database-transactions-service",
+    } satisfies Service as T;
 
     for (const [name, transactionUntyped] of Object.entries(transactionDeclarations)) {
         const transaction = transactionUntyped as (store: Store<C, R, A>, args: any) => void;

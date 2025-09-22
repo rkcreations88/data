@@ -68,7 +68,7 @@ export interface Database<
   A extends ArchetypeComponents<StringKeyof<C>> = never,
   T extends TransactionFunctions = never,
 > extends ReadonlyStore<C, R, A>, Service {
-  readonly transactions: T;
+  readonly transactions: T & Service;
   readonly observe: {
     readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
     readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
