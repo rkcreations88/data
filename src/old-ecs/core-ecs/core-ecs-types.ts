@@ -160,6 +160,19 @@ export interface Table<C = { [K: string]: unknown }> {
 }
 
 /**
+ * A set of flags that can be used to control the privacy of the data.
+ */
+export interface UserPrivacyPreferences {
+/**
+ * Allows unsafe direct access to underlying attributes.
+ */
+  strictlyNecessary: boolean;
+  performance: boolean;
+  functional: boolean;
+  advertising: boolean;
+}
+
+/**
  * A column represents an array of values for a single component.
  * Each row in the column corresponds to a single entity within the containing Table.
  * The ECS stores data as a structure of arrays.
