@@ -83,6 +83,19 @@ export interface Schema {
   allOf?: readonly Schema[];
   const?: any;
   enum?: readonly any[];
+  /**
+   * Classification of data according to privacy regulations and cookie consent frameworks.
+   * Used to categorize data collection and processing for privacy compliance.
+   * Useful resource:
+   * https://www.onetrust.com/products/cookie-consent/
+   * 
+   * @remarks
+   * - `strictlyNecessary`: Essential data required for basic functionality and security
+   * - `performance`: Data used for analytics, performance monitoring, and site optimization  
+   * - `functional`: Data used for enhanced features and user experience improvements
+   * - `advertising`: Data used for advertising, marketing, and personalized content
+   */
+  privacy?: 'strictlyNecessary' | 'performance' | 'functional' | 'advertising';
 }
 
 export type FromSchemas<T> = {
