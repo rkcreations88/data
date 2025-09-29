@@ -83,6 +83,7 @@ export interface Schema {
   allOf?: readonly Schema[];
   const?: any;
   enum?: readonly any[];
+  privacyClassification?: 'strictlyNecessary' | 'performance' | 'functional' | 'advertising';
 }
 
 export type FromSchemas<T> = {
