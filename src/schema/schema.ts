@@ -83,7 +83,21 @@ export interface Schema {
   allOf?: readonly Schema[];
   const?: any;
   enum?: readonly any[];
-  privacyClassification?: 'strictlyNecessary' | 'performance' | 'functional' | 'advertising';
+  /**
+   * Classification of data according to privacy regulations and cookie consent frameworks.
+   * Used to categorize data collection and processing for privacy compliance.
+   * Useful resources:
+   * https://git.corp.adobe.com/feds/privacy
+   * https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=adobedotcom&title=Consent+Management+Platform+Onboarding
+   * https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=adobedotcom&title=Domain+IDs+for+CMP+integration
+   * 
+   * @remarks
+   * - `strictlyNecessary`: Essential data required for basic functionality and security
+   * - `performance`: Data used for analytics, performance monitoring, and site optimization  
+   * - `functional`: Data used for enhanced features and user experience improvements
+   * - `advertising`: Data used for advertising, marketing, and personalized content
+   */
+  privacy?: 'strictlyNecessary' | 'performance' | 'functional' | 'advertising';
 }
 
 export type FromSchemas<T> = {
