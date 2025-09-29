@@ -86,10 +86,8 @@ export interface Schema {
   /**
    * Classification of data according to privacy regulations and cookie consent frameworks.
    * Used to categorize data collection and processing for privacy compliance.
-   * Useful resources:
-   * https://git.corp.adobe.com/feds/privacy
-   * https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=adobedotcom&title=Consent+Management+Platform+Onboarding
-   * https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=adobedotcom&title=Domain+IDs+for+CMP+integration
+   * Useful resource:
+   * https://www.onetrust.com/products/cookie-consent/
    * 
    * @remarks
    * - `strictlyNecessary`: Essential data required for basic functionality and security
