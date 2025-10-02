@@ -166,3 +166,31 @@ export type NoUnion<Key> = [Key] extends [UnionToIntersection<Key>]
   ? Key
   : never;
 
+/**
+ * Ensures that type U contains exactly the properties of type T, no more, no less.
+ * Extra properties will cause a type error.
+ */
+export type Exact<T, U extends T> = 
+  U extends T
+    ? Exclude<keyof U, keyof T> extends never
+      ? U
+      : never
+    : never;
+
+// Compile-time tests for Exact type
+{
+  type TestBase = { a: number; b: string };
+  type TestExact = { a: number; b: string };
+  type TestExtra = { a: number; b: string; c: boolean };
+  
+  // Should accept exact match
+  type CheckExactMatch = True<Not<IsNever<Exact<TestBase, TestExact>>>>;
+  
+  // Should reject extra properties
+  type CheckExtraRejected = True<IsNever<Exact<TestBase, TestExtra>>>;
+  
+  // Should accept subset (U extends T)
+  type TestSubset = { a: number };
+  type CheckSubsetAccepted = True<Not<IsNever<Exact<TestBase, TestBase>>>>;
+}
+

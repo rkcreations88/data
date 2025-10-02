@@ -25,10 +25,10 @@ import * as TABLE from "../../table/index.js";
 import { Archetype } from "./archetype.js";
 import { CoreComponents } from "../core-components.js";
 import { EntityLocationTable } from "../entity-location-table/entity-location-table.js";
-import { Entity, EntitySchema } from "../entity.js";
+import { Entity, schema } from "../entity.js";
 import { StringKeyof } from "../../types/types.js";
 
-export const createArchetype = <C extends { id: typeof EntitySchema }>(
+export const createArchetype = <C extends { id: typeof schema }>(
     components: C,
     id: number,
     entityLocationTable: EntityLocationTable,

@@ -22,10 +22,14 @@ SOFTWARE.*/
 export * from "./store/index.js";
 export * from "./database/index.js";
 export * from "./archetype/index.js";
-export * from "./entity.js";
 export * from "./core-components.js";
 export * from "./component-schemas.js";
 export * from "./resource-schemas.js";
 export * from "./undo-redo-service/index.js";
 export * from "./persistence-service/index.js";
 export { applyOperations } from "./database/transactional-store/apply-operations.js";
+
+// Export the type Entity
+export type Entity = import("./entity.js").Entity;
+// Export the namespace Entity
+export * as Entity from "./entity.js";

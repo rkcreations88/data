@@ -23,22 +23,40 @@ import { memoizeFactory } from "../../internal/function/memoize-factory.js";
 import { I32Schema } from "../../schema/i32.js";
 import { type Schema } from "../../schema/schema.js";
 import { U32Schema } from "../../schema/u32.js";
-import type { StructFieldPrimitiveType, StructLayout } from "./struct-layout.js";
+import type { StructFieldPrimitiveType, StructLayout, Layout } from "./struct-layout.js";
 
-// Constants for std140 layout
-const VEC4_SIZE = 16;  // size in bytes
+// Layout rules for different memory layouts
+const LAYOUT_RULES = {
+    "std140": {
+        vecAlign: 16,      // vec4 alignment
+        structAlign: 16,   // struct alignment
+        arrayAlign: 16     // array element alignment
+    },
+    "packed": {
+        vecAlign: 4,       // minimal alignment for vertex buffers
+        structAlign: 1,    // no struct padding
+        arrayAlign: 1      // tight packing
+    }
+} as const;
+
+// Legacy constant for backwards compatibility
+const VEC4_SIZE = LAYOUT_RULES.std140.vecAlign;
 
 /**
  * Gets alignment in bytes for a field within a struct
- * Adheres to WebGPU std140 layout rules
  */
-const getStructFieldAlignment = (type: StructFieldPrimitiveType | StructLayout): number => {
-    // Primitive types are 4-byte aligned
+const getStructFieldAlignment = (
+    type: StructFieldPrimitiveType | StructLayout, 
+    layout: Layout
+): number => {
+    // Primitive types are always 4-byte aligned
     if (typeof type === "string") {
         return 4;
     }
-    // Arrays and structs are aligned to vec4 (16 bytes)
-    return VEC4_SIZE;
+    // Arrays and structs alignment depends on layout mode
+    return type.type === "array" 
+        ? LAYOUT_RULES[layout].arrayAlign 
+        : LAYOUT_RULES[layout].structAlign;
 };
 
 /**
@@ -54,28 +72,34 @@ const getFieldSize = (type: StructFieldPrimitiveType | StructLayout): number => 
 
 /**
  * Gets stride in bytes for an array element type
- * In std140, array elements are aligned to vec4 if they are arrays/structs
- * but primitives just use their natural alignment
  */
-const getArrayElementStride = (type: StructFieldPrimitiveType | StructLayout): number => {
+const getArrayElementStride = (
+    type: StructFieldPrimitiveType | StructLayout, 
+    layout: Layout
+): number => {
     // For primitives in arrays, use 4 bytes
     if (typeof type === "string") {
         return 4;
     }
-    // For structs and arrays, round up to vec4
-    return roundUpToAlignment(type.size, VEC4_SIZE);
+    // For structs and arrays, alignment depends on layout mode
+    if (layout === "packed") {
+        return type.size; // tight packing
+    }
+    // std140: round up to vec4
+    return roundUpToAlignment(type.size, LAYOUT_RULES.std140.vecAlign);
 };
 
 /**
  * Gets alignment for array elements
- * In std140, array elements are aligned to vec4 if they are arrays/structs
- * but primitives just use their natural alignment
  */
-const getArrayElementAlignment = (type: StructFieldPrimitiveType | StructLayout): number => {
+const getArrayElementAlignment = (
+    type: StructFieldPrimitiveType | StructLayout, 
+    layout: Layout
+): number => {
     if (typeof type === "string") {
         return 4;  // Primitives use natural alignment
     }
-    return VEC4_SIZE;  // Arrays and structs align to vec4
+    return LAYOUT_RULES[layout].arrayAlign;
 };
 
 /**
@@ -110,7 +134,11 @@ const getPrimitiveType = (schema: Schema): StructFieldPrimitiveType | null => {
  * Analyzes a Schema and returns a StructLayout.
  * Returns null if schema is not a valid struct schema.
  */
-const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | null => {
+const getStructLayoutInternal = memoizeFactory(
+    ({ schema, layout }: { schema: Schema; layout: Layout }): StructLayout | null => getStructLayoutInternalImpl(schema, layout)
+);
+
+const getStructLayoutInternalImpl = (schema: Schema, layout: Layout = "std140"): StructLayout | null => {
     // Handle root array/tuple case
     if (schema.type === "array") {
         if (!schema.items || Array.isArray(schema.items)) {
@@ -139,22 +167,24 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
             return {
                 type: "array",
                 size: 12,  // vec3 is 12 bytes, not padded to vec4
-                fields
+                fields,
+                layout
             };
         }
 
         // Regular array case
         const fields: StructLayout["fields"] = {};
-        const elementType = primitiveType ?? getStructLayoutInternal(schema.items);
+        const elementType = primitiveType ?? getStructLayoutInternal({ schema: schema.items, layout });
         if (!elementType) {
             return null;
         }
         let currentOffset = 0;
 
-        // Arrays are aligned to vec4 boundary
-        currentOffset = roundUpToAlignment(currentOffset, VEC4_SIZE);
-        const elementAlignment = getArrayElementAlignment(elementType);
-        const stride = getArrayElementStride(elementType);
+        // Arrays are aligned according to layout rules
+        const arrayAlign = LAYOUT_RULES[layout].arrayAlign;
+        currentOffset = roundUpToAlignment(currentOffset, arrayAlign);
+        const elementAlignment = getArrayElementAlignment(elementType, layout);
+        const stride = getArrayElementStride(elementType, layout);
 
         for (let i = 0; i < schema.minItems; i++) {
             // Align each element according to its type
@@ -166,12 +196,14 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
             currentOffset += stride;
         }
 
-        // Total size must be rounded up to vec4
-        const size = roundUpToAlignment(currentOffset, VEC4_SIZE);
+        // Total size must be rounded up to alignment
+        const finalAlign = layout === "packed" ? 1 : arrayAlign;
+        const size = roundUpToAlignment(currentOffset, finalAlign);
         return {
             type: "array",
             size,
-            fields
+            fields,
+            layout
         };
     }
 
@@ -186,11 +218,11 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
     // First pass: create all fields and calculate alignments
     for (const [name, fieldSchema] of Object.entries(schema.properties)) {
         const primitiveType = getPrimitiveType(fieldSchema);
-        const fieldType = primitiveType ?? getStructLayoutInternal(fieldSchema);
+        const fieldType = primitiveType ?? getStructLayoutInternal({ schema: fieldSchema, layout });
         if (!fieldType) {
             return null;
         }
-        const alignment = getStructFieldAlignment(fieldType);
+        const alignment = getStructFieldAlignment(fieldType, layout);
 
         // Align field to its required alignment
         currentOffset = roundUpToAlignment(currentOffset, alignment);
@@ -201,22 +233,43 @@ const getStructLayoutInternal = memoizeFactory((schema: Schema): StructLayout | 
         currentOffset += getFieldSize(fieldType);
     }
 
-    // Round up total size to vec4 (std140 requirement)
-    const size = roundUpToAlignment(currentOffset, VEC4_SIZE);
+    // Round up total size according to layout rules
+    const finalAlign = layout === "packed" ? 1 : LAYOUT_RULES.std140.structAlign;
+    const size = roundUpToAlignment(currentOffset, finalAlign);
     return {
         type: "object",
         size,
-        fields
+        fields,
+        layout
     };
-});
+};
 
 export function getStructLayout(schema: Schema): StructLayout
+export function getStructLayout(schema: Schema, layout: Layout): StructLayout
 export function getStructLayout(schema: Schema, throwError: true): StructLayout
+export function getStructLayout(schema: Schema, throwError: true, layout: Layout): StructLayout
 export function getStructLayout(schema: Schema, throwError: boolean): StructLayout | null
-export function getStructLayout(schema: Schema, throwError = true): StructLayout | null {
-    const layout = getStructLayoutInternal(schema);
-    if (layout === null && throwError) {
+export function getStructLayout(schema: Schema, throwError: boolean, layout: Layout): StructLayout | null
+export function getStructLayout(
+    schema: Schema, 
+    throwErrorOrLayout: boolean | Layout = true,
+    layout?: Layout
+): StructLayout | null {
+    // Determine throwError and layout parameters
+    let throwError: boolean;
+    let actualLayout: Layout;
+    
+    if (typeof throwErrorOrLayout === "boolean") {
+        throwError = throwErrorOrLayout;
+        actualLayout = layout ?? "std140";
+    } else {
+        throwError = true;
+        actualLayout = throwErrorOrLayout;
+    }
+    
+    const result = getStructLayoutInternal({ schema, layout: actualLayout });
+    if (result === null && throwError) {
         throw new Error("Invalid structure schema");
     }
-    return layout;
+    return result;
 }

@@ -29,7 +29,6 @@ import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { patchEntityValues } from "./patch-entity-values.js";
-import { Undoable } from "../undoable.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
@@ -67,8 +66,8 @@ export function createTransactionalStore<
             get rowCount() {
                 return archetype.rowCount;
             },
-            insert: (values: EntityInsertValues<C>) => {
-                const entity = archetype.insert(values);
+            insert: <T extends EntityInsertValues<C>>(values: T) => {
+                const entity = archetype.insert(values as never);
                 redoOperations.push({
                     type: "insert",
                     values: values,
@@ -77,7 +76,7 @@ export function createTransactionalStore<
                 changed.entities.set(entity, values);
                 changed.archetypes.add(id);
                 for (const key in values) {
-                    changed.components.add(key as keyof C);
+                    changed.components.add(key as never);
                 }
                 return entity;
             },
