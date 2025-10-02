@@ -26,7 +26,7 @@ import { U32Schema } from "../../schema/u32.js";
 import type { StructFieldPrimitiveType, StructLayout, Layout } from "./struct-layout.js";
 
 // Layout rules for different memory layouts
-const LAYOUT_RULES = {
+const LAYOUT_RULES: { [K in Layout]: { vecAlign: number; structAlign: number; arrayAlign: number } } = {
     "std140": {
         vecAlign: 16,      // vec4 alignment
         structAlign: 16,   // struct alignment
@@ -39,8 +39,6 @@ const LAYOUT_RULES = {
     }
 } as const;
 
-// Legacy constant for backwards compatibility
-const VEC4_SIZE = LAYOUT_RULES.std140.vecAlign;
 
 /**
  * Gets alignment in bytes for a field within a struct
@@ -135,23 +133,23 @@ const getPrimitiveType = (schema: Schema): StructFieldPrimitiveType | null => {
  * Returns null if schema is not a valid struct schema.
  */
 const getStructLayoutInternal = memoizeFactory(
-    ({ schema, layout }: { schema: Schema; layout: Layout }): StructLayout | null => getStructLayoutInternalImpl(schema, layout)
+    ({ schema, layout }: { schema: Schema; layout: Layout }): StructLayout | null => getStructLayoutInternalImpl(schema, layout, false)
 );
 
-const getStructLayoutInternalImpl = (schema: Schema, layout: Layout = "std140"): StructLayout | null => {
+const getStructLayoutInternalImpl = (schema: Schema, layout: Layout = "std140", throwsOnError: boolean = false): StructLayout | null => {
     // Handle root array/tuple case
     if (schema.type === "array") {
         if (!schema.items || Array.isArray(schema.items)) {
+            if (throwsOnError) throw new Error("Array schema must have single item type");
             return null;
-            // throw new Error("Array schema must have single item type");
         }
         if (schema.minItems !== schema.maxItems || !schema.minItems) {
+            if (throwsOnError) throw new Error("Array must have fixed length");
             return null;
-            // throw new Error("Array must have fixed length");
         }
         if (schema.minItems < 1) {
+            if (throwsOnError) throw new Error("Array length must be at least 1");
             return null;
-            // throw new Error("Array length must be at least 1");
         }
 
         // Special case for vec3
@@ -176,6 +174,7 @@ const getStructLayoutInternalImpl = (schema: Schema, layout: Layout = "std140"):
         const fields: StructLayout["fields"] = {};
         const elementType = primitiveType ?? getStructLayoutInternal({ schema: schema.items, layout });
         if (!elementType) {
+            if (throwsOnError) throw new Error("Array element type is not a valid struct type");
             return null;
         }
         let currentOffset = 0;
@@ -209,6 +208,7 @@ const getStructLayoutInternalImpl = (schema: Schema, layout: Layout = "std140"):
 
     // Handle object case
     if (schema.type !== "object" || !schema.properties) {
+        if (throwsOnError) throw new Error("Schema must be an object type with properties definition");
         return null;
     }
 
@@ -220,6 +220,7 @@ const getStructLayoutInternalImpl = (schema: Schema, layout: Layout = "std140"):
         const primitiveType = getPrimitiveType(fieldSchema);
         const fieldType = primitiveType ?? getStructLayoutInternal({ schema: fieldSchema, layout });
         if (!fieldType) {
+            if (throwsOnError) throw new Error(`Field "${name}" is not a valid struct type`);
             return null;
         }
         const alignment = getStructFieldAlignment(fieldType, layout);
@@ -245,31 +246,19 @@ const getStructLayoutInternalImpl = (schema: Schema, layout: Layout = "std140"):
 };
 
 export function getStructLayout(schema: Schema): StructLayout
-export function getStructLayout(schema: Schema, layout: Layout): StructLayout
-export function getStructLayout(schema: Schema, throwError: true): StructLayout
-export function getStructLayout(schema: Schema, throwError: true, layout: Layout): StructLayout
 export function getStructLayout(schema: Schema, throwError: boolean): StructLayout | null
-export function getStructLayout(schema: Schema, throwError: boolean, layout: Layout): StructLayout | null
 export function getStructLayout(
     schema: Schema, 
-    throwErrorOrLayout: boolean | Layout = true,
-    layout?: Layout
+    throwError: boolean = true
 ): StructLayout | null {
-    // Determine throwError and layout parameters
-    let throwError: boolean;
-    let actualLayout: Layout;
+    // Read layout from schema with fallback to "std140"
+    const layout = schema.layout ?? "std140";
     
-    if (typeof throwErrorOrLayout === "boolean") {
-        throwError = throwErrorOrLayout;
-        actualLayout = layout ?? "std140";
+    // If we need to throw errors, call the implementation directly with throwError=true
+    // Otherwise, use the memoized version for better performance
+    if (throwError) {
+        return getStructLayoutInternalImpl(schema, layout, true);
     } else {
-        throwError = true;
-        actualLayout = throwErrorOrLayout;
+        return getStructLayoutInternal({ schema, layout });
     }
-    
-    const result = getStructLayoutInternal({ schema, layout: actualLayout });
-    if (result === null && throwError) {
-        throw new Error("Invalid structure schema");
-    }
-    return result;
 }

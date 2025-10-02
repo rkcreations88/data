@@ -63,7 +63,55 @@ describe("createTypedBuffer", () => {
             // Should throw error because we're enforcing struct validation
             expect(() => {
                 createTypedBuffer(invalidSchema, 10);
-            }).toThrow();
+            }).toThrow(/Array must have fixed length/);
+        });
+
+        it("should throw specific error for invalid array schemas with layout", () => {
+            // Array without single item type
+            const invalidArraySchema1: Schema = {
+                type: "array",
+                layout: "packed"
+            };
+
+            expect(() => {
+                createTypedBuffer(invalidArraySchema1, 10);
+            }).toThrow(/Array schema must have single item type/);
+
+            // Array without fixed length
+            const invalidArraySchema2: Schema = {
+                type: "array",
+                items: { type: "number" },
+                layout: "packed"
+            };
+
+            expect(() => {
+                createTypedBuffer(invalidArraySchema2, 10);
+            }).toThrow(/Array must have fixed length/);
+        });
+
+        it("should throw specific error for invalid object schemas with layout", () => {
+            // Object without properties
+            const invalidObjectSchema: Schema = {
+                type: "object",
+                layout: "packed"
+            };
+
+            expect(() => {
+                createTypedBuffer(invalidObjectSchema, 10);
+            }).toThrow(/Schema must be an object type with properties definition/);
+
+            // Object with invalid field
+            const invalidFieldSchema: Schema = {
+                type: "object",
+                properties: {
+                    invalidField: { type: "string" }  // Not a valid struct type
+                },
+                layout: "packed"
+            };
+
+            expect(() => {
+                createTypedBuffer(invalidFieldSchema, 10);
+            }).toThrow(/Field "invalidField" is not a valid struct type/);
         });
 
         it("should work normally for schemas without layout property", () => {
