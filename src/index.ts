@@ -25,3 +25,4 @@ export { type IsData } from "./is-data.js";
 export { equals } from "./equals.js";
 export { normalize} from "./normalize.js";
 export { mutableClone } from "./mutable-clone.js";
+export { type Mutable } from "./mutable.js";

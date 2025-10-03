@@ -20,8 +20,7 @@ SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createStructBuffer } from "./create-struct-buffer.js";
 import { F32Schema } from "../schema/f32.js";
-import type { Schema } from "../schema/schema.js";
-import type { Layout } from "./structs/struct-layout.js";
+import type { Schema, Layout } from "../schema/schema.js";
 
 describe("createStructBuffer", () => {
     // Helper function to create vec3 schema
@@ -67,7 +66,7 @@ describe("createStructBuffer", () => {
                 }
             };
 
-            const buffer = createStructBuffer(schema, 1, "std140");
+            const buffer = createStructBuffer(schema, 1);
             
             // vec3 (16 bytes padded) + f32 (4 bytes) = 20 bytes, rounded to vec4 = 20 bytes
             expect(buffer.typedArrayElementSizeInBytes).toBeGreaterThanOrEqual(16);
@@ -96,10 +95,11 @@ describe("createStructBuffer", () => {
                 properties: {
                     position: Vec3Schema,    // 12 bytes
                     color: Vec4Schema        // 16 bytes
-                }
+                },
+                layout: "packed"
             };
 
-            const buffer = createStructBuffer(schema, 1, "packed");
+            const buffer = createStructBuffer(schema, 1);
             
             // Packed layout: 12 + 16 = 28 bytes
             expect(buffer.type).toBe("struct");
@@ -108,16 +108,25 @@ describe("createStructBuffer", () => {
         });
 
         it("should show memory efficiency difference", () => {
-            const schema: Schema = {
+            const std140Schema: Schema = {
                 type: "object",
                 properties: {
                     position: Vec3Schema,    // 12 bytes
                     normal: Vec3Schema      // 12 bytes
-                }
+                },
+                layout: "std140"
+            };
+            const packedSchema: Schema = {
+                type: "object",
+                properties: {
+                    position: Vec3Schema,    // 12 bytes
+                    normal: Vec3Schema      // 12 bytes
+                },
+                layout: "packed"
             };
 
-            const std140Buffer = createStructBuffer(schema, 100, "std140");
-            const packedBuffer = createStructBuffer(schema, 100, "packed");
+            const std140Buffer = createStructBuffer(std140Schema, 100);
+            const packedBuffer = createStructBuffer(packedSchema, 100);
 
             // std140: 2 * 16 bytes = 32 bytes per element
             // packed: 12 + 12 = 24 bytes per element
@@ -132,10 +141,11 @@ describe("createStructBuffer", () => {
                 properties: {
                     id: { type: "integer", minimum: 0, maximum: 65535 }, // u32: 4 bytes
                     weight: F32Schema
-                }
+                },
+                layout: "packed"
             };
 
-            const buffer = createStructBuffer(schema, 2, "packed");
+            const buffer = createStructBuffer(schema, 2);
             
             // Packed: 4 + 4 = 8 bytes per element
             expect(buffer.typedArrayElementSizeInBytes).toBe(8);
@@ -148,11 +158,12 @@ describe("createStructBuffer", () => {
                 properties: {
                     position: Vec3Schema,    // 12 bytes
                     scale: F32Schema        // 4 bytes
-                }
+                },
+                layout: "packed"
             };
 
             const arrayBuffer = new ArrayBuffer(96); // 6 * 16 bytes
-            const buffer = createStructBuffer(schema, arrayBuffer, "packed");
+            const buffer = createStructBuffer(schema, arrayBuffer);
             
             // Packed size: 16 bytes per element, so capacity should be 6
             expect(buffer.capacity).toBe(6);
@@ -172,7 +183,8 @@ describe("createStructBuffer", () => {
             const layouts: Layout[] = ["std140", "packed"];
             
             layouts.forEach(layout => {
-                const buffer = createStructBuffer(schema, 1, layout);
+                const schemaWithLayout = { ...schema, layout };
+                const buffer = createStructBuffer(schemaWithLayout, 1);
                 expect(buffer.type).toBe("struct");
             });
 
@@ -218,16 +230,25 @@ describe("createStructBuffer", () => {
     describe("vertex buffer use case", () => {
         it("should be optimized for vertex data with packed layout", () => {
             // Typical vertex format: position + color
-            const vertexSchema: Schema = {
+            const std140VertexSchema: Schema = {
                 type: "object",
                 properties: {
                     position: Vec3Schema,    // 12 bytes for tight vertex packing
                     color: Vec4Schema        // 16 bytes
-                }
+                },
+                layout: "std140"
+            };
+            const packedVertexSchema: Schema = {
+                type: "object",
+                properties: {
+                    position: Vec3Schema,    // 12 bytes for tight vertex packing
+                    color: Vec4Schema        // 16 bytes
+                },
+                layout: "packed"
             };
 
-            const std140VertexBuffer = createStructBuffer(vertexSchema, 1000, "std140");
-            const packedVertexBuffer = createStructBuffer(vertexSchema, 1000, "packed");
+            const std140VertexBuffer = createStructBuffer(std140VertexSchema, 1000);
+            const packedVertexBuffer = createStructBuffer(packedVertexSchema, 1000);
 
             // Calculate memory usage
             const std140Memory = std140VertexBuffer.capacity * std140VertexBuffer.typedArrayElementSizeInBytes;

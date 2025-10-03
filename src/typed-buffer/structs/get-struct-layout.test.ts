@@ -315,10 +315,11 @@ describe("getStructLayout", () => {
                         minItems: 4,
                         maxItems: 4
                     }
-                }
+                },
+                layout: "packed"
             };
 
-            const packedLayout = getStructLayout(schema, "packed");
+            const packedLayout = getStructLayout(schema);
             expect(packedLayout.layout).toBe("packed");
             expect(packedLayout.type).toBe("object");
             
@@ -341,7 +342,7 @@ describe("getStructLayout", () => {
         });
 
         it("should show difference between std140 and packed layouts", () => {
-            const schema: Schema = {
+            const std140Schema: Schema = {
                 type: "object",
                 properties: {
                     position: {
@@ -356,11 +357,30 @@ describe("getStructLayout", () => {
                         minItems: 4,
                         maxItems: 4
                     }
-                }
+                },
+                layout: "std140"
+            };
+            const packedSchema: Schema = {
+                type: "object",
+                properties: {
+                    position: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 3,
+                        maxItems: 3
+                    },
+                    color: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 4,
+                        maxItems: 4
+                    }
+                },
+                layout: "packed"
             };
 
-            const std140Layout = getStructLayout(schema, "std140");
-            const packedLayout = getStructLayout(schema, "packed");
+            const std140Layout = getStructLayout(std140Schema);
+            const packedLayout = getStructLayout(packedSchema);
 
             // std140 should be larger due to vec4 alignment
             expect(std140Layout.size).toBe(32); // 16 + 16
@@ -380,10 +400,11 @@ describe("getStructLayout", () => {
                         minItems: 2,
                         maxItems: 2
                     }
-                }
+                },
+                layout: "packed"
             };
 
-            const packedLayout = getStructLayout(schema, "packed");
+            const packedLayout = getStructLayout(schema);
             expect(packedLayout.layout).toBe("packed");
             expect(packedLayout.type).toBe("object");
             
@@ -426,8 +447,8 @@ describe("getStructLayout", () => {
             const layout2 = getStructLayout(schema, true);
             const layout3 = getStructLayout(schema, false);
             
-            expect(layout1.layout).toBe("std140");
-            expect(layout2.layout).toBe("std140");
+            expect(layout1?.layout).toBe("std140");
+            expect(layout2?.layout).toBe("std140");
             expect(layout3?.layout).toBe("std140");
         });
     });

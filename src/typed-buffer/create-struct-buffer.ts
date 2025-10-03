@@ -26,7 +26,6 @@ import { FromSchema, Schema } from "../schema/schema.js";
 import { createReadStruct } from "./structs/create-read-struct.js";
 import { createWriteStruct } from "./structs/create-write-struct.js";
 import { getStructLayout } from "./structs/get-struct-layout.js";
-import type { Layout } from "./structs/struct-layout.js";
 import { TypedBuffer, TypedBufferType } from "./typed-buffer.js";
 import { TypedArray } from "../internal/typed-array/index.js";
 import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
@@ -47,10 +46,10 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
     private readonly arrayType: ArrayType;
     private _capacity: number;
 
-    constructor(schema: S, initialCapacityOrArrayBuffer: number | ArrayBuffer, layout: Layout = "std140") {
+    constructor(schema: S, initialCapacityOrArrayBuffer: number | ArrayBuffer) {
         super(schema);
         
-        const structLayout = getStructLayout(schema, layout);
+        const structLayout = getStructLayout(schema);
         if (!structLayout) {
             throw new Error("Schema is not a valid struct schema");
         }
@@ -116,22 +115,11 @@ export function createStructBuffer<S extends Schema, ArrayType extends keyof Dat
 ): TypedBuffer<FromSchema<S>>
 export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     schema: S,
-    initialCapacity: number,
-    layout: Layout,
-): TypedBuffer<FromSchema<S>>
-export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
-    schema: S,
     arrayBuffer: ArrayBuffer,
-): TypedBuffer<FromSchema<S>>
-export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
-    schema: S,
-    arrayBuffer: ArrayBuffer,
-    layout: Layout,
 ): TypedBuffer<FromSchema<S>>
 export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     schema: S,
     initialCapacityOrArrayBuffer: number | ArrayBuffer,
-    layout: Layout = "std140",
 ): TypedBuffer<FromSchema<S>> {
-    return new StructTypedBuffer<S, ArrayType>(schema, initialCapacityOrArrayBuffer, layout);
+    return new StructTypedBuffer<S, ArrayType>(schema, initialCapacityOrArrayBuffer);
 };
