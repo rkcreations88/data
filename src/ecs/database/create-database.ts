@@ -37,6 +37,7 @@ import { ArchetypeComponents } from "../store/archetype-components.js";
 import { observeSelectEntities } from "./observe-select-entities.js";
 import { CoreComponents } from "../core-components.js";
 import { applyOperations } from "../index.js";
+import { Service } from "../../service/service.js";
 
 export function createDatabase<
     const C extends Components,
@@ -47,7 +48,7 @@ export function createDatabase<
     store: Store<C, R, A>,
     transactionDeclarations: TD,
 ): Database<C, R, A, ToTransactionFunctions<TD>> {
-    type T = ToTransactionFunctions<TD>;
+    type T = ToTransactionFunctions<TD> & Service;
 
     const transactionalStore = createTransactionalStore(store);
 
@@ -153,97 +154,94 @@ export function createDatabase<
         return result;
     }
 
-    const transactions = {} as T;
+    const transactions = {
+        serviceName: "ecs-database-transactions-service",
+    } satisfies Service as T;
 
     for (const [name, transactionUntyped] of Object.entries(transactionDeclarations)) {
         const transaction = transactionUntyped as (store: Store<C, R, A>, args: any) => void;
-        Object.defineProperty(transactions, name, {
-            value: (args: unknown) => {
-                // Check if args is an AsyncArgsProvider function
-                if (typeof args === 'function') {
-                    const asyncArgsProvider = args as () => Promise<any> | AsyncGenerator<any>;
-                    const asyncResult = asyncArgsProvider();
+        (transactions as any)[name as keyof T] = (args: unknown) => {
+            // Check if args is an AsyncArgsProvider function
+            if (typeof args === 'function') {
+                const asyncArgsProvider = args as () => Promise<any> | AsyncGenerator<any>;
+                const asyncResult = asyncArgsProvider();
 
-                    if (isAsyncGenerator(asyncResult)) {
-                        let count = 0;
-                        return new Promise(async (resolve, reject) => {
-                            try {
-                                let lastArgs: any = undefined;
-                                let lastTransaction: TransactionResult<C> | undefined;
+                if (isAsyncGenerator(asyncResult)) {
+                    let count = 0;
+                    return new Promise(async (resolve, reject) => {
+                        try {
+                            let lastArgs: any = undefined;
+                            let lastTransaction: TransactionResult<C> | undefined;
 
-                                const executeNext = (asyncArgs: any, transient: boolean) => {
-                                    lastArgs = asyncArgs;
+                            const executeNext = (asyncArgs: any, transient: boolean) => {
+                                lastArgs = asyncArgs;
 
-                                    if (lastTransaction) {
-                                        // rollback previous transaction.
-                                        execute(t => {
-                                            if (lastTransaction) {
-                                                // Rollback the previous transaction to restore the state before it
-                                                applyOperations(t, lastTransaction.undo);
-                                            }
-                                        }, { transient: true })
-                                    }
-                                    lastTransaction = execute(
-                                        t => transaction(t, asyncArgs),
-                                        { transient }
-                                    );
-
-                                    if (!transient) {
-                                        // this is the last value so we will resolve to it
-                                        resolve(lastTransaction.value);
-                                    }
+                                if (lastTransaction) {
+                                    // rollback previous transaction.
+                                    execute(t => {
+                                        if (lastTransaction) {
+                                            // Rollback the previous transaction to restore the state before it
+                                            applyOperations(t, lastTransaction.undo);
+                                        }
+                                    }, { transient: true })
                                 }
+                                lastTransaction = execute(
+                                    t => transaction(t, asyncArgs),
+                                    { transient }
+                                );
 
-                                // Manually iterate through the generator to capture both yield and return values
-                                let result = await asyncResult.next();
-
-                                // Process yield values one by one with rollback
-                                // We can't know if a yield is final until the generator completes,
-                                // so we mark all yields as transient initially
-                                while (!result.done) {
-                                    // This is a yield value - always transient initially
-                                    executeNext(result.value, true);
-                                    result = await asyncResult.next();
-                                }
-
-                                if (result.value !== undefined) {
-                                    executeNext(result.value, false);
-                                } else if (lastArgs !== undefined) {  // Only execute if lastArgs exists
-                                    executeNext(lastArgs, false);
+                                if (!transient) {
+                                    // this is the last value so we will resolve to it
+                                    resolve(lastTransaction.value);
                                 }
                             }
-                            catch (error) {
-                                console.error('AsyncGenerator error:', error);
-                                reject(error);
+
+                            // Manually iterate through the generator to capture both yield and return values
+                            let result = await asyncResult.next();
+
+                            // Process yield values one by one with rollback
+                            // We can't know if a yield is final until the generator completes,
+                            // so we mark all yields as transient initially
+                            while (!result.done) {
+                                // This is a yield value - always transient initially
+                                executeNext(result.value, true);
+                                result = await asyncResult.next();
                             }
-                        });
-                    }
-                    else if (isPromise(asyncResult)) {
-                        return new Promise(async (resolve, reject) => {
-                            try {
-                                const input = await asyncResult;
-                                const result = execute(t => transaction(t, input));
-                                resolve(result);
+
+                            if (result.value !== undefined) {
+                                executeNext(result.value, false);
+                            } else if (lastArgs !== undefined) {  // Only execute if lastArgs exists
+                                executeNext(lastArgs, false);
                             }
-                            catch (error) {
-                                reject(error);
-                            }
-                        });
-                    }
-                    else {
-                        // Function returned a synchronous value
-                        return execute(t => transaction(t, asyncResult));
-                    }
+                        }
+                        catch (error) {
+                            console.error('AsyncGenerator error:', error);
+                            reject(error);
+                        }
+                    });
+                }
+                else if (isPromise(asyncResult)) {
+                    return new Promise(async (resolve, reject) => {
+                        try {
+                            const input = await asyncResult;
+                            const result = execute(t => transaction(t, input));
+                            resolve(result);
+                        }
+                        catch (error) {
+                            reject(error);
+                        }
+                    });
                 }
                 else {
-                    // Synchronous argument
-                    return execute(t => transaction(t, args)).value;
+                    // Function returned a synchronous value
+                    return execute(t => transaction(t, asyncResult));
                 }
-            },
-            writable: false,
-            enumerable: true,
-            configurable: false
-        });
+            }
+            else {
+                // Synchronous argument
+                return execute(t => transaction(t, args)).value;
+            }
+        };
     }
 
     const notifyAllObserversStoreReloaded = () => {
@@ -273,6 +271,7 @@ export function createDatabase<
 
     // Return the complete observable store
     const database = {
+        serviceName: "ecs-database-service",
         ...rest,
         resources,
         transactions,
@@ -281,7 +280,7 @@ export function createDatabase<
         fromData: (data: unknown) => {
             store.fromData(data);
             notifyAllObserversStoreReloaded();
-        }
+        },
     } as Database<C, R, A, T>;
     return database;
 }
