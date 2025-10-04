@@ -83,6 +83,6 @@ export interface TransactionResult<C = unknown> {
     readonly redo: TransactionWriteOperation<C>[];
     readonly undo: TransactionWriteOperation<C>[];
     readonly changedEntities: Map<Entity, EntityUpdateValues<C> | null>;
-    readonly changedComponents: Set<keyof C>;
+    readonly changedComponents: Set<keyof C | string>;
     readonly changedArchetypes: Set<ArchetypeId>;
 }

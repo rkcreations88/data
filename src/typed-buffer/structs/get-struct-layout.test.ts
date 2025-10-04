@@ -298,4 +298,159 @@ describe("getStructLayout", () => {
         })).toThrow();
     });
 
+    describe("packed layout", () => {
+        it("should use tight packing for vertex buffers", () => {
+            const schema: Schema = {
+                type: "object",
+                properties: {
+                    position: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 3,
+                        maxItems: 3
+                    },
+                    color: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 4,
+                        maxItems: 4
+                    }
+                },
+                layout: "packed"
+            };
+
+            const packedLayout = getStructLayout(schema);
+            expect(packedLayout.layout).toBe("packed");
+            expect(packedLayout.type).toBe("object");
+            
+            // position: vec3f at offset 0, size 12 bytes
+            expect(packedLayout.fields.position.offset).toBe(0);
+            const positionType = packedLayout.fields.position.type;
+            if (typeof positionType !== "string") {
+                expect(positionType.size).toBe(12);
+            }
+            
+            // color: vec4f at offset 12, size 16 bytes
+            expect(packedLayout.fields.color.offset).toBe(12);
+            const colorType = packedLayout.fields.color.type;
+            if (typeof colorType !== "string") {
+                expect(colorType.size).toBe(16);
+            }
+            
+            // Total size should be 28 bytes (no padding for packed layout)
+            expect(packedLayout.size).toBe(28);
+        });
+
+        it("should show difference between std140 and packed layouts", () => {
+            const std140Schema: Schema = {
+                type: "object",
+                properties: {
+                    position: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 3,
+                        maxItems: 3
+                    },
+                    color: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 4,
+                        maxItems: 4
+                    }
+                },
+                layout: "std140"
+            };
+            const packedSchema: Schema = {
+                type: "object",
+                properties: {
+                    position: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 3,
+                        maxItems: 3
+                    },
+                    color: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 4,
+                        maxItems: 4
+                    }
+                },
+                layout: "packed"
+            };
+
+            const std140Layout = getStructLayout(std140Schema);
+            const packedLayout = getStructLayout(packedSchema);
+
+            // std140 should be larger due to vec4 alignment
+            expect(std140Layout.size).toBe(32); // 16 + 16
+            expect(packedLayout.size).toBe(28); // 12 + 16 (no padding)
+            
+            expect(std140Layout.layout).toBe("std140");
+            expect(packedLayout.layout).toBe("packed");
+        });
+
+        it("should work with arrays of primitives in packed mode", () => {
+            const schema: Schema = {
+                type: "object",
+                properties: {
+                    values: {
+                        type: "array",
+                        items: { type: "number", precision: 1 },
+                        minItems: 2,
+                        maxItems: 2
+                    }
+                },
+                layout: "packed"
+            };
+
+            const packedLayout = getStructLayout(schema);
+            expect(packedLayout.layout).toBe("packed");
+            expect(packedLayout.type).toBe("object");
+            
+            // Array should not have excess padding
+            const valuesType = packedLayout.fields.values.type;
+            expect(typeof valuesType).not.toBe("string");
+            if (typeof valuesType !== "string") {
+                expect(valuesType.size).toBe(8); // 2 floats * 4 bytes each
+            }
+            
+            expect(packedLayout.size).toBe(8); // No padding
+        });
+    });
+
+    describe("backwards compatibility", () => {
+        it("should default to std140 layout when no layout specified", () => {
+            const schema: Schema = {
+                type: "object",
+                properties: {
+                    a: F32Schema,
+                    b: F32Schema
+                }
+            };
+
+            const layout = getStructLayout(schema); // No layout parameter
+            expect(layout.layout).toBe("std140");
+            expect(layout.size).toBe(16); // Should be padded to vec4
+        });
+
+        it("should work with original function signatures", () => {
+            const schema: Schema = {
+                type: "object",
+                properties: {
+                    a: F32Schema
+                }
+            };
+
+            // Original signatures should still work
+            const layout1 = getStructLayout(schema);
+            const layout2 = getStructLayout(schema, true);
+            const layout3 = getStructLayout(schema, false);
+            
+            expect(layout1?.layout).toBe("std140");
+            expect(layout2?.layout).toBe("std140");
+            expect(layout3?.layout).toBe("std140");
+        });
+    });
+
 }); 

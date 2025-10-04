@@ -26,6 +26,8 @@ import { DeepReadonly, EquivalentTypes, True } from "../types/types.js";
 type JSONPath = string;
 type JSONMergePatch = unknown;
 
+export type Layout = "std140" | "packed";
+
 /**
  * Conditional patch applied to the path when the enclosing schema branch is active
  * and `match` is not present or validates against the root.
@@ -83,6 +85,7 @@ export interface Schema {
   allOf?: readonly Schema[];
   const?: any;
   enum?: readonly any[];
+  layout?: Layout; // Memory layout for typed buffers (std140 or packed)
   /**
    * Classification of data according to privacy regulations and cookie consent frameworks.
    * Used to categorize data collection and processing for privacy compliance.

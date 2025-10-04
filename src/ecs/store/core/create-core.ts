@@ -26,7 +26,7 @@ import * as ARCHETYPE from "../../archetype/index.js";
 import * as TABLE from "../../../table/index.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { CoreComponents } from "../../core-components.js";
-import { Entity, EntitySchema } from "../../entity.js";
+import { Entity, schema } from "../../entity.js";
 import { Core, EntityUpdateValues, ArchetypeQueryOptions } from "./core.js";
 import { Assert, Equal, Simplify, StringKeyof } from "../../../types/index.js";
 import { ComponentSchemas } from "../../component-schemas.js";
@@ -34,7 +34,7 @@ import { ComponentSchemas } from "../../component-schemas.js";
 export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC): Core<Simplify<{ [K in StringKeyof<NC>]: FromSchema<NC[K]> }>> {
     type C = CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
 
-    const componentSchemas: { readonly [K in StringKeyof<C>]: Schema } = { id: EntitySchema, ...newComponentSchemas };
+    const componentSchemas: { readonly [K in StringKeyof<C>]: Schema } = { id: schema, ...newComponentSchemas };
     const entityLocationTable = createEntityLocationTable();
     const archetypes = [] as unknown as Archetype<C & CoreComponents>[] & { readonly [x: string]: Archetype<C> };
 

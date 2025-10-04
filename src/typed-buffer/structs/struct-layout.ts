@@ -19,6 +19,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import { Layout } from "../../schema/schema.js";
+
+export type { Layout };
 export type StructFieldPrimitiveType = "i32" | "u32" | "f32";
 
 /**
@@ -38,4 +41,6 @@ export interface StructLayout {
     size: number;
     /** Fields for struct types */
     fields: Record<string, StructLayoutField>;
+    /** Layout mode used for generating this layout */
+    layout?: Layout;
 }

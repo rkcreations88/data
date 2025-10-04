@@ -62,7 +62,9 @@ function createTypedBufferInternal <S extends Schema>(
         return createNumberBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
     }
 
-    const structLayout = getStructLayout(schema, false);
+    // If schema has layout property, it should be treated as a struct layout
+    const shouldBeStruct = schema.layout !== undefined;
+    const structLayout = getStructLayout(schema, shouldBeStruct);
     if (structLayout) {
         return createStructBuffer(schema, initialCapacity);
     }

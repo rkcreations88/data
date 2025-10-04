@@ -49,12 +49,12 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
     constructor(schema: S, initialCapacityOrArrayBuffer: number | ArrayBuffer) {
         super(schema);
         
-        const layout = getStructLayout(schema);
-        if (!layout) {
+        const structLayout = getStructLayout(schema);
+        if (!structLayout) {
             throw new Error("Schema is not a valid struct schema");
         }
         
-        this.layout = layout;
+        this.layout = structLayout;
         this.typedArrayElementSizeInBytes = this.layout.size;
         this.arrayType = 'f32' as ArrayType;
         this.sizeInQuads = this.layout.size / 4;

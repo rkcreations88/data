@@ -12,7 +12,7 @@ export const applyOperations = (
             case "insert": {
                 const componentNames = ["id", ...Object.keys(operation.values)] as StringKeyof<any>[];
                 const archetype = store.ensureArchetype(componentNames);
-                archetype.insert(operation.values as any);
+                archetype.insert(operation.values as never);
                 break;
             }
             case "update":
