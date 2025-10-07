@@ -24,6 +24,8 @@ import { describe, expect, test } from "vitest";
 import { ECSJSON } from "./core-ecs-types.js";
 import { createCoreECS } from "./core-ecs.js";
 import { U32Schema } from "../../schema/u32.js";
+import { Assert } from "../../types/assert.js";
+import { Equal } from "../../types/equal.js";
 
 const createEcsWithMassAndSize = (data?: ECSJSON, precision: 1 | 2 = 2) => {
   return createCoreECS({ data })
@@ -32,9 +34,11 @@ const createEcsWithMassAndSize = (data?: ECSJSON, precision: 1 | 2 = 2) => {
       size: { enum: ["small", "medium", "large"] },
     } as const)
     .withResources({
-      gravity: 9.8,
+      gravity: { default: 9.8, privacy: "strictlyNecessary" },
     });
 };
+
+type CheckGravityResourceType = Assert<Equal<ReturnType<typeof createEcsWithMassAndSize>["resources"]["gravity"], number>>;
 
 const createEcsWithMassAndSizeAndShape = (data?: ECSJSON) => {
   return createCoreECS({ data })
@@ -44,7 +48,7 @@ const createEcsWithMassAndSizeAndShape = (data?: ECSJSON) => {
       size: { enum: ["small", "medium", "large"] },
     } as const)
     .withResources({
-      gravity: 9.8,
+      gravity: { default: 9.8, privacy: "strictlyNecessary" },
     });
 };
 
@@ -66,7 +70,7 @@ describe("ecs-functions", () => {
         id: U32Schema,
         mass: { type: "number", minimum: +0, precision: 2 },
         size: { enum: ["small", "medium", "large"] },
-        gravity: {},
+        gravity: { default: 9.8, privacy: "strictlyNecessary" },
       },
       entities: [1, +0, 2, +0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5, 2, 6, 2, 7, 2, 8],
       tables: [
@@ -116,7 +120,7 @@ describe("ecs-functions", () => {
         id: U32Schema,
         mass: { type: "number", minimum: +0, precision: 1 },
         size: { enum: ["small", "medium", "large"] },
-        gravity: {},
+        gravity: { default: 9.8, privacy: "strictlyNecessary" },
       },
       entities: [1, +0, 2, +0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5, 2, 6, 2, 7, 2, 8],
       tables: [

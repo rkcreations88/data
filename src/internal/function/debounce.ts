@@ -112,7 +112,6 @@ export const debounce = <TFunc extends (...args: any[]) => any>(
 
     const invokeFunc = (time: number): ReturnType<TFunc> => {
         const args = lastArgs!;
-        console.log('invokeFunc called with lastArgs:', args);
         lastArgs = undefined;
         lastInvokeTime = time;
         result = func(...args);
@@ -198,7 +197,6 @@ export const debounce = <TFunc extends (...args: any[]) => any>(
             // Start maxWait timer if configured
             if (maxWait !== undefined) {
                 maxTimeoutId = setTimeout(() => {
-                    console.log('maxWait timer fired, lastArgs:', lastArgs);
                     maxTimeoutId = undefined;
                     if (timeoutId !== undefined) {
                         trailingEdge(Date.now());

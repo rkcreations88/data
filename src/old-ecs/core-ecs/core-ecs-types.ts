@@ -69,7 +69,7 @@ export interface CoreECS<
   C extends CoreComponents = CoreComponents,
   R extends CoreResources = {},
 > extends CoreECSRead<C, R>,
-    CoreECSWrite<C, R> {
+  CoreECSWrite<C, R> {
   /**
    * Creates new components within this ecs and returns the same ecs with the new expanded type information.
    */
@@ -79,6 +79,9 @@ export interface CoreECS<
   >(
     components: S
   ): CoreECS<Simplify<C & T>, R>;
+  withResources<T extends { readonly [K: string]: Schema & { default: any } }>(
+    resources: T
+  ): CoreECS<C, Simplify<R & { -readonly [K in keyof T]: FromSchema<T[K]> }>>;
   withResources<T extends { readonly [K: string]: Data }>(
     resources: T
   ): CoreECS<C, Simplify<R & T>>;
