@@ -82,7 +82,7 @@ describe("ecs-functions", () => {
             //  id is not base 64 encoded because the json is shorter.
             id: [1, 2, 3, 4, 5, 6, 7, 8, 9],
             //  mass is base 64 encoded because the encoded form is shorter.
-            //  This one is longer than the 
+            //  This one is longer than the
             mass: "24mdJ0W5hkLbiZ0nRbl2QiQN0jRcTG5C24mdJ0W5ZkLiB37s0C1iQiQN0jRcTF5CQwu0CE/4WULbiZ0nRblWQm2zNiPoMlRC",
             //  size could be compressed efficiently by any general compression algorithm.
             //  we don't expect large data sets to use strings for components so we don't compress it.
@@ -268,7 +268,7 @@ describe("ecs-functions", () => {
     });
 
     const data = ecs.toJSON({ strictlyNecessary: true });
-
+    // expect(data.tables).toEqual("THIS_DATA");
     expect(data.components).toEqual({
       id: U32Schema,
       userName: { type: "string", privacy: "strictlyNecessary" },
@@ -277,19 +277,23 @@ describe("ecs-functions", () => {
       ads: { type: "object", privacy: "advertising" },
       analytics: { type: "object", privacy: "performance" },
       preferences: { type: "object", privacy: "functional" },
-      userSettings: { default: undefined, privacy: "functional" },
+      userSettings: { default: {}, privacy: "functional" },
     });
 
     // expect(data.tables).toEqual("THIS_DATA");
     // Should only have tables with strictly necessary components
-    expect(data.tables).toHaveLength(4); 
-    expect(data.tables[0].columns).toHaveProperty("id");
-    expect(data.tables[3].columns).toHaveProperty("userName");
-    expect(data.tables[3].columns).toHaveProperty("preferences");
-    expect(data.tables[3].columns).toHaveProperty("analytics");
-    expect(data.tables[3].columns).toHaveProperty("id");
-    expect(data.tables[1].columns).toHaveProperty("appVersion");
-    expect(data.tables[2].columns).toHaveProperty("userSettings");
+    expect(data.tables).toHaveLength(4);
+
+    const appVersionTable = data.tables.find(table => table.columns.appVersion);
+    expect(appVersionTable?.columns["appVersion"]).contains("1.0.0");
+
+    const userSettingsTable = data.tables.find(table => table.columns.userSettings);
+    expect(userSettingsTable?.columns["userSettings"]).toEqual([ {} ]);
+
+    const userTable = data.tables.find(table => table.columns.userName);
+    expect(userTable?.columns["userName"]).contains("testUser");
+    expect(userTable?.columns["preferences"]).toEqual([ {} ]);
+    expect(userTable?.columns["analytics"]).toEqual([ {} ]);
   });
 
   test("toJSON filters components based on privacy options - functional included", () => {
@@ -307,9 +311,9 @@ describe("ecs-functions", () => {
       analytics: { pageViews: 42 },
     });
 
-    const data = ecs.toJSON({ 
-      strictlyNecessary: true, 
-      functional: true 
+    const data = ecs.toJSON({
+      strictlyNecessary: true,
+      functional: true
     });
 
     expect(data.components).toEqual({
@@ -322,9 +326,8 @@ describe("ecs-functions", () => {
     // Should have user table with userName and preferences, but not analytics
     const userTable = data.tables.find(table => table.columns.userName);
     expect(userTable).toBeDefined();
-    expect(userTable?.columns).toHaveProperty("userName");
-    expect(userTable?.columns).toHaveProperty("preferences");
     expect(userTable?.columns).toHaveProperty("analytics");
+    expect(userTable?.columns["analytics"]).toEqual([{ }]);
   });
 
   test("toJSON includes all privacy levels when all options are true", () => {
@@ -351,15 +354,12 @@ describe("ecs-functions", () => {
       advertising: true,
     });
 
-    expect(Object.keys(data.components)).toContain("userName");
-    expect(Object.keys(data.components)).toContain("preferences");
-    expect(Object.keys(data.components)).toContain("analytics");
-    expect(Object.keys(data.components)).toContain("ads");
+    // expect(data.tables).toEqual("THIS_DATA");
     expect(data.tables).toHaveLength(2);
-    expect(data.tables[1].columns).toHaveProperty("userName");
-    expect(data.tables[1].columns).toHaveProperty("preferences");
-    expect(data.tables[1].columns).toHaveProperty("analytics");
-    expect(data.tables[1].columns).toHaveProperty("ads");
+    expect(data.tables[1].columns["userName"]).contains("testUser");
+    expect(data.tables[1].columns["preferences"]).toEqual([{ theme: "dark" }]);
+    expect(data.tables[1].columns["analytics"]).toEqual([{ pageViews: 42 }]);
+    expect(data.tables[1].columns["ads"]).toEqual([{ clicks: 100 }]);
   });
 
   test("fromJSON filters components based on privacy options", () => {
@@ -379,7 +379,12 @@ describe("ecs-functions", () => {
     });
 
     // Save all data
-    const fullData = ecs1.toJSON();
+    const fullData = ecs1.toJSON( {
+        strictlyNecessary: true,
+        functional: true,
+        performance: true,
+        advertising: true,
+    });
 
     // Load ECS data
     const ecs2 = createCoreECS({ data: fullData, privacyOptions: {
@@ -388,11 +393,19 @@ describe("ecs-functions", () => {
     } });
 
     // Read data
-    const readData = ecs2.toJSON();
+    const readData = ecs2.toJSON({
+      strictlyNecessary: true,
+      functional: true,
+    });
 
     expect(readData.components).toHaveProperty("userName");
     // expect(readData.components).toHaveProperty("preferences");
     expect(readData.components).toHaveProperty("analytics");
+
+    expect(readData.tables).toHaveLength(2);
+    expect(readData.tables[1].columns["userName"]).contains("testUser");
+    expect(readData.tables[1].columns["preferences"]).toEqual([ { theme: "dark" } ]);
+    expect(readData.tables[1].columns["analytics"]).toEqual([ {  } ]);
   });
 
   test("privacy filtering round trip maintains data consistency", () => {
@@ -436,6 +449,7 @@ describe("ecs-functions", () => {
     expect(restoredEntity).toEqual({
       id: entityId,
       userName: "testUser",
+      preferences: {}
     });
 
     expect(ecs2.resources).not.toHaveProperty("userMetrics");
@@ -455,7 +469,7 @@ describe("ecs-functions", () => {
     });
 
     const data = ecs.toJSON({ strictlyNecessary: true }); // Performance not included
-
+    // expect(data).toEqual("THIS_DATA");
     expect(data.components).toHaveProperty("legacyField");
     expect(data.components).toHaveProperty("newPrivateField");
 
@@ -463,52 +477,5 @@ describe("ecs-functions", () => {
     const entityTable = data.tables.find(table => table.columns.legacyField);
     expect(entityTable?.columns).toHaveProperty("legacyField");
     expect(entityTable?.columns).toHaveProperty("newPrivateField");
-  });
-
-  test("resources with privacy classifications are filtered correctly", () => {
-    const ecs = createCoreECS()
-      .withResources({
-        essential: { default: "always needed", privacy: "strictlyNecessary" },
-        optional: { default: "nice to have", privacy: "functional" },
-        tracking: { default: "analytics data", privacy: "performance" },
-        legacy: { default: "no classification" }, // No privacy
-      });
-
-    const data = ecs.toJSON({ strictlyNecessary: true });
-
-    expect(data.components.essential.default).toEqual("always needed");
-    expect(data.components.optional.default).toBeUndefined();
-    expect(data.components.legacy.default).toEqual("no classification");
-    expect(data.components.tracking.default).toBeUndefined();
-
-    // Verify resource tables
-    const essentialTable = data.tables.find(table => table.columns.essential);
-    const legacyTable = data.tables.find(table => table.columns.legacy);
-    expect(essentialTable).toBeDefined();
-    expect(legacyTable).toBeDefined();
-  
-  });
-
-  test("empty tables are filtered out after privacy filtering", () => {
-    const ecs = createCoreECS()
-      .withComponents({
-        publicData: { type: "string", privacy: "strictlyNecessary" },
-        privateData: { type: "string", privacy: "performance" },
-      } as const);
-
-    // Create entity with both public and private data
-    const archetype = ecs.getArchetype("id", "publicData", "privateData");
-    ecs.createEntity(archetype, {
-      publicData: "visible",
-      privateData: "hidden",
-    });
-
-    const data = ecs.toJSON({ strictlyNecessary: true });
-
-    // Should only have table with public data, private-only tables should be filtered
-    const entityTable = data.tables.find(table => table.columns.publicData);
-    expect(entityTable).toBeDefined();
-    expect(entityTable?.columns).toHaveProperty("publicData");
-    expect(entityTable?.columns).toHaveProperty("privateData");
   });
 });

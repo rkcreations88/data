@@ -594,10 +594,12 @@ export function createCoreECS<
 
   /**
    * Filters the components for privacy
+   * @param componentSchemas - The component schemas to filter
    * @param options - The options to use
    * @returns The filtered components
    */
-  const filterComponentsForPrivacyGlobal = (options?: {
+
+  const filterComponentsForPrivacy_V2 = (componentSchemas: Record<string, Schema>,options?: {
     strictlyNecessary?: boolean;
     functional?: boolean;
     performance?: boolean;
@@ -605,17 +607,42 @@ export function createCoreECS<
   }): Record<string, Schema> => {
     // filter the components for privacy
     const filteredComponents = Object.fromEntries(
-        Object.entries(componentSchemas).filter(([schemaName, oldSchema]) => shouldIncludeComponentForSerialization(schemaName, options))
+        Object.entries(componentSchemas).filter(([schemaName, schema]) => {
+          return shouldIncludeComponentForSerialization(schemaName, options);
+        })
     ) as Record<string, Schema>;
     return filteredComponents;
   }
 
-  /**
-   * Filters the components for privacy
-   * @param componentSchemas - The component schemas to filter
-   * @param options - The options to use
-   * @returns The filtered components
-   */
+  const getDefaultValueForSchema = (schema: Schema): any => {
+    switch(schema.type) {
+      case 'number':
+      case 'integer':
+        return 0;
+      case 'string':
+        return '';
+      case 'boolean':
+        return false;
+      case 'object':
+        return {};
+      case 'array':
+        return [];
+      case 'typed-buffer':
+        return new Uint8Array();
+      case 'blob':
+        return null;
+      default:
+        // For schemas with const, enum, or other constraints
+        if (schema.const !== undefined) {
+          return schema.const;
+        } else if (schema.enum && schema.enum.length > 0) {
+          return schema.enum[0];
+        } else {
+          return undefined;
+        }
+    }
+  }
+
   const filterComponentsForPrivacy = (componentSchemas: Record<string, Schema>,options?: {
     strictlyNecessary?: boolean;
     functional?: boolean;
@@ -629,7 +656,7 @@ export function createCoreECS<
           const updatedSchema = { ...oldSchema };
           if (!shouldIncludeComponentForSerialization(schemaName, options)) {
           // Apply default values if they don't exist
-          if (updatedSchema.default !== undefined) {
+          if (updatedSchema.default === undefined) {
             switch(updatedSchema.type) {
               case 'number':
               case 'integer':
@@ -672,57 +699,58 @@ export function createCoreECS<
     return filteredComponents;
   }
 
-        // .filter(([schemaName, oldSchema]) => !shouldIncludeComponentForSerialization(schemaName, options))
-        // .map(([schemaName, oldSchema]) => {
-          // const updatedSchema = { ... oldSchema };
+  /**
+   * Updates a column for privacy, applying default values if necessary
+   * @param filteredComponentSchema - The filtered component schema
+   * @param rows - The number of rows
+   * @param data - The data to update
+   */
+  const updateColumnForPrivacy = (filteredComponentSchema: Schema, rows: any, data: any) => {
+    let value = data;
+    // If the column has no data and the filtered component has a default, use the default
+    if ((value === undefined || value === null || (Array.isArray(value) && value.length === 0))
+        && filteredComponentSchema?.default !== undefined) {
+      // Create array filled with default values for the number of rows
+      if (rows > 0) {
+        value = new Array(rows).fill(filteredComponentSchema.default);
+      } else {
+        value = [];
+      }
+    }
+    return value;
+  }
 
-          // if (updatedSchema.default === undefined) {
-          //   switch(updatedSchema.type) {
-          //     case 'number':
-          //     case 'integer':
-          //       updatedSchema.default = 0;
-          //       break;
-          //     case 'string':
-          //       updatedSchema.default = '';
-          //       break;
-          //     case 'boolean':
-          //       updatedSchema.default = false;
-          //       break;
-          //     case 'object':
-          //       updatedSchema.default = {};
-          //       break;
-          //     case 'array':
-          //       updatedSchema.default = [];
-          //       break;
-          //     case 'typed-buffer':
-          //       updatedSchema.default = new Uint8Array();
-          //       break;
-          //     case 'blob':
-          //       updatedSchema.default = null;
-          //       break;
-          //     default:
-          //       // For schemas with const, enum, or other constraints
-          //       if (updatedSchema.const !== undefined) {
-          //         updatedSchema.default = updatedSchema.const;
-          //       } else if (updatedSchema.enum && updatedSchema.enum.length > 0) {
-          //         updatedSchema.default = updatedSchema.enum[0];
-          //       }
-          //       break;
-          //   }
-          // }
-
-  //         return [schemaName, updatedSchema];
-  //       })
-  //   ) as Record<string, Schema>;
-  //   return filteredComponents;
-  // }
+  const updateColumnForPrivacy_V2 = (schema: Schema, rows: any, data: any) => {
+    let value = data;
+    console.log(`Updating column for schema ${JSON.stringify(schema)} with rows: ${rows}, original data: ${JSON.stringify(data)}`);
+    // If the column has no data and the filtered component has a default, use the default
+    if (value !== undefined && value !== null && (Array.isArray(value) && value.length !== 0)) {
+      let defaultValue = undefined;
+      if (schema?.default !== undefined) {
+        defaultValue = schema.default;
+      } else {
+        defaultValue = getDefaultValueForSchema(schema);
+      }
+      console.log(`Applying default value for schema ${JSON.stringify(schema)}: ${JSON.stringify(defaultValue)}`);
+      // Create array filled with default values for the number of rows
+      if (rows > 0) {
+        value = new Array(rows).fill(defaultValue);
+      } else {
+        value = [];
+      }
+    }
+    console.log(`Updated column for schema ${JSON.stringify(schema)} with rows: ${rows}, original data: ${JSON.stringify(data)}, resulting value: ${JSON.stringify(value)}`);
+    return value;
+  }
 
   /**
    * Filters the tables for privacy
    * @param filteredComponents - The filtered components
+   * @param options
    * @returns The filtered tables
    */
-  const filterTablesForPrivacy = (filteredComponents: Record<string, Schema>) => {
+  const filterTablesForPrivacy = (filteredComponents: Record<string, Schema>, options: any = {
+  }) => {
     // filter the tables for privacy based on the filtered components.
     const result = archetables.map((table, index) => {
       if (index !== table.id) {
@@ -730,26 +758,27 @@ export function createCoreECS<
       }
 
       const {rows, columns} = table;
+      console.log(`Filtering table ${index} with rows: ${rows} and columns: ${Object.keys(columns).join(", ")}`);
       const filteredColumns = Object.fromEntries(
           Object.entries(columns)
-              .filter(([name, schema]) => Object.keys(filteredComponents).includes(name))
               .map(([name, column]) => {
-                // Use the filtered component's default value if available and column data is empty/undefined
-                let value = column.toJSON(rows, name !== "id");
-                // Get the filtered component schema with default values
-                const filteredComponentSchema = filteredComponents[name];
-                // If the column has no data and the filtered component has a default, use the default
-                if ((value === undefined || value === null || (Array.isArray(value) && value.length === 0))
-                    && filteredComponentSchema?.default !== undefined) {
-                  // Create array filled with default values for the number of rows
-                  if (rows > 0) {
-                    value = new Array(rows).fill(filteredComponentSchema.default);
-                  } else {
-                    value = [];
-                  }
-                }
+                const data = column.toJSON(rows, name !== "id");
+                console.log(`Processing column "${name}" with data: ${JSON.stringify(data)}`);
+                // console.log(`Filtered components: ${Object.keys(filteredComponents).join(", ")}`);
+                const shouldInclude = shouldIncludeComponentForSerialization(name, options);
+                console.log(`Should include component "${name}" for serialization: ${shouldInclude}`);
+                if (shouldIncludeComponentForSerialization(name, options)) {
+                // if (Object.keys(filteredComponents).includes(name)) {
+                // if (shouldIncludeComponentForSerialization(name, options)) {
+                // if ()
+                  return [name, data];
+                } else {
+                  // Use the filtered component's default value if available and column data is empty/undefined
 
-                return [name, value];
+                  // return [name, updateColumnForPrivacy(filteredComponents[name], rows, data) ];
+                  console.log(`Excluding component "${name}" for serialization, applying privacy filter.`);
+                  return [name, updateColumnForPrivacy_V2(filteredComponents[name], rows, data)];
+                }
               })
       );
 
@@ -758,7 +787,7 @@ export function createCoreECS<
           rows,
           columns: filteredColumns,
         },
-        isValidTable: Object.keys(filteredColumns).length >= 1,
+        isValidTable: Object.keys(filteredColumns).length >= 0,
       };
     }).filter(tableInfo => tableInfo.isValidTable)
         .map(tableInfo => tableInfo.table);
@@ -766,29 +795,28 @@ export function createCoreECS<
     return result;
   }
 
-   const filterTableForPrivacy = (filteredComponents: Record<string, Schema>, table: any) => {
+   const filterTableForPrivacy = (filteredComponents: Record<string, Schema>, table: any, options: any) => {
      // filter the tables for privacy based on the filtered components.
      const {rows, columns} = table;
      const filteredColumns = Object.fromEntries(
          Object.entries(columns)
-             .filter(([name, data]) => Object.keys(filteredComponents).includes(name))
              .map(([name, data]) => {
-               // For JSON data, we don't need to call toJSON since it's already serialized
-               let value = data;
-               // Get the filtered component schema with default values
-               const filteredComponentSchema = filteredComponents[name];
-               // If the column has no data and the filtered component has a default, use the default
-               if ((value === undefined || value === null || (Array.isArray(value) && value.length === 0))
-                   && filteredComponentSchema?.default !== undefined) {
-                 // Create array filled with default values for the number of rows
-                 if (rows > 0) {
-                   value = new Array(rows).fill(filteredComponentSchema.default);
-                 } else {
-                   value = [];
-                 }
-               }
+               console.log(`Processing column "${name}" with data: ${JSON.stringify(data)}`);
+               // console.log(`Filtered components: ${Object.keys(filteredComponents).join(", ")}`);
+               const shouldInclude = shouldIncludeComponentForSerialization(name, options);
+               console.log(`Should include component "${name}" for serialization: ${shouldInclude}`);
+               if (shouldIncludeComponentForSerialization(name, options)) {
+                 // if (Object.keys(filteredComponents).includes(name)) {
+                 // if (shouldIncludeComponentForSerialization(name, options)) {
+                 // if ()
+                 return [name, data];
+               } else {
+                 // Use the filtered component's default value if available and column data is empty/undefined
 
-               return [name, value];
+                 // return [name, updateColumnForPrivacy(filteredComponents[name], rows, data) ];
+                 console.log(`Excluding component "${name}" for serialization, applying privacy filter.`);
+                 return [name, updateColumnForPrivacy_V2(filteredComponents[name], rows, data)];
+               }
              })
      );
 
@@ -811,14 +839,15 @@ export function createCoreECS<
   }) => {
 
     // get the filtered components based on its own privacy attribute and the provided privacy options
-    const filteredComponents = filterComponentsForPrivacy(componentSchemas, options);
+    // const filteredComponents = filterComponentsForPrivacy(componentSchemas, options);
+    const filteredComponents = filterComponentsForPrivacy_V2(componentSchemas, options);
     // filter the tables for privacy based on the filtered components.
-    const filteredTables = filterTablesForPrivacy(filteredComponents);
+    const filteredTables = filterTablesForPrivacy(componentSchemas, options);
 
     return {
       ecs: true,
       version: SERIALIZATION_VERSION,
-      components: filteredComponents,
+      components: componentSchemas,
       entities: [...records.slice(0, recordCount * 2)],
       tables: filteredTables,
     } as const;
@@ -839,18 +868,19 @@ export function createCoreECS<
     }
 
     // filter the components for privacy
-    const filteredComponents = filterComponentsForPrivacy(json.components as Record<string, Schema>, options.privacyOptions);
+    // const filteredComponents = filterComponentsForPrivacy(json.components as Record<string, Schema>, json.privacyOptions);
+    // const filteredComponents = filterComponentsForPrivacy_V2(json.components as Record<string, Schema>, options.privacyOptions);
     recordCount = entities.length / 2;
     ensureRecordCapacity(recordCount);
     records.set(entities);
-    Object.assign(componentSchemas, filteredComponents);
+    Object.assign(componentSchemas, json.components);
 
     // create a set of the filtered components keys
     // const filteredComponentSchemaSet = new Set(Object.keys(filteredComponents));
 
     for (let i = 0; i < tables.length; i++) {
       const persistedTable = tables[i];
-      const { rows, columns } = filterTableForPrivacy(filteredComponents, persistedTable);
+      const { rows, columns } = filterTableForPrivacy(json.components, persistedTable, options.privacyOptions);
       const tableComponents = Object.keys(columns) as Component[];
       // filter the table components to remove any components that are not in the filtered components set
       // const components = tableComponents.filter(component => filteredComponentSchemaSet.has(component as string));
