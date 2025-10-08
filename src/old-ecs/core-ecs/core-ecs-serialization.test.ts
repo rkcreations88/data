@@ -268,7 +268,6 @@ describe("ecs-functions", () => {
     });
 
     const data = ecs.toJSON({ strictlyNecessary: true });
-    // expect(data.tables).toEqual("THIS_DATA");
     expect(data.components).toEqual({
       id: U32Schema,
       userName: { type: "string", privacy: "strictlyNecessary" },
@@ -280,8 +279,7 @@ describe("ecs-functions", () => {
       userSettings: { default: {}, privacy: "functional" },
     });
 
-    // expect(data.tables).toEqual("THIS_DATA");
-    // Should only have tables with strictly necessary components
+    // Should only have table columns with strictly necessary components
     expect(data.tables).toHaveLength(4);
 
     const appVersionTable = data.tables.find(table => table.columns.appVersion);
@@ -354,7 +352,7 @@ describe("ecs-functions", () => {
       advertising: true,
     });
 
-    // expect(data.tables).toEqual("THIS_DATA");
+    // Should include all components
     expect(data.tables).toHaveLength(2);
     expect(data.tables[1].columns["userName"]).contains("testUser");
     expect(data.tables[1].columns["preferences"]).toEqual([{ theme: "dark" }]);
@@ -399,7 +397,7 @@ describe("ecs-functions", () => {
     });
 
     expect(readData.components).toHaveProperty("userName");
-    // expect(readData.components).toHaveProperty("preferences");
+    expect(readData.components).toHaveProperty("preferences");
     expect(readData.components).toHaveProperty("analytics");
 
     expect(readData.tables).toHaveLength(2);
@@ -426,16 +424,13 @@ describe("ecs-functions", () => {
       preferences: { theme: "dark" },
     });
 
-    // Save with functional privacy level
+    // Save with all privacy levels
     const functionalData = ecs1.toJSON({
       strictlyNecessary: true,
       functional: true,
       performance: true,
       advertising: true,
     });
-
-    // expect(JSON.stringify(functionalData, null, 2)).toBe("SHOW_ME_THE_VALUE1" + entityId);
-    // expect(ecs1.getEntityValues(3)).toBe("SHOW_ME_THE_VALUE1" + entityId);
 
     // Load back with same privacy settings
     const ecs2 = createCoreECS({ data: functionalData, privacyOptions: {
@@ -469,7 +464,6 @@ describe("ecs-functions", () => {
     });
 
     const data = ecs.toJSON({ strictlyNecessary: true }); // Performance not included
-    // expect(data).toEqual("THIS_DATA");
     expect(data.components).toHaveProperty("legacyField");
     expect(data.components).toHaveProperty("newPrivateField");
 
