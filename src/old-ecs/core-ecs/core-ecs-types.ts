@@ -111,7 +111,12 @@ export interface CoreECSRead<
   selectEntities<T extends CoreComponents>(
     archetype: CoreArchetype<T>
   ): Entity[];
-  toJSON(): ECSJSON;
+  toJSON(options?: {
+    strictlyNecessary?: boolean;
+    functional?: boolean;
+    performance?: boolean;
+    advertising?: boolean;
+  }): ECSJSON;
 }
 
 export interface CoreECSWrite<
