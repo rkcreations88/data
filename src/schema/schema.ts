@@ -66,35 +66,6 @@ export const isSchema = (schema: unknown): schema is Schema => {
   );
 }
 
-export const getDefaultValueForSchemaType = (schema: Schema): any => {
-  switch(schema.type) {
-    case 'number':
-    case 'integer':
-      return 0;
-    case 'string':
-      return '';
-    case 'boolean':
-      return false;
-    case 'object':
-      return {};
-    case 'array':
-      return [];
-    case 'typed-buffer':
-      return new Uint8Array();
-    case 'blob':
-      return null;
-    default:
-      // For schemas with const, enum, or other constraints
-      if (schema.const !== undefined) {
-        return schema.const;
-      } else if (schema.enum && schema.enum.length > 0) {
-        return schema.enum[0];
-      } else {
-        return undefined;
-      }
-  }
-}
-
 export interface Schema {
   type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object' | 'typed-buffer' | 'blob';
   conditionals?: readonly Conditional[];

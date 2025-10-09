@@ -250,9 +250,9 @@ describe("ecs-functions", () => {
     const ecs = createCoreECS()
       .withComponents({
         userName: { type: "string", privacy: "strictlyNecessary" },
-        preferences: { type: "object", privacy: "functional" },
-        analytics: { type: "object", privacy: "performance" },
-        ads: { type: "object", privacy: "advertising" },
+        preferences: { type: "object", privacy: "functional", default: {} },
+        analytics: { type: "object", privacy: "performance", default: {} },
+        ads: { type: "object", privacy: "advertising", default: {} },
         unclassified: { type: "string" }, // No privacy classification
       } as const)
       .withResources({
@@ -267,16 +267,19 @@ describe("ecs-functions", () => {
       analytics: { pageViews: 42 },
     });
 
-    const data = ecs.toJSON({ strictlyNecessary: true });
+    const data = ecs.toJSON( { privacy : {
+        strictlyNecessary: true
+      }
+    });
     expect(data.components).toEqual({
       id: U32Schema,
       userName: { type: "string", privacy: "strictlyNecessary" },
       unclassified: { type: "string" },
       appVersion: { default: "1.0.0", privacy: "strictlyNecessary" },
-      ads: { type: "object", privacy: "advertising" },
-      analytics: { type: "object", privacy: "performance" },
-      preferences: { type: "object", privacy: "functional" },
-      userSettings: { default: {}, privacy: "functional" },
+      ads: { type: "object", privacy: "advertising" , default: {} },
+      analytics: { type: "object", privacy: "performance" , default: {} },
+      preferences: { type: "object", privacy: "functional" , default: {} },
+      userSettings: { default: {}, privacy: "functional"},
     });
 
     // Should only have table columns with strictly necessary components
@@ -298,8 +301,8 @@ describe("ecs-functions", () => {
     const ecs = createCoreECS()
       .withComponents({
         userName: { type: "string", privacy: "strictlyNecessary" },
-        preferences: { type: "object", privacy: "functional" },
-        analytics: { type: "object", privacy: "performance" },
+        preferences: { type: "object", privacy: "functional" , default: { } },
+        analytics: { type: "object", privacy: "performance" , default: { } },
       } as const);
 
     const userArchetype = ecs.getArchetype("id", "userName", "preferences", "analytics");
@@ -309,16 +312,17 @@ describe("ecs-functions", () => {
       analytics: { pageViews: 42 },
     });
 
-    const data = ecs.toJSON({
-      strictlyNecessary: true,
-      functional: true
+    const data = ecs.toJSON({ privacy: {
+        strictlyNecessary: true,
+        functional: true
+      }
     });
 
     expect(data.components).toEqual({
       id: U32Schema,
       userName: { type: "string", privacy: "strictlyNecessary" },
-      preferences: { type: "object", privacy: "functional" },
-      analytics: { type: "object", privacy: "performance" },
+      preferences: { type: "object", privacy: "functional", default: {} },
+      analytics: { type: "object", privacy: "performance", default: {} },
     });
 
     // Should have user table with userName and preferences, but not analytics
@@ -332,9 +336,9 @@ describe("ecs-functions", () => {
     const ecs = createCoreECS()
       .withComponents({
         userName: { type: "string", privacy: "strictlyNecessary" },
-        preferences: { type: "object", privacy: "functional" },
-        analytics: { type: "object", privacy: "performance" },
-        ads: { type: "object", privacy: "advertising" },
+        preferences: { type: "object", privacy: "functional" , default: { } },
+        analytics: { type: "object", privacy: "performance" , default: { } },
+        ads: { type: "object", privacy: "advertising" , default: { } },
       } as const);
 
     const userArchetype = ecs.getArchetype("id", "userName", "preferences", "analytics", "ads");
@@ -345,11 +349,12 @@ describe("ecs-functions", () => {
       ads: { clicks: 100 },
     });
 
-    const data = ecs.toJSON({
-      strictlyNecessary: true,
-      functional: true,
-      performance: true,
-      advertising: true,
+    const data = ecs.toJSON({ privacy: {
+        strictlyNecessary: true,
+        functional: true,
+        performance: true,
+        advertising: true,
+      }
     });
 
     // Should include all components
@@ -365,8 +370,8 @@ describe("ecs-functions", () => {
     const ecs1 = createCoreECS()
       .withComponents({
         userName: { type: "string", privacy: "strictlyNecessary" },
-        preferences: { type: "object", privacy: "functional" },
-        analytics: { type: "object", privacy: "performance" },
+        preferences: { type: "object", privacy: "functional" , default: { } },
+        analytics: { type: "object", privacy: "performance" , default : { } },
       } as const);
 
     const userArchetype = ecs1.getArchetype("id", "userName", "preferences", "analytics");
@@ -377,23 +382,25 @@ describe("ecs-functions", () => {
     });
 
     // Save all data
-    const fullData = ecs1.toJSON( {
+    const fullData = ecs1.toJSON( { privacy: {
         strictlyNecessary: true,
         functional: true,
         performance: true,
         advertising: true,
+      }
     });
 
     // Load ECS data
-    const ecs2 = createCoreECS({ data: fullData, privacyOptions: {
+    const ecs2 = createCoreECS({ data: fullData, privacy: {
       strictlyNecessary: true,
       functional: true,
     } });
 
     // Read data
-    const readData = ecs2.toJSON({
-      strictlyNecessary: true,
-      functional: true,
+    const readData = ecs2.toJSON({ privacy: {
+        strictlyNecessary: true,
+        functional: true,
+      }
     });
 
     expect(readData.components).toHaveProperty("userName");
@@ -410,8 +417,8 @@ describe("ecs-functions", () => {
     const ecs1 = createCoreECS()
       .withComponents({
         userName: { type: "string", privacy: "strictlyNecessary" },
-        preferences: { type: "object", privacy: "functional" },
-        analytics: { type: "object", privacy: "performance" },
+        preferences: { type: "object", privacy: "functional" , default: { } },
+        analytics: { type: "object", privacy: "performance" , default: { } },
       } as const)
       .withResources({
         appConfig: { default: { version: "1.0" }, privacy: "strictlyNecessary" },
@@ -425,15 +432,16 @@ describe("ecs-functions", () => {
     });
 
     // Save with all privacy levels
-    const functionalData = ecs1.toJSON({
-      strictlyNecessary: true,
-      functional: true,
-      performance: true,
-      advertising: true,
+    const functionalData = ecs1.toJSON({ privacy: {
+        strictlyNecessary: true,
+        functional: true,
+        performance: true,
+        advertising: true,
+      }
     });
 
     // Load back with same privacy settings
-    const ecs2 = createCoreECS({ data: functionalData, privacyOptions: {
+    const ecs2 = createCoreECS({ data: functionalData, privacy: {
       strictlyNecessary: true,
     } });
 
@@ -454,7 +462,7 @@ describe("ecs-functions", () => {
     const ecs = createCoreECS()
       .withComponents({
         legacyField: { type: "string" }, // No privacy classification
-        newPrivateField: { type: "string", privacy: "performance" },
+        newPrivateField: { type: "string", privacy: "performance" , default: "defaultValue"},
       } as const);
 
     const archetype = ecs.getArchetype("id", "legacyField", "newPrivateField");
@@ -463,7 +471,9 @@ describe("ecs-functions", () => {
       newPrivateField: "should be filtered",
     });
 
-    const data = ecs.toJSON({ strictlyNecessary: true }); // Performance not included
+    const data = ecs.toJSON({
+        privacy: { strictlyNecessary: true }
+    }); // Performance not included
     expect(data.components).toHaveProperty("legacyField");
     expect(data.components).toHaveProperty("newPrivateField");
 
