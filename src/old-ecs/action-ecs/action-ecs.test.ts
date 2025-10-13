@@ -45,7 +45,7 @@ const createECSWithMassAndSize = () => {
       check: ["id", "checkCreatedTime", "checkCreatedBy"],
     } as const)
     .withResources({
-      gravity: 9.8,
+      gravity: { default: 9.8, privacy: 'strictlyNecessary' },
     })
     .withActions({
       createPhysical(t, mass: number, size: "small" | "medium" | "large") {

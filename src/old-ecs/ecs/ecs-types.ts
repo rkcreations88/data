@@ -125,6 +125,13 @@ export interface ECS<
     Simplify<A & { -readonly [AN in keyof S]: Archetype<{ [PN in S[AN][number]]: C[PN] }> }>,
     R
   >;
+  withResources<S extends { readonly [K: string]: Schema & { default: any } }> (
+      resources: S
+  ): ECS<
+    C,
+    A,
+    Simplify<R & { -readonly [K in keyof S]: FromSchema<S[K]>}>
+  >;
   withResources<S extends { [K: string]: Data }>(
     resources: S
   ): ECS<C, A, Simplify<R & S>>;
