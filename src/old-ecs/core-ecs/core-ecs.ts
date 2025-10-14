@@ -47,10 +47,10 @@ import {
   ECSJSON,
   CoreResources,
 } from "./core-ecs-types.js";
-import { PrivacyOptions } from "../../privacy/types.js";
+import { PrivacyOptions } from "../privacy/types.js";
 import { U32Schema } from "../../schema/u32.js";
 import { isSchema } from "../../schema/schema.js";
-import { filterTableForPrivacy, getFilteredColumn } from "../../privacy/helper-functions.js";
+import { filterTableForPrivacy, getFilteredColumn } from "../privacy/helper-functions.js";
 
 //  This is a sentinel value used to indicate a component should be deleted.
 export const DELETE: unknown = "_@_DELETE_@_";
