@@ -22,3 +22,7 @@ SOFTWARE.*/
 
 
 export * from "./pick-from-tables.js";
+export * from "./pick-result.js";
+export * from "./get-closest-entity-to-point.js";
+export * from "./get-closest-entity-to-line.js";
+export * from "./get-intersecting-entities.js";

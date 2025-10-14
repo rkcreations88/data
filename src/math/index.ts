@@ -21,57 +21,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 export * from "./constants.js";
-// Export the type Mat4x4
-export type Mat4x4 = import("./mat4x4/mat4x4.js").Type;
-// Export the namespace Mat4x4
-export * as Mat4x4 from "./mat4x4/mat4x4.js";
-
-// Export the type F32
-export type F32 = import("./f32/f32.js").Type;
-// Export the namespace F32
-export * as F32 from "./f32/f32.js";
-
-// Export the type F32
-export type U32 = import("./u32/u32.js").Type;
-// Export the namespace F32
-export * as U32 from "./u32/u32.js";
-
-// Export the type F32
-export type I32 = import("./i32/i32.js").Type;
-// Export the namespace F32
-export * as I32 from "./i32/i32.js";
-
-// Export the type Vec2
-export type Vec2 = import("./vec2/vec2.js").Type;
-// Export the namespace Vec2
-export * as Vec2 from "./vec2/vec2.js";
-
-// Export the type Vec3
-export type Vec3 = import("./vec3/vec3.js").Type;
-// Export the namespace Vec3
-export * as Vec3 from "./vec3/vec3.js";
-// Export the type Vec4
-export type Vec4 = import("./vec4/vec4.js").Type;
-// Export the namespace Vec4
-export * as Vec4 from "./vec4/vec4.js";
-
-// Export the type Quat
-export type Quat = import("./quat/quat.js").Type;
-// Export the namespace Quat
-export * as Quat from "./quat/quat.js";
-
-// Export the type Aabb  
-export type Aabb = import("./aabb/aabb.js").Type;
-// Export the namespace Aabb
-export * as Aabb from "./aabb/aabb.js";
-
-// Export the type Line2
-export type Line2 = import("./line2/line2.js").Type;
-// Export the namespace Line2
-export * as Line2 from "./line2/line2.js";
-
-// Export the type Line3
-export type Line3 = import("./line3/line3.js").Type;
-// Export the namespace Line3
-export * as Line3 from "./line3/line3.js";
+export * from "./mat4x4/mat4x4.js";
+export * from "./f32/f32.js";
+export * from "./u32/u32.js";
+export * from "./i32/i32.js";
+export * from "./vec2/vec2.js";
+export * from "./vec3/vec3.js";
+export * from "./vec4/vec4.js";
+export * from "./quat/quat.js";
+export * from "./aabb/aabb.js";
+export * from "./line2/line2.js";
+export * from "./line3/line3.js";
+export * from "./aabb-face/aabb-face.js";
+export * from "./plane/plane.js";
 export * from "./picking/index.js";

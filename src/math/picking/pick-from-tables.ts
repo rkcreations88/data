@@ -20,122 +20,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-
 import { Table } from "../../table/index.js";
 import { Aabb } from "../index.js";
 import { Line3 } from "../index.js";
-import { Vec3 } from "../index.js";
 import { Entity } from "../../ecs/index.js";
 import { PickResult } from "./pick-result.js";
-
-/**
- * Determines which face of a cube was hit based on the intersection point
- * @param position World position of the intersection
- * @param aabb Bounding box of the cube
- * @returns Face index: 0=POS_Z, 1=POS_X, 2=NEG_Z, 3=NEG_X, 4=POS_Y, 5=NEG_Y
- */
-function determineFaceFromPosition(position: Vec3, aabb: Aabb): number {
-    const aabbCenter = Aabb.center(aabb);
-    const localPos = [
-        position[0] - aabbCenter[0],
-        position[1] - aabbCenter[1],
-        position[2] - aabbCenter[2]
-    ];
-
-    // Find the face with the largest absolute coordinate (closest to cube surface)
-    const absX = Math.abs(localPos[0]);
-    const absY = Math.abs(localPos[1]);
-    const absZ = Math.abs(localPos[2]);
-
-    if (absX >= absY && absX >= absZ) {
-        // X-axis face (NEG_X or POS_X)
-        return localPos[0] > 0 ? 1 : 3; // 1=POS_X, 3=NEG_X
-    } else if (absY >= absZ) {
-        // Y-axis face (NEG_Y or POS_Y)
-        return localPos[1] > 0 ? 4 : 5; // 4=POS_Y, 5=NEG_Y
-    } else {
-        // Z-axis face (NEG_Z or POS_Z)
-        return localPos[2] > 0 ? 0 : 2; // 0=POS_Z, 2=NEG_Z
-    }
-}
-
-function getIntersectingEntities<T extends Table<{ id: Entity, boundingBox: Aabb }>>(options: {
-    tables: readonly T[],
-    line: Line3,
-    radius?: number,
-    predicate?: (table: T, row: number) => boolean,
-}): Map<Entity, Aabb> {
-    const { tables, line, radius = 0, predicate } = options;
-    const rows = new Map<number, Aabb>();
-    for (const table of tables) {
-        for (let row = 0; row < table.rowCount; row++) {
-            const boundingBox = table.columns.boundingBox.get(row);
-            if (Aabb.lineIntersection(boundingBox, line, radius) !== -1 && (predicate?.(table, row) ?? true)) {
-                rows.set(table.columns.id.get(row), boundingBox);
-            }
-        }
-    }
-    return rows;
-}
-
-function getClosestEntityToPoint(rows: Map<Entity, Aabb>, point: Vec3): PickResult | null {
-    let closestRow = -1;
-    let closestDistanceSquared = Infinity;
-    let closestAabb: Aabb | null = null;
-    for (const [row, aabb] of rows) {
-        const distSquared = Vec3.distanceSquared(point, Aabb.center(aabb));
-        if (distSquared < closestDistanceSquared) {
-            closestDistanceSquared = distSquared;
-            closestRow = row;
-            closestAabb = aabb;
-        }
-    }
-    if (closestRow !== -1 && closestAabb) {
-        // For direct intersection, use the intersection point if possible
-        // We'll use the intersection alpha from Aabb.lineIntersection
-        // If the line starts inside, alpha=0, so position is line.a
-        // Otherwise, Line3.interpolate at alpha
-        return {
-            entity: closestRow,
-            position: point,
-            face: determineFaceFromPosition(point, closestAabb),
-        };
-    }
-    return null;
-}
-
-function getClosestEntityToLine(rows: Map<Entity, Aabb>, line: Line3): PickResult | null {
-    let closestEntity: Entity | null = null;
-    let closestDistanceSquared = Infinity;
-    let closestAlpha = Infinity;
-    let pickedPosition: Vec3 | null = null;
-    for (const [id, aabb] of rows) {
-        const aabbCenter = Aabb.center(aabb);
-        const alpha = Line3.closestPointOnLine(line, aabbCenter);
-        const closestPointOnLineSegment = Line3.interpolate(line, alpha);
-        const distSquared = Vec3.distanceSquared(aabbCenter, closestPointOnLineSegment);
-        if (
-            distSquared < closestDistanceSquared ||
-            (distSquared === closestDistanceSquared && alpha < closestAlpha)
-        ) {
-            closestDistanceSquared = distSquared;
-            closestAlpha = alpha;
-            closestEntity = id;
-            pickedPosition = closestPointOnLineSegment;
-        }
-    }
-    if (closestEntity !== null && pickedPosition) {
-        return {
-            entity: closestEntity,
-            position: pickedPosition,
-            face: determineFaceFromPosition(pickedPosition, rows.get(closestEntity)!),
-        };
-    }
-    return null;
-}
+import { getIntersectingEntities } from "./get-intersecting-entities.js";
+import { getClosestEntityToPoint } from "./get-closest-entity-to-point.js";
+import { getClosestEntityToLine } from "./get-closest-entity-to-line.js";
 
 /**
  * Picks the closest intersecting row from a table.
+ * This would be the broad phase picking step.
  * @returns The entity id and picked position, or null if no entity is found.
  */
 export function pickFromTables<T extends Table<{ id: Entity, boundingBox: Aabb }>>(options: {
@@ -158,8 +54,9 @@ export function pickFromTables<T extends Table<{ id: Entity, boundingBox: Aabb }
         if (best) {
             return {
                 entity: best.id,
-                position: Line3.interpolate(line, best.alpha),
-                face: determineFaceFromPosition(Line3.interpolate(line, best.alpha), rows.get(best.id)!),
+                lineAlpha: best.alpha,
+                entityPosition: Line3.interpolate(line, best.alpha),
+                // face: AabbFace.fromPosition(Line3.interpolate(line, best.alpha), rows.get(best.id)!),
             };
         }
         // fallback (should not happen):
