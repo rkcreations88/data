@@ -78,6 +78,13 @@ export interface ActionECS<
     R,
     F
   >;
+  withResources<S extends { readonly [K: string]: Schema & { default: any } }> (
+    resources: S
+  ): ActionECS<
+    C,
+    A,
+    Simplify<R & { -readonly [K in keyof S]: FromSchema<S[K]> }>
+  >;
   withResources<S extends { [K: string]: unknown }>(
     resources: S
   ): ActionECS<C, A, Simplify<R & S>, F>;
