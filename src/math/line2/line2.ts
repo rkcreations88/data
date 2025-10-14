@@ -25,71 +25,72 @@ import { getStructLayout } from "../../typed-buffer/index.js";
 import { Vec2 } from "../index.js";
 import { epsilon } from "../constants.js";
 
-const { schema: Vec2Schema } = Vec2;
+export type Line2 = FromSchema<typeof Line2.schema>;
 
-export const schema = {
-    type: 'object',
-    properties: {
-        a: Vec2Schema,
-        b: Vec2Schema,
-    },
-    required: ['a', 'b'],
-    additionalProperties: false,
-    default: {
-        a: Vec2Schema.default,
-        b: Vec2Schema.default,
-    }
-} as const satisfies Schema;
-export type Type = FromSchema<typeof schema>;
-type Line2 = Type;
+export namespace Line2 {
+    const { schema: Vec2Schema } = Vec2;
 
-export const layout = getStructLayout(schema);
+    export const schema = {
+        type: 'object',
+        properties: {
+            a: Vec2Schema,
+            b: Vec2Schema,
+        },
+        required: ['a', 'b'],
+        additionalProperties: false,
+        default: {
+            a: Vec2Schema.default,
+            b: Vec2Schema.default,
+        }
+    } as const satisfies Schema;
+    export const layout = getStructLayout(schema);
 
-// Line2 utility functions
-export const interpolate = (line: Line2, alpha: number): Vec2 => {
-    const a = line.a;
-    const b = line.b;
-    return [a[0] + alpha * (b[0] - a[0]), a[1] + alpha * (b[1] - a[1])];
-};
-
-export const intersects = (line1: Line2, line2: Line2, includeEndpoints = false): boolean => {
-    const a = line1.a;
-    const b = line1.b;
-    const c = line2.a;
-    const d = line2.b;
-
-    // Check for endpoint intersections
-    if (includeEndpoints && (
-        (Math.abs(a[0] - c[0]) < epsilon && Math.abs(a[1] - c[1]) < epsilon) ||
-        (Math.abs(a[0] - d[0]) < epsilon && Math.abs(a[1] - d[1]) < epsilon) ||
-        (Math.abs(b[0] - c[0]) < epsilon && Math.abs(b[1] - c[1]) < epsilon) ||
-        (Math.abs(b[0] - d[0]) < epsilon && Math.abs(b[1] - d[1]) < epsilon)
-    )) {
-        return true;
-    }
-
-    // Calculate the denominator
-    const denominator = (d[0] - c[0]) * (b[1] - a[1]) - (d[1] - c[1]) * (b[0] - a[0]);
-
-    // Check if lines are parallel or collinear
-    if (Math.abs(denominator) < epsilon) {
-        return false;
-    }
-
-    // Calculate intersection parameters
-    const numerator1 = (d[1] - c[1]) * (a[0] - c[0]) - (d[0] - c[0]) * (a[1] - c[1]);
-    const numerator2 = (b[1] - a[1]) * (a[0] - c[0]) - (b[0] - a[0]) * (a[1] - c[1]);
-
-    const ua = numerator1 / denominator;
-    const ub = numerator2 / denominator;
-
-    // Check if intersection point lies within both line segments
-    return ua >= -epsilon && ua <= 1 + epsilon && ub >= -epsilon && ub <= 1 + epsilon;
-};
-
-export const subLine = (line: Line2, alpha: number, beta: number): Line2 => {
-    return {
-        a: interpolate(line, alpha),
-        b: interpolate(line, beta),
+    // Line2 utility functions
+    export const interpolate = (line: Line2, alpha: number): Vec2 => {
+        const a = line.a;
+        const b = line.b;
+        return [a[0] + alpha * (b[0] - a[0]), a[1] + alpha * (b[1] - a[1])];
     };
-};
+
+    export const intersects = (line1: Line2, line2: Line2, includeEndpoints = false): boolean => {
+        const a = line1.a;
+        const b = line1.b;
+        const c = line2.a;
+        const d = line2.b;
+
+        // Check for endpoint intersections
+        if (includeEndpoints && (
+            (Math.abs(a[0] - c[0]) < epsilon && Math.abs(a[1] - c[1]) < epsilon) ||
+            (Math.abs(a[0] - d[0]) < epsilon && Math.abs(a[1] - d[1]) < epsilon) ||
+            (Math.abs(b[0] - c[0]) < epsilon && Math.abs(b[1] - c[1]) < epsilon) ||
+            (Math.abs(b[0] - d[0]) < epsilon && Math.abs(b[1] - d[1]) < epsilon)
+        )) {
+            return true;
+        }
+
+        // Calculate the denominator
+        const denominator = (d[0] - c[0]) * (b[1] - a[1]) - (d[1] - c[1]) * (b[0] - a[0]);
+
+        // Check if lines are parallel or collinear
+        if (Math.abs(denominator) < epsilon) {
+            return false;
+        }
+
+        // Calculate intersection parameters
+        const numerator1 = (d[1] - c[1]) * (a[0] - c[0]) - (d[0] - c[0]) * (a[1] - c[1]);
+        const numerator2 = (b[1] - a[1]) * (a[0] - c[0]) - (b[0] - a[0]) * (a[1] - c[1]);
+
+        const ua = numerator1 / denominator;
+        const ub = numerator2 / denominator;
+
+        // Check if intersection point lies within both line segments
+        return ua >= -epsilon && ua <= 1 + epsilon && ub >= -epsilon && ub <= 1 + epsilon;
+    };
+
+    export const subLine = (line: Line2, alpha: number, beta: number): Line2 => {
+        return {
+            a: interpolate(line, alpha),
+            b: interpolate(line, beta),
+        };
+    };
+}
