@@ -58,6 +58,14 @@ export interface UIProperties {
   };
 }
 
+export const isSchema = (schema: unknown): schema is Schema => {
+  return typeof schema === 'object' && schema !== null && (
+    'type' in schema && typeof schema.type === 'string'
+    ||
+    'default' in schema && typeof schema.default !== 'undefined'
+  );
+}
+
 export interface Schema {
   type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object' | 'typed-buffer' | 'blob';
   conditionals?: readonly Conditional[];
@@ -213,14 +221,14 @@ type FromOneOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number
   : never
   : never;
 
-type FromAllOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number> = 
+type FromAllOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number> =
   Schemas extends readonly [infer First, ...infer Rest]
-    ? First extends Schema
-      ? Rest extends ReadonlyArray<Schema>
-        ? FromSchema<First, Depth> & FromAllOfSchema<Rest, Depth>
-        : FromSchema<First, Depth>
-      : never
-    : {};
+  ? First extends Schema
+  ? Rest extends ReadonlyArray<Schema>
+  ? FromSchema<First, Depth> & FromAllOfSchema<Rest, Depth>
+  : FromSchema<First, Depth>
+  : never
+  : {};
 
 //  type check tests
 

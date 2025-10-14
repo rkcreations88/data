@@ -48,6 +48,7 @@ import {
   CoreResources,
 } from "./core-ecs-types.js";
 import { U32Schema } from "../../schema/u32.js";
+import { isSchema } from "../../schema/schema.js";
 
 //  This is a sentinel value used to indicate a component should be deleted.
 export const DELETE: unknown = "_@_DELETE_@_";
@@ -342,9 +343,11 @@ export function createCoreECS<
   const withResources = <T extends { readonly [K: string]: Data }>(
     newResources: T
   ): any => {
-    Object.entries(newResources).forEach(([name, value]) => {
+    Object.entries(newResources).forEach(([name, valueOrSchema]) => {
       //  register the resource as a component.
-      withComponents({ [name]: {} });
+      let schema: Schema = isSchema(valueOrSchema) ? valueOrSchema : { default: valueOrSchema };
+      withComponents({ [name]: schema });
+      const value = schema.default;
       const archetype = getArchetype("id", name as Component);
       //  resource row *may* already exist if loaded from disk.
       const entityId = archetype.rows

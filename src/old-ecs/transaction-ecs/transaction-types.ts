@@ -72,6 +72,13 @@ export interface TransactionECS<
     Simplify<A & { [AN in keyof S]: Archetype<{ [PN in S[AN][number]]: C[PN] }> }>,
     R
   >;
+  withResources<T extends { readonly [K: string]: Schema & { default: any } }> (
+    resources: T
+  ): TransactionECS<
+    C,
+    A,
+    Simplify<R & { -readonly [K in keyof T]: FromSchema<T[K]>}>
+  >;
   withResources<S extends { [K: string]: Data }>(
     resources: S
   ): TransactionECS<C, A, Simplify<R & S>>;
