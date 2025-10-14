@@ -20,6 +20,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { F32Schema, FromSchema } from "../../schema/index.js";
-export const schema = F32Schema
-export type Type = FromSchema<typeof schema>;
+import { I32Schema, FromSchema } from "../../schema/index.js";
+
+export type I32 = FromSchema<typeof I32.schema>;
+
+export namespace I32 {
+    export const schema = I32Schema;
+}

@@ -20,14 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-
 import { Entity } from "../../ecs/index.js";
 import { Vec3 } from "../index.js";
 
-// Returns the entity, picked position (Vec3), and face index (0-5 for cubes) or null if not found
-
 export interface PickResult {
+    /** The entity that was picked. */
     entity: Entity;
-    position: Vec3;
-    face: number; // 0-5: POS_Z, POS_X, NEG_Z, NEG_X, POS_Y, NEG_Y (matches flags.ts)
+    /** Alpha value (0-1) along the picking line where the intersection/closest point occurs. */
+    lineAlpha: number;
+    /** World-space position of the entity or closest point on the AABB. */
+    entityPosition: Vec3;
 }

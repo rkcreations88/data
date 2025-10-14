@@ -21,5 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { U32Schema, FromSchema } from "../../schema/index.js";
-export const schema = U32Schema
-export type Type = FromSchema<typeof schema>;
+
+export type U32 = FromSchema<typeof U32.schema>;
+
+export namespace U32 {
+    export const schema = U32Schema;
+}
