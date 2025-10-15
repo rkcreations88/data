@@ -111,11 +111,23 @@ function createTestDatabase() {
                 t.resources.generating = true;
             }
             return -1;
+        },
+        deletePositionEntities(t) {
+            for (const entity of t.select(["position"])) {
+                t.delete(entity);
+            }
         }
     });
 }
 
 describe("createDatabase", () => {
+    it("should support deleting entities", () => {
+        const store = createTestDatabase();
+        const entity = store.transactions.createPositionEntity({ position: { x: 1, y: 2, z: 3 } });
+        store.transactions.deletePositionEntities();
+        expect(store.locate(entity)).toBeNull();
+    });
+
     it("should notify component observers when components change", () => {
         const store = createTestDatabase();
         const positionObserver = vi.fn();
