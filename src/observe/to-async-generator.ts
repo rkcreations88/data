@@ -127,7 +127,7 @@ export function toAsyncGenerator<T>(
             cleanup();
             return Promise.resolve();
         }
-    };
+    } as unknown as AsyncGenerator<T>;
 
     return iterator;
 }
