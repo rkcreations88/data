@@ -19,15 +19,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+import { describe, it, expect } from "vitest";
+import { createConstBuffer } from "./create-const-buffer.js";
 
-import { Entity } from "../../ecs/index.js";
-import { Vec3 } from "../index.js";
+describe("createConstBuffer.copy", () => {
+    it("should produce a new buffer with same capacity and const semantics", () => {
+        const buf = createConstBuffer({ const: 7 }, 5);
+        const copy = buf.copy();
+        
+        expect(copy.capacity).toBe(5);
+        expect(copy.type).toBe("const");
+        
+        // Verify all elements return the const value
+        for (let i = 0; i < 5; i++) {
+            expect(copy.get(i)).toBe(7);
+        }
+    });
+});
 
-export interface PickResult {
-    /** The entity that was picked. */
-    entity: Entity;
-    /** Alpha value (0-1) along the picking line where the intersection/closest point occurs. */
-    lineAlpha: number;
-    /** World-space position of the entity or closest point on the AABB. */
-    entityPosition: Vec3;
-}
+

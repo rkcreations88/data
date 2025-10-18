@@ -34,4 +34,3 @@ export * from "./line2/line2.js";
 export * from "./line3/line3.js";
 export * from "./aabb-face/aabb-face.js";
 export * from "./plane/plane.js";
-export * from "./picking/index.js";

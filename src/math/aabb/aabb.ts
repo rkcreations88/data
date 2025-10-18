@@ -44,6 +44,14 @@ export namespace Aabb {
     } as const satisfies Schema;
     export const layout = getStructLayout(schema);
 
+    /**
+     * A unit AABB is a cube with side length 1 centered at the origin.
+     */
+    export const unit: Aabb = {
+        min: [-0.5, -0.5, -0.5],
+        max: [0.5, 0.5, 0.5],
+    };
+
     // AABB utility functions
     export const center = (aabb: Aabb): Vec3 => [
         (aabb.min[0] + aabb.max[0]) / 2,

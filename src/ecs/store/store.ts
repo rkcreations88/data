@@ -32,11 +32,10 @@ import { Undoable } from "../database/undoable.js";
 
 interface BaseStore<C extends object = never> {
     select<
-        Include extends StringKeyof<C>,
-        T extends Include
+        Include extends StringKeyof<C>
     >(
         include: readonly Include[] | ReadonlySet<string>,
-        options?: EntitySelectOptions<C, Pick<C & CoreComponents, T>>
+        options?: EntitySelectOptions<C, Pick<C & CoreComponents, Include>>
     ): readonly Entity[];
     toData(): unknown
 }
@@ -70,3 +69,6 @@ export interface Store<
     fromData(data: unknown): void
 }
 
+export type StoreComponents<S extends Store<any, any, any>> = S extends Store<infer C, infer R, infer A> ? C & R & A : never;
+export type StoreResources<S extends Store<any, any, any>> = S extends Store<any, infer R, any> ? R : never;
+export type StoreArchetypes<S extends Store<any, any, any>> = S extends Store<any, any, infer A> ? A : never;

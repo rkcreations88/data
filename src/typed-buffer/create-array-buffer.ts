@@ -31,9 +31,13 @@ class ArrayTypedBuffer<T> extends TypedBuffer<T> {
     
     private array: T[];
 
-    constructor(schema: Schema, initialCapacity: number) {
+    constructor(schema: Schema, initialCapacityOrArray: number | T[]) {
         super(schema);
-        this.array = new Array<T>(initialCapacity);
+        if (typeof initialCapacityOrArray === "number") {
+            this.array = new Array<T>(initialCapacityOrArray);
+        } else {
+            this.array = initialCapacityOrArray;
+        }
     }
 
     get capacity(): number {
@@ -65,6 +69,10 @@ class ArrayTypedBuffer<T> extends TypedBuffer<T> {
             return this.array;
         }
         return this.array.slice(start, end);
+    }
+
+    copy(): TypedBuffer<T> {
+        return new ArrayTypedBuffer<T>(this.schema, this.array.slice(0));
     }
 }
 

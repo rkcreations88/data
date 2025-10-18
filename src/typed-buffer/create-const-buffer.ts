@@ -60,6 +60,10 @@ class ConstTypedBuffer<T> extends TypedBuffer<T> {
     slice(start = 0, end = this.capacity): ArrayLike<T> & Iterable<T> {
         return Array(Math.max(0, end - start)).fill(this.constValue);
     }
+
+    copy(): TypedBuffer<T> {
+        return this;
+    }
 }
 
 export const createConstBuffer = <T>(

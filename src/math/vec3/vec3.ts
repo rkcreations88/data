@@ -78,6 +78,7 @@ export namespace Vec3 {
     };
 
     // Geometric Functions
+    export const lengthSquared = ([x, y, z]: Vec3): number => x * x + y * y + z * z;
     export const length = ([x, y, z]: Vec3): number => Math.sqrt(x * x + y * y + z * z);
     export const distance = (a: Vec3, b: Vec3): number => length(subtract(b, a));
     export const distanceSquared = (a: Vec3, b: Vec3): number => {

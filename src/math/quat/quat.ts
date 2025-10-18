@@ -84,7 +84,11 @@ export namespace Quat {
         const halfAngle = angle * 0.5;
         const s = Math.sin(halfAngle);
         const c = Math.cos(halfAngle);
-        return [axis[0] * s, axis[1] * s, axis[2] * s, c];
+        // Normalize the axis to ensure a unit quaternion
+        const len = Math.sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
+        if (len === 0) return identity;
+        const invLen = 1 / len;
+        return [axis[0] * invLen * s, axis[1] * invLen * s, axis[2] * invLen * s, c];
     };
 
     export const toAxisAngle = ([x, y, z, w]: Quat): { axis: Vec3; angle: number } => {
@@ -178,6 +182,11 @@ export namespace Quat {
     };
 
     // Matrix Conversion
+    /**
+     * Converts a quaternion to a 4x4 rotation matrix in column-major order.
+     * The resulting matrix is compatible with WebGPU and can be directly used
+     * with Mat4x4 operations.
+     */
     export const toMat4 = ([x, y, z, w]: Quat): Mat4x4 => {
         const xx = x * x;
         const yy = y * y;
@@ -189,10 +198,11 @@ export namespace Quat {
         const wy = w * y;
         const wz = w * z;
 
+        // Column-major format (WebGPU standard)
         return [
-            1 - 2 * (yy + zz), 2 * (xy - wz), 2 * (xz + wy), 0,
-            2 * (xy + wz), 1 - 2 * (xx + zz), 2 * (yz - wx), 0,
-            2 * (xz - wy), 2 * (yz + wx), 1 - 2 * (xx + yy), 0,
+            1 - 2 * (yy + zz), 2 * (xy + wz), 2 * (xz - wy), 0,
+            2 * (xy - wz), 1 - 2 * (xx + zz), 2 * (yz + wx), 0,
+            2 * (xz + wy), 2 * (yz - wx), 1 - 2 * (xx + yy), 0,
             0, 0, 0, 1
         ];
     };

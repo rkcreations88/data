@@ -19,24 +19,35 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { ReadonlyTypedBuffer, TypedBuffer } from "../typed-buffer/index.js";
+import { describe, it, expect } from "vitest";
+import { createStructBuffer } from "./create-struct-buffer.js";
+import type { Schema } from "../schema/schema.js";
 
-export interface ReadonlyTable<C> {
-    readonly columns: { readonly [K in keyof C]: ReadonlyTypedBuffer<C[K]> }
-    readonly rowCount: number;
-    readonly rowCapacity: number;
-}
+describe("createStructBuffer.copy", () => {
+    it("should deep-copy the underlying bytes and preserve capacity", () => {
+        const schema: Schema = {
+            type: "object",
+            properties: {
+                a: { type: "number", precision: 1 },
+                b: { type: "number", precision: 1 },
+                c: { type: "number", precision: 1 },
+            },
+            layout: "packed"
+        };
 
-export interface Table<C> extends ReadonlyTable<C> {
-    readonly columns: { readonly [K in keyof C]: TypedBuffer<C[K]> }
-    rowCount: number;
-    rowCapacity: number;
-}
+        const buf = createStructBuffer(schema, 2);
+        buf.set(0, { a: 1, b: 2, c: 3 });
+        buf.set(1, { a: 4, b: 5, c: 6 });
 
-export namespace Table {
+        const copy = buf.copy();
+        expect(copy.capacity).toBe(2);
+        expect(copy.get(0)).toEqual({ a: 1, b: 2, c: 3 });
+        expect(copy.get(1)).toEqual({ a: 4, b: 5, c: 6 });
 
-    export const hasColumn = <C, T extends keyof C>(table: Table<Partial<C>>, component: T): table is Table<C & { [K in T]: C[K] }> => {
-        return component in table.columns && table.columns[component] !== undefined;
-    }
+        // Mutate original and ensure copy is unaffected
+        buf.set(0, { a: 7, b: 8, c: 9 });
+        expect(copy.get(0)).toEqual({ a: 1, b: 2, c: 3 });
+    });
+});
 
-}
+

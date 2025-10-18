@@ -52,4 +52,5 @@ export abstract class TypedBuffer<T> implements ReadonlyTypedBuffer<T> {
     abstract get(index: number): T;
     abstract slice(start?: number, end?: number): ArrayLike<T> & Iterable<T>;
     abstract set(index: number, value: T): void;
+    abstract copy(): TypedBuffer<T>;
 }

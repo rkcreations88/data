@@ -98,6 +98,12 @@ class NumberTypedBuffer extends TypedBuffer<number> {
     slice(start = 0, end = this._capacity): ArrayLike<number> & Iterable<number> {
         return this.array.subarray(start, end);
     }
+
+    copy(): TypedBuffer<number> {
+        const copy = new NumberTypedBuffer(this.schema, this._capacity);
+        copy.array.set(this.array);
+        return copy;
+    }
 }
 
 export const createNumberBuffer = (

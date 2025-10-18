@@ -107,6 +107,16 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
         }
         return result;
     }
+
+    copy(): TypedBuffer<FromSchema<S>> {
+        const byteLength = this._capacity * this.layout.size;
+        const newArrayBuffer = new ArrayBuffer(byteLength);
+        // Copy underlying f32 data (structs are packed as float32 quads)
+        const dst = new Float32Array(newArrayBuffer);
+        const src = this.dataView[this.arrayType];
+        dst.set(src.subarray(0, this._capacity * this.sizeInQuads));
+        return new StructTypedBuffer<S, ArrayType>(this.schema as S, newArrayBuffer);
+    }
 }
 
 export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
