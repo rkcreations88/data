@@ -38,6 +38,7 @@ export type DragMove = {
 };
 export type DragEnd = {
     readonly type: 'end';
+    readonly delta: Vector2;
     readonly position: Vector2;
 };
 export type DragState = DragStart | DragMove | DragEnd;
@@ -64,8 +65,8 @@ export function useDragObserve(props: DragObserveProps, dependencies: unknown[])
                     delta,
                 });
             },
-            onDragEnd: (_e, position) => {
-                setDragState({ type: 'end', position });
+            onDragEnd: (_e, position, delta) => {
+                setDragState({ type: 'end', position, delta });
             },
             onDragCancel: () => {
                 setDragState({ type: 'cancel' });

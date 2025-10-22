@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
+import { Vec2 } from '../../math/vec2/vec2.js';
 import { useEffect } from './use-effect.js';
 
 export type Vector2 = readonly [number, number];
@@ -32,7 +33,7 @@ export interface DraggableProps {
     //  onDragStart should return the initial position of the element
     onDragStart: (e: PointerEvent) => Vector2 | void;
     onDrag: (e: PointerEvent, newPosition: Vector2, delta: Vector2) => void;
-    onDragEnd?: (e: PointerEvent, newPosition: Vector2) => void;
+    onDragEnd?: (e: PointerEvent, newPosition: Vector2, delta: Vector2) => void;
     /**
      * Called if this hook is destroyed before the drag is completed.
      */
@@ -67,7 +68,8 @@ export function useDraggable(element: HTMLElement, propsFunction: () => Draggabl
             if (distance >= minDragDistance) {
                 if (!isDragging) {
                     isDragging = true;
-                    startPosition = props.onDragStart(e) ?? [0, 0];
+                    const rect = element.getBoundingClientRect();
+                    startPosition = props.onDragStart(e) ?? [e.clientX - rect.left, e.clientY - rect.top];
                     if (dragCursor) {
                         originalCursor = element.style.cursor;
                         element.style.cursor = dragCursor;
@@ -109,7 +111,7 @@ export function useDraggable(element: HTMLElement, propsFunction: () => Draggabl
         function onPointerUp(e: PointerEvent) {
             cleanup();
             if (isDragging) {
-                props.onDragEnd?.(e, lastPosition);
+                props.onDragEnd?.(e, lastPosition, Vec2.subtract(lastPosition, startPosition));
             }
             if (stopPropagation) e.stopPropagation();
             downPosition = null;
