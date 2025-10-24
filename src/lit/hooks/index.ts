@@ -37,3 +37,4 @@ export * from "./attach-decorator.js";
 export * from "./use-drag-transaction.js";
 export * from "./use-drag-observe.js";
 export * from "./use-draggable.js";
+export * from "./use-updated.js";

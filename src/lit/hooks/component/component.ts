@@ -27,5 +27,6 @@ export interface Component extends EventTarget {
     readonly isConnected: boolean;
     hookIndex: number
     hooks: any[]
+    updatedListeners: Set<() => void>
     requestUpdate(): void
 }
