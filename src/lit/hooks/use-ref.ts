@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { useState } from "./use-state.js";
 
-export function useRef<T>(value: T): { value: T } {
-    const [state] = useState({ value });
+export function useRef<T>(initialValue: T): { current: T } {
+    const [state] = useState({ current: initialValue });
     return state;
 }
