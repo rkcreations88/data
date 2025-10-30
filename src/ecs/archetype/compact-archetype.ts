@@ -19,8 +19,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from './copy.js';
-export * from './grow.js';
-export * from './resize.js';
-export * from './is-array-buffer.js';
-export * from './is-shared-array-buffer.js';
+import * as TABLE from "../../table/index.js";
+import { Archetype } from "./archetype.js";
+import { CoreComponents } from "../core-components.js";
+
+/**
+ * Compacts an archetype by reducing its rowCapacity to match rowCount.
+ * This shrinks the underlying buffers to remove unused capacity.
+ * Useful before serialization to avoid storing unused buffer space.
+ */
+export const compactArchetype = <C extends CoreComponents>(archetype: Archetype<C>): void => {
+    TABLE.compactTable(archetype);
+};
+

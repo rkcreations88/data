@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { grow } from "../internal/array-buffer-like/grow.js";
+import { resize } from "../internal/array-buffer-like/resize.js";
 import { DataView32 } from "../internal/data-view-32/data-view-32.js";
 import { createDataView32 } from "../internal/data-view-32/create-data-view-32.js";
 import { FromSchema, Schema } from "../schema/schema.js";
@@ -77,8 +78,15 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
 
     set capacity(value: number) {
         if (value !== this._capacity) {
+            const newByteLength = value * this.layout.size;
+            const oldByteLength = this.arrayBuffer.byteLength;
             this._capacity = value;
-            this.arrayBuffer = grow(this.arrayBuffer, value * this.layout.size);
+            // Use resize for shrinking, grow for expanding
+            if (newByteLength < oldByteLength) {
+                this.arrayBuffer = resize(this.arrayBuffer, newByteLength);
+            } else {
+                this.arrayBuffer = grow(this.arrayBuffer, newByteLength);
+            }
             this.dataView = createDataView32(this.arrayBuffer);
             this.typedArray = this.dataView[this.arrayType];
         }

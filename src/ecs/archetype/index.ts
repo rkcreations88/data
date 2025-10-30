@@ -22,3 +22,4 @@ SOFTWARE.*/
 export * from "./archetype.js";
 export * from "./create-archetype.js";
 export * from "./delete-row.js";
+export * from "./compact-archetype.js";
