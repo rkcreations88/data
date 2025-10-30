@@ -22,12 +22,30 @@ SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createDatabase } from "./create-database.js";
 import { createStore } from "../store/create-store.js";
-import { TupleSchema } from "../../schema/tuple.js";
 import { F32Schema } from "../../schema/f32.js";
-import { U32Schema } from "../../schema/u32.js";
+import { Schema } from "../../schema/schema.js";
+import { Entity } from "../entity.js";
 
-const positionSchema = TupleSchema([F32Schema, F32Schema, F32Schema]);
-const healthSchema = TupleSchema([U32Schema, U32Schema]);
+const positionSchema = {
+    type: "object",
+    properties: {
+        x: F32Schema,
+        y: F32Schema,
+        z: F32Schema,
+    },
+    required: ["x", "y", "z"],
+    additionalProperties: false,
+} as const satisfies Schema;
+
+const healthSchema = {
+    type: "object",
+    properties: {
+        current: F32Schema,
+        max: F32Schema,
+    },
+    required: ["current", "max"],
+    additionalProperties: false,
+} as const satisfies Schema;
 
 describe("Database compact() integration test", () => {
     it("should reduce JSON serialization size after compacting deleted entities", () => {
@@ -36,21 +54,18 @@ describe("Database compact() integration test", () => {
                 position: positionSchema,
                 health: healthSchema,
             },
+            {},
             {
-                time: { default: { delta: 0.016, elapsed: 0 } }
+                PositionHealth: ["position", "health"]
             }
         );
 
         const database = createDatabase(store, {
-            createEntity: () => (args: { position: { x: number, y: number, z: number }, health: { current: number, max: number } }) => {
-                const archetype = store.ensureArchetype(["id", "position", "health"]);
-                return archetype.insert({
-                    position: args.position,
-                    health: args.health
-                });
+            createEntity(t, args: { position: { x: number, y: number, z: number }, health: { current: number, max: number } }) {
+                return t.archetypes.PositionHealth.insert(args);
             },
-            deleteEntity: () => (args: { entity: number }) => {
-                store.delete(args.entity);
+            deleteEntity(t, args: { entity: Entity }) {
+                t.delete(args.entity);
             }
         });
 
@@ -97,18 +112,18 @@ describe("Database compact() integration test", () => {
     });
 
     it("should maintain data integrity after compact and restore", () => {
-        const createTestDatabase = () => createDatabase(
-            createStore(
+        const createTestDatabase = () => {
+            const store = createStore(
                 { position: positionSchema },
-                { time: { default: { delta: 0.016, elapsed: 0 } } }
-            ),
-            {
-                createEntity: () => (args: { position: { x: number, y: number, z: number } }) => {
-                    const archetype = createTestDatabase().ensureArchetype(["id", "position"]);
-                    return archetype.insert({ position: args.position });
+                {},
+                { Position: ["position"] }
+            );
+            return createDatabase(store, {
+                createEntity(t, args: { position: { x: number, y: number, z: number } }) {
+                    return t.archetypes.Position.insert(args);
                 },
-            }
-        );
+            });
+        };
 
         const db1 = createTestDatabase();
 
