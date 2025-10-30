@@ -276,7 +276,10 @@ export function createDatabase<
         resources,
         transactions,
         observe,
-        toData: () => store.toData(),
+        toData: () => {
+            store.compact();
+            return store.toData();
+        },
         fromData: (data: unknown) => {
             store.compact();
             store.fromData(data);
