@@ -22,4 +22,3 @@ SOFTWARE.*/
 export * from "./store.js";
 export * from "./create-store.js";
 export * from "./archetype-components.js";
-export * from "./store-schema/index.js";

@@ -20,13 +20,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Assert } from "../../../types/assert.js";
-import { Equal } from "../../../types/equal.js";
-import { Archetype, CoreComponents } from "../../index.js";
-import { StoreFromSchema } from "./store-schema.js";
-import { createStoreSchema } from "./create-store-schema.js";
+import { Assert } from "../../types/assert.js";
+import { Equal } from "../../types/equal.js";
+import { Archetype, CoreComponents } from "../index.js";
+import { Store } from "./store.js";
 
-const storeSchema = createStoreSchema(
+const storeSchema = Store.Schema.create(
     {
         velocity: { type: "number" },
         particle: { type: "boolean" },
@@ -41,7 +40,7 @@ const storeSchema = createStoreSchema(
     }
 )
 
-type TestStore = StoreFromSchema<typeof storeSchema>;
+type TestStore = Store.FromSchema<typeof storeSchema>;
 type CheckParticle = Assert<Equal<TestStore["archetypes"]["Particle"], Archetype<CoreComponents & {
     particle: boolean;
 }>>>;
