@@ -46,7 +46,7 @@ type RenderArgs = {
 export function render(args: RenderArgs) {
   const { localized, todo, toggleComplete, deleteTodo, index, dragTodo } = args;
 
-  useDragTransaction(() => ({
+  useDragTransaction({
     transaction: dragTodo,
     update: (value) => {
       if (value.type === 'move') {
@@ -63,7 +63,7 @@ export function render(args: RenderArgs) {
         };
       }
     },
-  }), [dragTodo, todo.id, index]);
+  }, [dragTodo, todo.id, index]);
 
   const dragging = todo.dragPosition !== null;
   const position = index * TODO_ROW_HEIGHT + (todo.dragPosition ?? 0);
