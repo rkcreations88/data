@@ -856,7 +856,9 @@ describe("createDatabase", () => {
 
             // Create an async generator that only returns
             async function* returnOnly() {
+                // This generator yields nothing but returns a value
                 return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
+                yield; // This will never be reached but satisfies the linter
             }
 
             // Execute transaction with async generator
@@ -947,7 +949,9 @@ describe("createDatabase", () => {
                 {
                     name: "return-only (no yields)",
                     generator: async function* returnOnly() {
+                        // This generator yields nothing but returns a value
                         return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
+                        yield; // This will never be reached but satisfies the linter
                     },
                     expectedFinalName: "ReturnOnly",
                     expectedFinalPosition: { x: 100, y: 200, z: 300 }

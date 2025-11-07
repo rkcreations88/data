@@ -132,4 +132,4 @@ export function createStructBuffer<S extends Schema, ArrayType extends keyof Dat
     initialCapacityOrArrayBuffer: number | ArrayBuffer,
 ): TypedBuffer<FromSchema<S>> {
     return new StructTypedBuffer<S, ArrayType>(schema, initialCapacityOrArrayBuffer);
-};
+}

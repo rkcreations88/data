@@ -58,14 +58,13 @@ function createTestObservable<T>(
 // Helper function to collect all values from an async generator
 async function collectValues<T>(generator: AsyncGenerator<T>): Promise<T[]> {
     const values: T[] = [];
-    try {
-        while (true) {
-            const result = await generator.next();
-            if (result.done) break;
+    let done = false;
+    while (!done) {
+        const result = await generator.next();
+        done = result.done;
+        if (!done) {
             values.push(result.value);
         }
-    } catch (error) {
-        throw error;
     }
     return values;
 }

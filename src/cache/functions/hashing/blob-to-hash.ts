@@ -45,10 +45,13 @@ export async function blobToHash(blob: Blob): Promise<string> {
     await writer.write(tBytes);
 
     const reader = blob.stream().getReader();
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      await writer.write(value!);
+    let done = false;
+    while (!done) {
+      const result = await reader.read();
+      done = result.done;
+      if (!done) {
+        await writer.write(result.value!);
+      }
     }
     await writer.close();
 

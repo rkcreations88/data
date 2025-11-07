@@ -33,6 +33,7 @@ export interface Table<C> extends ReadonlyTable<C> {
     rowCapacity: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Table {
 
     export const hasColumn = <C, T extends keyof C>(table: Table<Partial<C>>, component: T): table is Table<C & { [K in T]: C[K] }> => {

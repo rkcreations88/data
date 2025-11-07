@@ -35,6 +35,9 @@ module.exports = {
       'error',
       'block',
       headerLines,
+      {
+        fixable: false  // Disable auto-fixing to prevent header duplication
+      }
     ],
     '@typescript-eslint/no-explicit-any': 'off',  // Allow 'any' type
     '@typescript-eslint/no-non-null-assertion': 'off',  // Allow non-null assertions

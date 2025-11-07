@@ -25,6 +25,7 @@ import { getStructLayout } from "../../typed-buffer/index.js";
 
 export type Vec2 = FromSchema<typeof Vec2.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Vec2 {
     export const schema = {
         type: 'array',

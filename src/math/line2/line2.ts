@@ -27,6 +27,7 @@ import { epsilon } from "../constants.js";
 
 export type Line2 = FromSchema<typeof Line2.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Line2 {
     const { schema: Vec2Schema } = Vec2;
 
