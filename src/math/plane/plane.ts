@@ -26,6 +26,7 @@ import { Vec3, F32, Line3, epsilon } from "../index.js";
 
 export type Plane = FromSchema<typeof Plane.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Plane {
     export const schema = {
         type: 'object',

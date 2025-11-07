@@ -31,7 +31,7 @@ export function useEffect<T extends Component>(callback: EffectCallback, depende
     const component = Component_stack.active() as T;
     const hookIndex = component.hookIndex++;
     const oldHookState = component.hooks[hookIndex] as EffectHookState | undefined;
-    let rerunEffect = !oldHookState || !equalsShallow(dependencies, oldHookState.dependencies);
+    const rerunEffect = !oldHookState || !equalsShallow(dependencies, oldHookState.dependencies);
     if (rerunEffect) {
         oldHookState?.dispose?.();
         component.hooks[hookIndex] = { dispose: callback.call(component) ?? undefined, dependencies };

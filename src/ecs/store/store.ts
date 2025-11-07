@@ -75,6 +75,7 @@ export interface Store<
     fromData(data: unknown): void
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Store {
     export type Components<S extends Store<any, any, any>> = S extends Store<infer C, infer R, infer A> ? C & R & A : never;
     export type Resources<S extends Store<any, any, any>> = S extends Store<any, infer R, any> ? R : never;
@@ -94,6 +95,7 @@ export namespace Store {
 
     export type FromSchema<T> = T extends Store.Schema<infer CS, infer RS, infer A> ? Store<FromSchemas<CS>, FromSchemas<RS>, A> : never;
 
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     export namespace Schema {
         export function create<
             const CS extends ComponentSchemas,
@@ -105,7 +107,7 @@ export namespace Store {
             archetypes: A,
         ) {
             return { components, resources, archetypes } as const satisfies Store.Schema<CS, RS, A>;
-        };
+        }
 
     }
 
@@ -117,7 +119,7 @@ export namespace Store {
         schema: Store.Schema<CS, RS, A>,
     ) {
         return createStore(schema.components, schema.resources, schema.archetypes);
-    };
+    }
 }
 
 type Foo = Store<{ a: number, b: string }, {}, { one: ["a", "b"] }>

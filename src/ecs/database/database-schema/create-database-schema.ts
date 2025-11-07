@@ -42,7 +42,7 @@ export function createDatabaseSchema<
     transactions: TD,
 ) {
     return { components, resources, archetypes, transactions } as const satisfies DatabaseSchema<CS, RS, A, TD>;
-};
+}
 
 export function createDatabaseFromSchema<
     const CS extends ComponentSchemas,
@@ -56,4 +56,4 @@ export function createDatabaseFromSchema<
         createStore<CS, RS, A>(schema.components, schema.resources, schema.archetypes),
         schema.transactions as any
     ) as any;
-};
+}

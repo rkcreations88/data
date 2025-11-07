@@ -45,4 +45,4 @@ export function withDefault<T>(defaultValue: T, observable: Observe<T | undefine
 
     return unobserverInternal;
   };
-};
+}

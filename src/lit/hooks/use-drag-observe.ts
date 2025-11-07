@@ -20,9 +20,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { DraggableProps, Vector2, useDraggable } from './use-draggable.js';
+import { DraggableProps, useDraggable } from './use-draggable.js';
 import { useElement } from './use-element.js';
 import { createObservableEvent } from '../../observe/index.js';
+import { Vec2 } from '../../math/index.js';
 
 export type DragObserveProps = Pick<
     DraggableProps,
@@ -33,13 +34,13 @@ export type DragStart = {
 };
 export type DragMove = {
     readonly type: 'move';
-    readonly delta: Vector2;
-    readonly position: Vector2;
+    readonly delta: Vec2;
+    readonly position: Vec2;
 };
 export type DragEnd = {
     readonly type: 'end';
-    readonly delta: Vector2;
-    readonly position: Vector2;
+    readonly delta: Vec2;
+    readonly position: Vec2;
 };
 export type DragState = DragStart | DragMove | DragEnd;
 
@@ -53,7 +54,7 @@ export function useDragObserve(props: DragObserveProps, dependencies: unknown[])
     const [dragState, setDragState] = createObservableEvent<DragState>();
     const element = useElement();
     useDraggable(element,
-        () => ({
+        {
             ...props,
             onDragStart: _e => {
                 setDragState({ type: 'start' });
@@ -71,7 +72,7 @@ export function useDragObserve(props: DragObserveProps, dependencies: unknown[])
             onDragCancel: () => {
                 setDragState({ type: 'cancel' });
             },
-        }),
+        },
         dependencies
     );
     return dragState;

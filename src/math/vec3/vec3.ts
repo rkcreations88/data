@@ -25,6 +25,7 @@ import { getStructLayout } from "../../typed-buffer/index.js";
 
 export type Vec3 = FromSchema<typeof Vec3.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Vec3 {
     export const schema = {
         type: 'array',

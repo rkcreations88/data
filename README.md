@@ -11,6 +11,11 @@ Adobe Data Oriented Programming Library
 
 Until we reach 1.0.0, minor version changes may be API breaking.
 
+## Data Oriented Programming
+
+This library is built using a data oriented and functional programming paradigm.
+We prefer composition over inheritance, avoid classes when possible and emphasize separation of concerns.
+
 ## Data
 
 This library uses data oriented design paradigm and prefers pure functional interfaces whenever practical.
@@ -156,7 +161,7 @@ The `memoize` function can be used to cache expensive, deterministic, asynchrono
 
 ### BlobStore
 
-It is important to handle `Blob`s correctly within an application. Retaining references to a large number of them can cause memory problems depending upon their size.
+It is important to handle `Blob`s correctly within an application.
 
 The `BlobStore` interface and corresponding `blobStore` exported instance provide a convenient way to convert `Blob`s into small JSON handles to them called `BlobRef`s. Those `BlobRef`s can later be converted back into a `Blob`.
 
@@ -165,7 +170,6 @@ The `BlobStore` interface and corresponding `blobStore` exported instance provid
 `BlobRef`s have a number of advantages over directly using blobs.
 `BlobRef`s are:
 - small json objects
-- use negligible memory since the `Blob` is stored on disc till needed.
 - deterministic for each `Blob` based on mime type and content.
 - suitable for persistence to locations with limited size.
 - suitable for use as a cache key
@@ -179,20 +183,105 @@ Contains some standard data type schemas in JSON Schema format for convenience. 
 
 This ECS database is a high performance, strongly typed typescript implementation inspired by the Sanders Mertens C++ based [Flecs](https://www.flecs.dev/flecs/md_docs_2Docs.html).
 
-This library provides three different high performance ECS interfaces. They each share the same basic read API but differ in their interface for writing and observability of changes.
+This library provides two main interfaces for ECS operations: **Store** and **Database**. They share the same read API but differ significantly in their approach to writing and observability.
 
-- [ECS](./docs/api/interfaces/ecs.ECS.html)
-    - allows direct write access to the data.
-    - no changes are observability.
-- [Transaction ECS](./docs/api/interfaces/ecs.TransactionECS.html)
-    - requires transactions for writing changes.
-    - all changes are observable.
-- [Action ECS](./docs/api/interfaces/ecs.ActionECS.html)
-    - requires pre-defined actions for writing changes.
-    - actions are implemented using transactions.
-    - action functions must be synchronous and may never throw.
-    - all changes are observable.
-    - provides Operational Transform to resolve concurrent multi player edits.
+### Store Interface
+
+The **Store** is the foundational, low-level interface for direct ECS data operations.
+
+**Key Characteristics:**
+- **Direct Access**: Provides immediate, synchronous read/write access to entities, components, and resources
+- **No Transaction Control**: Changes are applied directly without transaction boundaries  
+- **No Observability**: Changes are not automatically observable or trackable
+- **High Performance**: Minimal overhead for direct operations using Structure of Arrays (SoA) with linear memory layout of numeric types for optimal cache performance
+- **Core ECS Operations**: Includes entity creation, component updates, archetype querying, and resource management
+
+**Usage**: Ideal for scenarios requiring fast, direct ECS manipulation where you don't need change tracking or transactional safety.
+
+```typescript
+// Create a store with components, resources, and archetypes
+const store = createStore(
+  { 
+    position: Vec3.schema, 
+    health: { type: "number" },
+    player: { const: true } 
+  },
+  { 
+    gravity: { default: 9.8 as number } 
+  },
+  {
+    Player: ["position", "health", "player"],
+    Particle: ["position"]
+  }
+);
+
+// Direct operations
+const playerId = store.archetypes.Player.insert({ 
+  position: [0, 0, 0], 
+  health: 100, 
+  player: true 
+});
+store.update(playerId, { position: [1, 1, 1] });
+store.resources.gravity = 10.0;
+```
+
+### Database Interface
+
+The **Database** wraps a Store to provide **transaction-based operations** with **full observability**.
+
+**Key Characteristics:**
+- **Transaction-Based**: All changes must occur within predefined atomic transactions that can be undone.
+- **Full Observability**: Every change is observable through the `observe` API
+- **Predefined Operations**: Uses predefined transaction functions rather than direct mutations
+- **Undo/Redo Support**: Transactions generate undo/redo operations automatically
+- **Change Tracking**: Tracks which entities, components, and archetypes changed
+- **Event Notifications**: Automatically notifies observers of changes
+
+**Usage**: Ideal for applications requiring change history, multiplayer synchronization, undo/redo functionality, or reactive UI updates.
+
+**Important Note**: Even when using a Database, transaction functions are written as direct modifications to the underlying Store interface. The Database wraps these operations to provide transactional guarantees and observability.
+
+```typescript
+// Create a database with predefined transactions
+const database = createDatabase(store, {
+  createPlayer(t, args: { position: Vector3, health: number }) {
+    // Transaction function receives Store interface for direct operations
+    return t.archetypes.Player.insert({ 
+      ...args, 
+      player: true 
+    });
+  },
+  movePlayer(t, args: { entity: Entity, position: Vector3 }) {
+    // Direct Store operations within transaction context
+    t.update(args.entity, { position: args.position });
+  },
+  setGravity(t, gravity: number) {
+    // Direct resource modification within transaction
+    t.resources.gravity = gravity;
+  }
+});
+
+// Execute transactions (these provide observability and undo/redo)
+const playerId = database.transactions.createPlayer({ 
+  position: [10, 20, 0], 
+  health: 100 
+});
+database.transactions.movePlayer({ entity: playerId, position: [15, 25, 5] });
+
+// Observe all changes
+database.observe.transactions((result) => {
+  console.log('Transaction applied:', result);
+  console.log('Changed entities:', result.changedEntities);
+  console.log('Undo operations:', result.undo);
+});
+
+// Observe specific entities
+database.observe.entity(playerId)((entityData) => {
+  if (entityData) {
+    console.log('Player moved to:', entityData.position);
+  }
+});
+```
 
 ### What is an ECS?
 
@@ -200,110 +289,7 @@ Sanders Mertens also covers this thoroughly in his ECS FAQ:
 
 [https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-is-ecs](https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-is-ecs)
 
-In addition to the Entity, Component and System definitions which are standard, we also use the term Resource. A Resource is just a value which is defined globally on the ECS itself and not attached to any specific Entity.
-
-### Action ECS Usage
-
-```typescript
-//  create an action ecs
-const ecs = createActionECS()
-  //  define components with schemas
-  .withComponents({
-    position: Vector3Schema,
-    velocity: Vector3Schema,
-    color: Vector4Schema,
-    size: { type: "number" },
-    health: { type: "number" },
-    player: { const: true },
-  } as const)
-  //  define archetypes with component names
-  .withArchetypes({
-    particle: ["position", "velocity", "color", "size"],
-    player: ["position", "health", "player"],
-  })
-  //  define resources with initial values
-  .withResources({
-    gravity: 9.8,
-  })
-  //  define actions with transactional functions
-  .withActions({
-    createParticle(t, props: { position: Vector3, velocity: Vector3, color: Vector4, size: number }) {
-      t.createEntity(t.ecs.archetypes.particle, props);
-    },
-    deleteParticle(t, entity: number) {
-      t.deleteEntity(entity);
-    },
-    createPlayer(t, position: Vector3) {
-      t.createEntity(t.ecs.archetypes.player, { position, health: 100, player: true });
-    },
-    movePlayer(t, entity: number, position: Vector3) {
-      t.setComponentValue(entity, "position", position);
-    },
-    setGravity(t, gravity: number) {
-      t.resources.gravity = gravity;
-    },
-  })
-
-//  call some actions to modify the ECS
-ecs.actions.createParticle({ position: [0, 0, 0], velocity: [1, 0, 0], color: [1, 1, 1, 1], size: 1 });
-ecs.actions.createParticle({ position: [1, 1, 1], velocity: [1, 1, 1], color: [1, 1, 1, 1], size: 2 });
-ecs.actions.createPlayer([10, 20, 0]);
-ecs.actions.movePlayer(1, [10, 20, 0]);
-
-//  read some values from the ECS
-const players = ecs.selectEntities(ecs.archetypes.player);
-const particles = ecs.selectEntities(ecs.archetypes.particle);
-
-//  observe changes to the ECS
-ecs.observe.archetypeEntities(ecs.archetypes.player)((playerEntities) => {
-  for (const playerEntity of playerEntities) {
-    const player = ecs.getEntityValues(playerEntity);
-    console.log("Player entity changed", player);
-  }
-});
-
-```
-
-### ECS Persistence
-
-The ECS can be converted to JSON and from JSON.
-
-The persistence format is logically consistent with the internal ECS data format so studying it may help you understand how an ECS is structured:
-
-```typescript
-{
-  ecs: true,
-  version: 2,
-  components: {
-    id: { type: 'integer', minimum: +0, maximum: 4294967295 },
-    position: { type: 'array', items: { type: 'number', precision: 1 }, minItems: 3, maxItems: 3 },
-    velocity: { type: 'array', items: { type: 'number', precision: 1 }, minItems: 3, maxItems: 3 },
-    color: { type: 'array', items: { type: 'number', precision: 1 }, minItems: 3, maxItems: 3 },
-    size: { type: 'number' }, health: { type: 'number' }, player: { const: true },
-    gravity: {}
-  },
-  //  The main entities table has two entries for each entity.
-  //  The first value is the index of the tables array and represents the entities archetype.
-  //  The second value is the row of the entity within the archetype table.
-  entities: [ 3, +0, 1, +0, 1, +1, 2, +0 ],
-  tables: [
-    { rows: +0, columns: { id: [] } },  // the empty archetype contains only an id component
-    {
-      rows: 2,
-      columns: {
-        //  component data is stored as Structure of Arrays (SoA)
-        id: [ 1, 2 ],
-        color: [ [1, 0, 0, 0], [1, 1, 1, 1] ],
-        position: [ [0, 0, 0, 0], [1, 1, 1, 1] ],
-        size: [ 1, 2 ],
-        velocity: [ [0, 0, 0], [1, 1, 1] ]
-      }
-    },
-    { rows: 1, columns: { id: [ 3 ], health: [ 100 ], player: true, position: [ [ 10, 20, +0 ] ] } },
-    { rows: 1, columns: { gravity: [ 9.8 ], id: [ +0 ] } }  // resources are stored internally as components
-  ]
-}
-```
+In addition to the Entity, Component and System definitions which are standard, we also use the term Resource. A Resource is just a value which is defined globally on the ECS itself and not attached to any specific Entity. You can think of them as a singleton Component.
 
 ## Performance Test
 

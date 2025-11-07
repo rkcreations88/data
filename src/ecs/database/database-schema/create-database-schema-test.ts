@@ -43,7 +43,7 @@ const databaseSchema = createDatabaseSchema(
     },
     {
         createParticle(t, args: { particle: boolean }) {
-            // @ts-expect-error
+            // @ts-expect-error - Testing that NonParticle archetype doesn't exist
             t.archetypes.NonParticle;
             t.archetypes.Particle.insert({ particle: args.particle });
         },

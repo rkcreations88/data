@@ -23,53 +23,45 @@ SOFTWARE.*/
 import { Vec2 } from '../../math/vec2/vec2.js';
 import { useEffect } from './use-effect.js';
 
-export type Vector2 = readonly [number, number];
-
 function toCssUnitString(value: number): string {
     return `${value}px`;
 }
 
 export interface DraggableProps {
     //  onDragStart should return the initial position of the element
-    onDragStart: (e: PointerEvent) => Vector2 | void;
-    onDrag: (e: PointerEvent, newPosition: Vector2, delta: Vector2) => void;
-    onDragEnd?: (e: PointerEvent, newPosition: Vector2, delta: Vector2) => void;
+    onDragStart: (e: PointerEvent) => Vec2 | void;
+    onDrag: (e: PointerEvent, newPosition: Vec2, delta: Vec2) => void;
+    onDragEnd?: (e: PointerEvent, newPosition: Vec2, delta: Vec2) => void;
     /**
      * Called if this hook is destroyed before the drag is completed.
      */
     onDragCancel?: () => void;
-    initialDownPosition?: Vector2;
     minDragDistance?: number;
     dragCursor?: string;
     addPlaceholder?: boolean;
     stopPropagation?: boolean;
 }
 
-export function useDraggable(element: HTMLElement, propsFunction: () => DraggableProps, dependencies: unknown[]) {
-    const props = propsFunction();
-    const { minDragDistance = 10, dragCursor = 'grab', addPlaceholder = false, initialDownPosition = null, stopPropagation = false } = props;
+export function useDraggable(element: HTMLElement, props: DraggableProps, dependencies: unknown[]) {
+    const { minDragDistance = 10, dragCursor = 'grab', addPlaceholder = false, stopPropagation = false } = props;
     useEffect(() => {
-        let downPosition: Vector2 | null = null;
-        let isDragging = false;
-        let startPosition!: Vector2;
+        let downPosition: Vec2 | null = null;
+        // the bounds of the element when the pointer was first pressed down.
+        let dragStartOffset: Vec2 | null = null;
         let originalCursor = '';
         let placeholder: HTMLElement | null = null;
-        let lastPosition: Vector2 = [0, 0];
-        function getRelativePosition(e: PointerEvent): Vector2 {
-            if (!downPosition) {
-                throw new Error("This cannot happen as we don't listen to pointermove until pointerdown occurs.");
-            }
-            return [e.clientX - downPosition[0], e.clientY - downPosition[1]];
+        let movePosition: Vec2 = [0, 0];
+        function notify(e: PointerEvent, dragListener: DraggableProps["onDrag"]) {
+            const delta = Vec2.subtract(movePosition, downPosition!);
+            dragListener(e, Vec2.add(dragStartOffset!, delta), delta);
         }
 
         function onPointerMove(e: PointerEvent) {
-            const relative = getRelativePosition(e);
-            const distance = Math.sqrt(Math.pow(relative[0], 2) + Math.pow(relative[1], 2));
-            if (distance >= minDragDistance) {
-                if (!isDragging) {
-                    isDragging = true;
-                    const rect = element.getBoundingClientRect();
-                    startPosition = props.onDragStart(e) ?? [e.clientX - rect.left, e.clientY - rect.top];
+            movePosition = [e.clientX, e.clientY];
+            if (Vec2.length(Vec2.subtract(movePosition, downPosition!)) >= minDragDistance) {
+                if (!dragStartOffset) {
+                    dragStartOffset = [element.offsetLeft, element.offsetTop];
+                    props.onDragStart(e);
                     if (dragCursor) {
                         originalCursor = element.style.cursor;
                         element.style.cursor = dragCursor;
@@ -90,9 +82,8 @@ export function useDraggable(element: HTMLElement, propsFunction: () => Draggabl
                     }
                 }
             }
-            if (isDragging) {
-                lastPosition = [startPosition[0] + relative[0], startPosition[1] + relative[1]];
-                props.onDrag(e, lastPosition, relative);
+            if (dragStartOffset) {
+                notify(e, props.onDrag);
             }
             if (stopPropagation) e.stopPropagation();
         }
@@ -110,24 +101,21 @@ export function useDraggable(element: HTMLElement, propsFunction: () => Draggabl
         }
         function onPointerUp(e: PointerEvent) {
             cleanup();
-            if (isDragging) {
-                props.onDragEnd?.(e, lastPosition, Vec2.subtract(lastPosition, startPosition));
+            if (dragStartOffset && props.onDragEnd) {
+                notify(e, props.onDragEnd);
             }
             if (stopPropagation) e.stopPropagation();
             downPosition = null;
-            isDragging = false;
+            dragStartOffset = null;
         }
         function onPointerDown(e: PointerEvent) {
+            // Only start drag transaction for left mouse button clicks
+            if (e.button !== 0) return;
+
             window.addEventListener('pointermove', onPointerMove);
             window.addEventListener('pointerup', onPointerUp);
             downPosition = [e.clientX, e.clientY];
             if (stopPropagation) e.stopPropagation();
-        }
-
-        if (initialDownPosition) {
-            window.addEventListener('pointermove', onPointerMove);
-            window.addEventListener('pointerup', onPointerUp);
-            downPosition = initialDownPosition;
         }
 
         element?.addEventListener('pointerdown', onPointerDown);
@@ -136,9 +124,9 @@ export function useDraggable(element: HTMLElement, propsFunction: () => Draggabl
             if (downPosition) {
                 cleanup();
             }
-            if (isDragging) {
+            if (dragStartOffset) {
                 props.onDragCancel?.();
             }
         };
-    }, [element, initialDownPosition, ...(dependencies ?? [])]);
+    }, [element, ...(dependencies ?? [])]);
 }
