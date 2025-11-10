@@ -32,6 +32,8 @@ export interface ResizeInfo {
 /**
  * Hook to observe element resizes. Calls callback with width, height, and the original entry
  * when the element's size changes.
+ * 
+ * @param onResize - Callback invoked when element size changes
  */
 export function useResizeObserver(onResize: (info: ResizeInfo) => void) {
     const element = useElement();
