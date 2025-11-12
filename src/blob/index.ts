@@ -21,5 +21,3 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 export * from "./blob-handle.js";
 export * from "./blob-meta.js";
-export * from "./download-handle.js";
-export * from "./upload-handle.js";

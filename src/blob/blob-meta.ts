@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { FromSchema, Schema } from "../schema/schema.js";
 
-export const BlobMetaSchema = {
+const BlobMetaSchema = {
     type: 'object',
     properties: {
         type: { type: 'string' },
@@ -34,3 +34,16 @@ export const BlobMetaSchema = {
 } as const satisfies Schema;
 
 export type BlobMeta = FromSchema<typeof BlobMetaSchema>;
+export namespace BlobMeta {
+    export const schema = BlobMetaSchema;
+    export function is(value: unknown): value is BlobMeta {
+        return (
+            typeof value === 'object' &&
+            value !== null &&
+            'type' in value &&
+            'size' in value &&
+            typeof value.type === 'string' &&
+            typeof value.size === 'number'
+        );
+    }
+}
