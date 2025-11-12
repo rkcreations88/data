@@ -25,7 +25,7 @@ import { useEffect } from "./use-effect.js";
 import { Observe } from "../../observe/index.js";
 
 export function useObservable<T>(observable: Observe<T>): T | undefined {
-    const [value, setValue] = useState<T | undefined>(undefined);
+    let [value, setValue] = useState<T | undefined>(undefined);
     useEffect(() => {
         return observable(newValue => {
             setValue(value = newValue);

@@ -162,6 +162,12 @@ export namespace Vec4 {
         z1 - z2,
         w1 - w2
     ];
+    export const multiply = ([x1, y1, z1, w1]: Vec4, [x2, y2, z2, w2]: Vec4): Vec4 => [
+        x1 * x2,
+        y1 * y2,
+        z1 * z2,
+        w1 * w2
+    ];
     export const scale = ([x, y, z, w]: Vec4, s: number): Vec4 => [x * s, y * s, z * s, w * s];
     export const negate = ([x, y, z, w]: Vec4): Vec4 => [-x, -y, -z, -w];
 }

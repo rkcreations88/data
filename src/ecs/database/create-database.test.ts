@@ -858,7 +858,6 @@ describe("createDatabase", () => {
             async function* returnOnly() {
                 // This generator yields nothing but returns a value
                 return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
-                yield; // This will never be reached but satisfies the linter
             }
 
             // Execute transaction with async generator
@@ -894,7 +893,6 @@ describe("createDatabase", () => {
             async function* yieldReturnYield() {
                 yield { position: { x: 1, y: 1, z: 1 }, name: "Yielded" };
                 return { position: { x: 2, y: 2, z: 2 }, name: "Returned" };
-                yield { position: { x: 3, y: 3, z: 3 }, name: "Unreachable" }; // This should never execute
             }
 
             // Execute transaction with async generator
@@ -951,7 +949,6 @@ describe("createDatabase", () => {
                     generator: async function* returnOnly() {
                         // This generator yields nothing but returns a value
                         return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
-                        yield; // This will never be reached but satisfies the linter
                     },
                     expectedFinalName: "ReturnOnly",
                     expectedFinalPosition: { x: 100, y: 200, z: 300 }

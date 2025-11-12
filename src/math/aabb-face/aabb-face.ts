@@ -25,41 +25,44 @@ import { Vec3, Aabb } from "../index.js";
 
 export type AabbFace = FromSchema<typeof AabbFace.schema>;
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AabbFace {
     export const schema = {
         type: 'number',
-        minimum: 0,
-        maximum: 5,
+        minimum: 1,
+        maximum: 63,
     } as const satisfies Schema;
 
     /**
-     * AABB face direction constants for cube faces
+     * AABB face direction constants for cube faces (as bit flags)
      */
-    export const POS_Z = 0 as const;
-    export const POS_X = 1 as const;
-    export const NEG_Z = 2 as const;
-    export const NEG_X = 3 as const;
-    export const POS_Y = 4 as const;
-    export const NEG_Y = 5 as const;
+    export const POS_Z = 1 << 0;  // 1
+    export const POS_X = 1 << 1;  // 2
+    export const NEG_Z = 1 << 2;  // 4
+    export const NEG_X = 1 << 3;  // 8
+    export const POS_Y = 1 << 4;  // 16
+    export const NEG_Y = 1 << 5;  // 32
+    export const ALL = POS_Z | POS_X | NEG_Z | NEG_X | POS_Y | NEG_Y;
+    export const NONE = 0;
 
-    /**
-     * Array of all face directions
-     */
-    export const ALL_FACES = [POS_Z, POS_X, NEG_Z, NEG_X, POS_Y, NEG_Y] as const;
+    const FACES = [POS_Z, POS_X, NEG_Z, NEG_X, POS_Y, NEG_Y];
 
     /**
      * AABB face direction names for debugging/logging
      */
-    export const FACE_NAMES = [
-        'POS_Z', 'POS_X', 'NEG_Z', 'NEG_X', 'POS_Y', 'NEG_Y'
-    ] as const;
+    const FACE_NAMES = new Map<number, string>([
+        [POS_Z, 'POS_Z'],
+        [POS_X, 'POS_X'],
+        [NEG_Z, 'NEG_Z'],
+        [NEG_X, 'NEG_X'],
+        [POS_Y, 'POS_Y'],
+        [NEG_Y, 'NEG_Y'],
+    ]);
 
     /**
      * Get the AABB face name for debugging/logging
      */
     export const getName = (face: AabbFace): string => {
-        return FACE_NAMES[face];
+        return FACE_NAMES.get(face) ?? `Unknown(${face})`;
     };
 
     /**
@@ -76,6 +79,14 @@ export namespace AabbFace {
             default: throw new Error(`Invalid face index: ${face}`);
         }
     };
+
+    export function* getFaces(face: AabbFace): IterableIterator<AabbFace> {
+        for (const f of FACES) {
+            if (face & f) {
+                yield f;
+            }
+        }
+    }
 
     /**
      * Get the opposite AABB face
@@ -130,9 +141,9 @@ export namespace AabbFace {
      * Assumes the position is in normalized coordinate space - a cube with size 1 centered on the origin.
      * @param position World position of the intersection point
      * @param aabb Bounding box of the cube
-     * @returns AabbFace index: 0=POS_Z, 1=POS_X, 2=NEG_Z, 3=NEG_X, 4=POS_Y, 5=NEG_Y
+     * @returns AabbFace flag: 1=POS_Z, 2=POS_X, 4=NEG_Z, 8=NEG_X, 16=POS_Y, 32=NEG_Y
      */
-    export const fromPosition = (position: Vec3, aabb: Aabb): AabbFace => {
+    export const fromPosition = (position: Vec3, aabb: Aabb = Aabb.unit): AabbFace => {
         const aabbCenter = Aabb.center(aabb);
         const localPos = [
             position[0] - aabbCenter[0],
