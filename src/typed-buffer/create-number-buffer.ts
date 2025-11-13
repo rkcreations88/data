@@ -73,9 +73,8 @@ class NumberTypedBuffer extends TypedBuffer<number> {
 
     set capacity(value: number) {
         if (value !== this._capacity) {
-            const newByteLength = value * this.typedArrayElementSizeInBytes;
             this._capacity = value;
-            this.arrayBuffer = resize(this.arrayBuffer, newByteLength); 
+            this.arrayBuffer = resize(this.arrayBuffer, value * this.typedArrayElementSizeInBytes); 
             this.array = new this.typedArrayConstructor(this.arrayBuffer);
         }
     }

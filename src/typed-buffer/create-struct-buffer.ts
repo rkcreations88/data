@@ -77,9 +77,8 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
 
     set capacity(value: number) {
         if (value !== this._capacity) {
-            const newByteLength = value * this.layout.size;
             this._capacity = value;
-            this.arrayBuffer = resize(this.arrayBuffer, newByteLength);
+            this.arrayBuffer = resize(this.arrayBuffer, value * this.layout.size);
             this.dataView = createDataView32(this.arrayBuffer);
             this.typedArray = this.dataView[this.arrayType];
         }

@@ -280,9 +280,7 @@ export function createDatabase<
         resources,
         transactions,
         observe,
-        toData: () => {
-            return store.toData();
-        },
+        toData: () => store.toData(),
         fromData: (data: unknown) => {
             store.fromData(data);
             notifyAllObserversStoreReloaded();
