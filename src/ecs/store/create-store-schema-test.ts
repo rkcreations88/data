@@ -20,5 +20,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-export * from "./create-store-schema.js";
-export * from "./store-schema.js";
+import { Assert } from "../../types/assert.js";
+import { Equal } from "../../types/equal.js";
+import { Archetype, CoreComponents } from "../index.js";
+import { Store } from "./store.js";
+
+const storeSchema = Store.Schema.create(
+    {
+        velocity: { type: "number" },
+        particle: { type: "boolean" },
+    },
+    {
+        mousePosition: { type: "number", default: 0 },
+        fooPosition: { type: "number", default: 0 },
+    },
+    {
+        Particle: ["particle"],
+        DynamicParticle: ["particle", "velocity"],
+    }
+)
+
+type TestStore = Store.FromSchema<typeof storeSchema>;
+type CheckParticle = Assert<Equal<TestStore["archetypes"]["Particle"], Archetype<CoreComponents & {
+    particle: boolean;
+}>>>;
+type CheckDynamicParticle = Assert<Equal<TestStore["archetypes"]["DynamicParticle"], Archetype<CoreComponents & {
+    particle: boolean;
+    velocity: number;
+}>>>;

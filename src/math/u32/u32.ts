@@ -24,6 +24,7 @@ import { U32Schema, FromSchema } from "../../schema/index.js";
 
 export type U32 = FromSchema<typeof U32.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace U32 {
     export const schema = U32Schema;
 }

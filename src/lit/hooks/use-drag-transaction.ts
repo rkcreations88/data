@@ -30,8 +30,7 @@ export type DragTransactionProps<T> = DragObserveProps & {
     update: (drag: DragMove | DragEnd) => T | void;
 };
 
-export function useDragTransaction<T>(propsFactory: () => DragTransactionProps<T>, dependencies: unknown[]) {
-    const props = propsFactory();
+export function useDragTransaction<T>(props: DragTransactionProps<T>, dependencies: unknown[]) {
     const { transaction, update } = props;
     const dragObserve = useDragObserve(props, dependencies);
     const startDragTransaction = () => {

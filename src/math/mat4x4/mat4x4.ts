@@ -48,6 +48,7 @@ export type Mat4x4 = FromSchema<typeof Mat4x4.schema>;
  * - Column 3 (m12, m13, m14): Translation (x, y, z)
  * - Row 3 (m3, m7, m11, m15): Perspective (usually 0, 0, 0, 1)
  */
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Mat4x4 {
     export const schema = {
         type: 'array',

@@ -88,7 +88,7 @@ export function createDatabase<
         Object.entries(store.resources).map(([resource]) => {
             const archetype = store.ensureArchetype(["id" as StringKeyof<C>, resource as unknown as StringKeyof<C>]);
             const resourceId = archetype.columns.id.get(0);
-            return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>]!)];
+            return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>] ?? undefined)];
         })
     ) as { [K in StringKeyof<R>]: Observe<R[K]>; };
 
@@ -167,11 +167,12 @@ export function createDatabase<
                 const asyncResult = asyncArgsProvider();
 
                 if (isAsyncGenerator(asyncResult)) {
-                    let count = 0;
-                    return new Promise(async (resolve, reject) => {
-                        try {
-                            let lastArgs: any = undefined;
-                            let lastTransaction: TransactionResult<C> | undefined;
+                    const count = 0;
+                    return new Promise((resolve, reject) => {
+                        (async () => {
+                            try {
+                                let lastArgs: any = undefined;
+                                let lastTransaction: TransactionResult<C> | undefined;
 
                             const executeNext = (asyncArgs: any, transient: boolean) => {
                                 lastArgs = asyncArgs;
@@ -213,23 +214,26 @@ export function createDatabase<
                             } else if (lastArgs !== undefined) {  // Only execute if lastArgs exists
                                 executeNext(lastArgs, false);
                             }
-                        }
-                        catch (error) {
-                            console.error('AsyncGenerator error:', error);
-                            reject(error);
-                        }
+                            }
+                            catch (error) {
+                                console.error('AsyncGenerator error:', error);
+                                reject(error);
+                            }
+                        })();
                     });
                 }
                 else if (isPromise(asyncResult)) {
-                    return new Promise(async (resolve, reject) => {
-                        try {
-                            const input = await asyncResult;
-                            const result = execute(t => transaction(t, input));
-                            resolve(result);
-                        }
-                        catch (error) {
-                            reject(error);
-                        }
+                    return new Promise((resolve, reject) => {
+                        (async () => {
+                            try {
+                                const input = await asyncResult;
+                                const result = execute(t => transaction(t, input));
+                                resolve(result);
+                            }
+                            catch (error) {
+                                reject(error);
+                            }
+                        })();
                     });
                 }
                 else {
@@ -249,7 +253,7 @@ export function createDatabase<
             changedComponents: new Set(componentObservers.keys()),
             changedArchetypes: new Set(archetypeObservers.keys()),
             changedEntities: new Map([...entityObservers.keys()].map((entity) => {
-                let values = store.read(entity);
+                const values = store.read(entity);
                 let updateValues: EntityUpdateValues<C> | null = null;
                 if (values) {
                     const { id, ...rest } = values;

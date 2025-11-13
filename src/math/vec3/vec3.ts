@@ -25,6 +25,7 @@ import { getStructLayout } from "../../typed-buffer/index.js";
 
 export type Vec3 = FromSchema<typeof Vec3.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Vec3 {
     export const schema = {
         type: 'array',
@@ -176,4 +177,6 @@ export namespace Vec3 {
     ];
     export const scale = ([x, y, z]: Vec3, s: number): Vec3 => [x * s, y * s, z * s];
     export const negate = ([x, y, z]: Vec3): Vec3 => [-x, -y, -z];
+
+    export const equals = (a: Vec3, b: Vec3): boolean => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
 }

@@ -24,6 +24,7 @@ import { F32Schema, FromSchema } from "../../schema/index.js";
 
 export type F32 = FromSchema<typeof F32.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace F32 {
     export const schema = F32Schema;
 }

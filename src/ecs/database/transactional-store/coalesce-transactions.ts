@@ -54,7 +54,7 @@ function coalesceWriteOperations(operations: TransactionWriteOperation<any>[]): 
 
         // Look ahead to see if we can merge with next operations
         if (current.type === "update") {
-            let mergedValues = { ...current.values };
+            const mergedValues = { ...current.values };
             let j = i + 1;
 
             // Merge consecutive updates on the same entity
@@ -84,7 +84,7 @@ function coalesceWriteOperations(operations: TransactionWriteOperation<any>[]): 
             }
         } else if (current.type === "insert") {
             // Look ahead for updates to merge into this insert
-            let mergedValues = { ...current.values };
+            const mergedValues = { ...current.values };
             let j = i + 1;
             let hasUpdates = false;
 

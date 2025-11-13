@@ -26,6 +26,7 @@ import { Vec3 } from "../index.js";
 
 export type Aabb = FromSchema<typeof Aabb.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Aabb {
     const { schema: Vec3Schema } = Vec3;
 

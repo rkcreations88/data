@@ -26,6 +26,7 @@ import { Vec3, Mat4x4 } from "../index.js";
 
 export type Quat = FromSchema<typeof Quat.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Quat {
     export const schema = {
         type: 'array',

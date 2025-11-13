@@ -26,6 +26,7 @@ import { Vec3 } from "../index.js";
 
 export type Line3 = FromSchema<typeof Line3.schema>;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Line3 {
     const { schema: Vec3Schema } = Vec3;
 

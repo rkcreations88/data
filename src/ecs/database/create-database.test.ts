@@ -856,6 +856,7 @@ describe("createDatabase", () => {
 
             // Create an async generator that only returns
             async function* returnOnly() {
+                // This generator yields nothing but returns a value
                 return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
             }
 
@@ -892,7 +893,6 @@ describe("createDatabase", () => {
             async function* yieldReturnYield() {
                 yield { position: { x: 1, y: 1, z: 1 }, name: "Yielded" };
                 return { position: { x: 2, y: 2, z: 2 }, name: "Returned" };
-                yield { position: { x: 3, y: 3, z: 3 }, name: "Unreachable" }; // This should never execute
             }
 
             // Execute transaction with async generator
@@ -947,6 +947,7 @@ describe("createDatabase", () => {
                 {
                     name: "return-only (no yields)",
                     generator: async function* returnOnly() {
+                        // This generator yields nothing but returns a value
                         return { position: { x: 100, y: 200, z: 300 }, name: "ReturnOnly" };
                     },
                     expectedFinalName: "ReturnOnly",

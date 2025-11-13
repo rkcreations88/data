@@ -20,32 +20,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Assert } from "../../../types/assert.js";
-import { Equal } from "../../../types/equal.js";
-import { Archetype, CoreComponents } from "../../index.js";
-import { StoreFromSchema } from "./store-schema.js";
-import { createStoreSchema } from "./create-store-schema.js";
+import { useEffect } from "./use-effect.js";
+import { useState } from "./use-state.js";
 
-const storeSchema = createStoreSchema(
-    {
-        velocity: { type: "number" },
-        particle: { type: "boolean" },
-    },
-    {
-        mousePosition: { type: "number", default: 0 },
-        fooPosition: { type: "number", default: 0 },
-    },
-    {
-        Particle: ["particle"],
-        DynamicParticle: ["particle", "velocity"],
-    }
-)
+/**
+ * Hook to debounce a value. Returns the debounced value after the specified delay.
+ * 
+ * @param value - The value to debounce
+ * @param delay - Delay in milliseconds before updating the debounced value
+ * @returns The debounced value
+ */
+export function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState(value);
 
-type TestStore = StoreFromSchema<typeof storeSchema>;
-type CheckParticle = Assert<Equal<TestStore["archetypes"]["Particle"], Archetype<CoreComponents & {
-    particle: boolean;
-}>>>;
-type CheckDynamicParticle = Assert<Equal<TestStore["archetypes"]["DynamicParticle"], Archetype<CoreComponents & {
-    particle: boolean;
-    velocity: number;
-}>>>;
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => clearTimeout(timeoutId);
+    }, [value, delay]);
+
+    return debouncedValue;
+}
+

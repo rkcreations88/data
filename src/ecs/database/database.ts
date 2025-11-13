@@ -62,6 +62,7 @@ export type ToTransactionFunctions<T> = {
 };
 
 export type TransactionFunctions = { readonly [K: string]: (args?: any) => void | Entity };
+
 export interface Database<
   C extends Components = never,
   R extends ResourceComponents = never,

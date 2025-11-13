@@ -57,7 +57,7 @@ export const selectEntities = <
         const entities = new Array<Entity>();
         for (const archetype of archetypes) {
             const idTypedArray = archetype.columns.id.getTypedArray();
-            for (let row of selectRows<Pick<C & CoreComponents, Include>>(archetype as any, options.where)) {
+            for (const row of selectRows<Pick<C & CoreComponents, Include>>(archetype as any, options.where)) {
                 entities.push(idTypedArray[row]);
             }
         }
@@ -69,7 +69,7 @@ export const selectEntities = <
     const entityValues = new Array<CoreComponents & { [K in Include]: any }>();
     for (const archetype of archetypes) {
         const idTypedArray = archetype.columns.id.getTypedArray();
-        for (let row of selectRows<Pick<C & CoreComponents, Include>>(archetype as any, options.where)) {
+        for (const row of selectRows<Pick<C & CoreComponents, Include>>(archetype as any, options.where)) {
             const entityValue = { id: idTypedArray[row] } as any;
             for (const order in options.order!) {
                 entityValue[order] = archetype.columns[order]!.get(row);

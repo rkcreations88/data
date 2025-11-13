@@ -31,6 +31,7 @@ export * from "./use-observable-values.js";
 export * from "./use-observable.js";
 export * from "./use-window-event.js";
 export * from "./use-resize-observer.js";
+export * from "./use-debounce.js";
 export * from "./use-element.js";
 export * from "./with-hooks.js";
 export * from "./attach-decorator.js";

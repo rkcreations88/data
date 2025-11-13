@@ -110,7 +110,7 @@ export interface Schema {
 }
 
 export type FromSchemas<T> = {
-  [K in keyof T]: FromSchema<T[K]>;
+  [K in Extract<keyof T, string>]: FromSchema<T[K]>;
 };
 
 export type FromSchema<T, Depth extends number = 5> =
