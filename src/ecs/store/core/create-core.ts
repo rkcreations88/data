@@ -165,7 +165,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
     const compact = () => {
         for (const archetype of archetypes) {
-            ARCHETYPE.compactArchetype(archetype);
+            TABLE.compactTable(archetype);
         }
     };
 

@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 export * from './copy.js';
-export * from './grow.js';
 export * from './resize.js';
 export * from './is-array-buffer.js';
 export * from './is-shared-array-buffer.js';

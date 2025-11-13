@@ -281,11 +281,9 @@ export function createDatabase<
         transactions,
         observe,
         toData: () => {
-            store.compact();
             return store.toData();
         },
         fromData: (data: unknown) => {
-            store.compact();
             store.fromData(data);
             notifyAllObserversStoreReloaded();
         },

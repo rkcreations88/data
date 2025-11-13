@@ -19,7 +19,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { grow } from "../internal/array-buffer-like/grow.js";
 import { resize } from "../internal/array-buffer-like/resize.js";
 import { I32Schema } from "../schema/i32.js";
 import { Schema } from "../schema/schema.js";
@@ -75,14 +74,8 @@ class NumberTypedBuffer extends TypedBuffer<number> {
     set capacity(value: number) {
         if (value !== this._capacity) {
             const newByteLength = value * this.typedArrayElementSizeInBytes;
-            const oldByteLength = this.arrayBuffer.byteLength;
             this._capacity = value;
-            // Use resize for shrinking, grow for expanding
-            if (newByteLength < oldByteLength) {
-                this.arrayBuffer = resize(this.arrayBuffer, newByteLength);
-            } else {
-                this.arrayBuffer = grow(this.arrayBuffer, newByteLength);
-            }
+            this.arrayBuffer = resize(this.arrayBuffer, newByteLength); 
             this.array = new this.typedArrayConstructor(this.arrayBuffer);
         }
     }
