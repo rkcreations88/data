@@ -37,7 +37,7 @@ const createECSWithMassAndSize = () => {
       sized: ["id", "size"],
     } as const)
     .withResources({
-      gravity: { default: 9.8, privacy: 'strictlyNecessary' },
+      gravity: { default: 9.8 },
     });
 };
 

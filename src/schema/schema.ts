@@ -58,16 +58,10 @@ export interface UIProperties {
   };
 }
 
-export const isSchema = (schema: unknown): schema is Schema => {
-  return typeof schema === 'object' && schema !== null && (
-    'type' in schema && typeof schema.type === 'string'
-    ||
-    'default' in schema && typeof schema.default !== 'undefined'
-  );
-}
+const schemaTypes = { number: true, integer: true, string: true, boolean: true, null: true, array: true, object: true, 'typed-buffer': true, blob: true } as const;
 
 export interface Schema {
-  type?: 'number' | 'integer' | 'string' | 'boolean' | 'null' | 'array' | 'object' | 'typed-buffer' | 'blob';
+  type?: keyof typeof schemaTypes;
   conditionals?: readonly Conditional[];
   ui?: UIProperties;
   transient?: boolean;
@@ -94,19 +88,6 @@ export interface Schema {
   const?: any;
   enum?: readonly any[];
   layout?: Layout; // Memory layout for typed buffers (std140 or packed)
-  /**
-   * Classification of data according to privacy regulations and cookie consent frameworks.
-   * Used to categorize data collection and processing for privacy compliance.
-   * Useful resource:
-   * https://www.onetrust.com/products/cookie-consent/
-   *
-   * @remarks
-   * - `strictlyNecessary`: Essential data required for basic functionality and security
-   * - `performance`: Data used for analytics, performance monitoring, and site optimization
-   * - `functional`: Data used for enhanced features and user experience improvements
-   * - `advertising`: Data used for advertising, marketing, and personalized content
-   */
-  privacy?: 'strictlyNecessary' | 'performance' | 'functional' | 'advertising';
 }
 
 export type FromSchemas<T> = {

@@ -71,10 +71,12 @@ export function createDatabase<
                         values = null;
                     }
                 }
+                console.log("OBSERVE ASYNC CALL", { entity, values });
                 originalObserver(values);
             }
         }
         // Call immediately with current values
+        console.log("OBSERVE IMMEDIATE CALL", { entity, values: store.read(entity) });
         observer(store.read(entity));
         // Add to observers for future changes
         const dispose = addToMapSet(entity, entityObservers)(observer);
@@ -88,7 +90,7 @@ export function createDatabase<
         Object.entries(store.resources).map(([resource]) => {
             const archetype = store.ensureArchetype(["id" as StringKeyof<C>, resource as unknown as StringKeyof<C>]);
             const resourceId = archetype.columns.id.get(0);
-            return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>] ?? undefined)];
+            return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>] ?? null)];
         })
     ) as { [K in StringKeyof<R>]: Observe<R[K]>; };
 
@@ -174,46 +176,46 @@ export function createDatabase<
                                 let lastArgs: any = undefined;
                                 let lastTransaction: TransactionResult<C> | undefined;
 
-                            const executeNext = (asyncArgs: any, transient: boolean) => {
-                                lastArgs = asyncArgs;
+                                const executeNext = (asyncArgs: any, transient: boolean) => {
+                                    lastArgs = asyncArgs;
 
-                                if (lastTransaction) {
-                                    // rollback previous transaction.
-                                    execute(t => {
-                                        if (lastTransaction) {
-                                            // Rollback the previous transaction to restore the state before it
-                                            applyOperations(t, lastTransaction.undo);
-                                        }
-                                    }, { transient: true })
+                                    if (lastTransaction) {
+                                        // rollback previous transaction.
+                                        execute(t => {
+                                            if (lastTransaction) {
+                                                // Rollback the previous transaction to restore the state before it
+                                                applyOperations(t, lastTransaction.undo);
+                                            }
+                                        }, { transient: true })
+                                    }
+                                    lastTransaction = execute(
+                                        t => transaction(t, asyncArgs),
+                                        { transient }
+                                    );
+
+                                    if (!transient) {
+                                        // this is the last value so we will resolve to it
+                                        resolve(lastTransaction.value);
+                                    }
                                 }
-                                lastTransaction = execute(
-                                    t => transaction(t, asyncArgs),
-                                    { transient }
-                                );
 
-                                if (!transient) {
-                                    // this is the last value so we will resolve to it
-                                    resolve(lastTransaction.value);
+                                // Manually iterate through the generator to capture both yield and return values
+                                let result = await asyncResult.next();
+
+                                // Process yield values one by one with rollback
+                                // We can't know if a yield is final until the generator completes,
+                                // so we mark all yields as transient initially
+                                while (!result.done) {
+                                    // This is a yield value - always transient initially
+                                    executeNext(result.value, true);
+                                    result = await asyncResult.next();
                                 }
-                            }
 
-                            // Manually iterate through the generator to capture both yield and return values
-                            let result = await asyncResult.next();
-
-                            // Process yield values one by one with rollback
-                            // We can't know if a yield is final until the generator completes,
-                            // so we mark all yields as transient initially
-                            while (!result.done) {
-                                // This is a yield value - always transient initially
-                                executeNext(result.value, true);
-                                result = await asyncResult.next();
-                            }
-
-                            if (result.value !== undefined) {
-                                executeNext(result.value, false);
-                            } else if (lastArgs !== undefined) {  // Only execute if lastArgs exists
-                                executeNext(lastArgs, false);
-                            }
+                                if (result.value !== undefined) {
+                                    executeNext(result.value, false);
+                                } else if (lastArgs !== undefined) {  // Only execute if lastArgs exists
+                                    executeNext(lastArgs, false);
+                                }
                             }
                             catch (error) {
                                 console.error('AsyncGenerator error:', error);

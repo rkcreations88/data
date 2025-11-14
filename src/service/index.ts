@@ -23,4 +23,8 @@ SOFTWARE.*/
 export { type Service } from './service.js';
 export { isService } from './is-service.js';
 export { type WithObservableActions, type ServiceActionMessages, addObservableActions } from './add-observable-actions.js';
-export * from './progressive-result.js';
+export {
+    type ErrorResult, type IntermediateResult, type SuccessResult, type FinalResult, type ProgressiveResult,
+    isErrorResult, isIntermediateResult, isSuccessResult,
+    ErrorResultSchema, IntermediateResultSchema, SuccessResultSchema, ProgressiveResultSchema
+} from './progressive-result.js';

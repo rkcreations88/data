@@ -48,8 +48,6 @@ import {
   CoreResources,
 } from "./core-ecs-types.js";
 import { U32Schema } from "../../schema/u32.js";
-import { isSchema } from "../../schema/schema.js";
-import { PrivacyOptions, filterTableForPrivacy, getFilteredColumn } from "../privacy/helper-functions.js";
 
 //  This is a sentinel value used to indicate a component should be deleted.
 export const DELETE: unknown = "_@_DELETE_@_";
@@ -77,7 +75,6 @@ export function createCoreECS<
   options: {
     data?: ECSJSON;
     allocator?: MemoryAllocator;
-    privacy?: PrivacyOptions;
   } = {}
 ): CoreECS<CoreComponents, {}> {
   type Component = keyof C;
@@ -274,8 +271,9 @@ export function createCoreECS<
               if (values) {
                 const value = values[name];
                 if (value === undefined) {
+                  console.log({ value, stack: (new Error()).stack });
                   throw new Error(
-                    `Missing value for column "${String(name)}"`
+                    `Missing33 value for column "${String(name)}"`
                   );
                 }
                 column.set(newRow, value);
@@ -337,23 +335,23 @@ export function createCoreECS<
       if (oldSchema && !equals(normalize(oldSchema), normalize(newSchema))) {
         console.warn(`Component "${name}" schema changed from ${JSON.stringify(oldSchema)} to ${JSON.stringify(newSchema)}`);
       }
-      // if a component explicitly sets the privacy property to any value other than strictlyNecessary,
-      // it must also provide a default value.
-      // for a component with strictlyNecessary privacy, a default value is optional, since it can never be excluded
-      if (newSchema.privacy && newSchema.privacy !== 'strictlyNecessary' && newSchema.default === undefined) {
-        throw new Error("Default value must be provided if privacy is set on a component schema");
-      }
       componentSchemas[name as keyof C] = newSchema;
     });
     return ecs as CoreECS<CoreComponents & T>;
   };
+
+  const isResourceSchema = (schema: unknown): schema is Schema => {
+    return typeof schema === 'object' && schema !== null && (
+      'default' in schema && typeof schema.default !== 'undefined'
+    );
+  }
 
   const withResources = <T extends { readonly [K: string]: Data }>(
     newResources: T
   ): any => {
     Object.entries(newResources).forEach(([name, valueOrSchema]) => {
       //  register the resource as a component.
-      const schema: Schema = isSchema(valueOrSchema) ? valueOrSchema : { default: valueOrSchema };
+      const schema: Schema = isResourceSchema(valueOrSchema) ? valueOrSchema : { default: valueOrSchema };
       withComponents({ [name]: schema });
       const value = schema.default;
       const archetype = getArchetype("id", name as Component);
@@ -568,9 +566,7 @@ export function createCoreECS<
    * @param options - The options to use
    * @returns The JSON
    */
-  const toJSON = (options?: {
-    privacy?: PrivacyOptions
-  }) => {
+  const toJSON = () => {
 
     return {
       ecs: true,
@@ -587,7 +583,7 @@ export function createCoreECS<
           columns: Object.fromEntries(
             Object.entries(columns).map(([name, column]) => {
               const value = column.toJSON(rows, name !== "id");
-              return getFilteredColumn(name, options?.privacy, value, componentSchemas, rows);
+              return [name, value];
             })
           ),
         };
@@ -616,7 +612,7 @@ export function createCoreECS<
 
     for (let i = 0; i < tables.length; i++) {
       const persistedTable = tables[i];
-      const { rows, columns } = filterTableForPrivacy(json.components, persistedTable, options.privacy);
+      const { rows, columns } = persistedTable;
       const tableComponents = Object.keys(columns) as Component[];
       const archetype = getArchetype(...tableComponents);
       const [archetable] = getTables(archetype, {
