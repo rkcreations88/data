@@ -37,6 +37,7 @@ import {
   withFilter,
   withMap,
   withOptional,
+  createObservableEvent,
 } from "./index.js";
 import { toProperties } from "./to-properties.js";
 import { withAsyncMap } from "./with-async-map.js";
@@ -304,10 +305,10 @@ describe("observable", () => {
     //  create the observable with a cache
     const observable = withCache(fromPromise(() => promise));
     //  wait for the first observable value to return.
+    let unobserveFirst: VoidFunction | undefined;
     const first = await new Promise<number>((resolve) => {
-      const unobserve = observable((value) => {
+      unobserveFirst = observable((value) => {
         resolve(value);
-        unobserve();
       });
     });
     assert({
@@ -327,6 +328,8 @@ describe("observable", () => {
       actual: syncValue,
       expected: 1,
     });
+
+    unobserveFirst?.();
   });
   test("deduplicate shallow compare", async () => {
     await testObservableFilter({
@@ -441,6 +444,88 @@ describe("observable", () => {
       expected: [42, 42, 1],
     });
   });
+
+  test("withCache resets when observables unsubscribe", async () => {
+    const [observable, setValue] = createObservableEvent<number>();
+    const cachedObservable = withCache(observable);
+
+    const observer1Values: number[] = [];
+    const unobserve1 = cachedObservable((value) => observer1Values.push(value));
+
+    setValue(1);
+    assert({
+      given: "withCache with an observer and no cache state",
+      should: "forward values",
+      actual: observer1Values,
+      expected: [1],
+    });
+
+    const observer2Values: number[] = [];
+    const unobserve2 = cachedObservable((value) => observer2Values.push(value));
+
+    setValue(2);
+
+    assert({
+      given: "withCache with an observer and a cache state",
+      should: "send the cached state and then forward values",
+      actual: [observer1Values, observer2Values],
+      expected: [
+        [1, 2],
+        [1, 2],
+      ],
+    });
+
+    unobserve1();
+
+    setValue(3);
+
+    assert({
+      given: "withCache with an observer that has unobserved and a cache state",
+      should: "send the cached state and then forward values",
+      actual: [observer1Values, observer2Values],
+      expected: [
+        [1, 2],
+        [1, 2, 3],
+      ],
+    });
+
+    unobserve2();
+
+    setValue(4);
+
+    assert({
+      given: "withCache with all observes that have unobserved",
+      should: "not send values to old observers",
+      actual: [observer1Values, observer2Values],
+      expected: [
+        [1, 2],
+        [1, 2, 3],
+      ],
+    });
+
+    const observer3Values: number[] = [];
+    const unobserve3 = cachedObservable((value) => observer3Values.push(value));
+
+    assert({
+      given:
+        "withCache with an observer that has started after old observers unsubscribed AND a value has been sent during the gap in observation",
+      should: "not reset the cache and not send to the new observer",
+      actual: observer3Values,
+      expected: [],
+    });
+
+    setValue(5);
+
+    assert({
+      given: "withCache with an observer that has unobserved and a cache state",
+      should: "send the cached state and then forward values",
+      actual: [observer1Values, observer2Values, observer3Values],
+      expected: [[1, 2], [1, 2, 3], [5]],
+    });
+
+    unobserve3();
+  });
+
   test("toObservableProperties", async () => {
     const [observable, setState] = createObservableState({ a: 1, b: "foo" });
     const properties = toProperties(observable, ["a", "b"]);
