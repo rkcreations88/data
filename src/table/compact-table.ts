@@ -19,15 +19,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { createSharedArrayBuffer } from "../shared-array-buffer/create-shared-array-buffer.js";
-import { copy } from "./copy.js";
-import { isArrayBuffer } from "./is-array-buffer.js";
-import { isSharedArrayBuffer } from "./is-shared-array-buffer.js";
+import { Table } from "./table.js";
 
-export function grow<T extends ArrayBufferLike>(arrayBuffer: T, newCapacity: number): T {
-    // create a new array buffer using the same constructor, copy the data, and return it
-    const constructor = arrayBuffer.constructor as new (size: number) => T;
-    const newArrayBuffer = new constructor(newCapacity);
-    copy(arrayBuffer, newArrayBuffer);
-    return newArrayBuffer;
-}
+/**
+ * Compacts the table by reducing rowCapacity to match rowCount.
+ * This shrinks the underlying buffers to remove unused capacity.
+ * Useful before serialization to avoid storing unused buffer space.
+ */
+export const compactTable = <C>(table: Table<C>): void => {
+    if (table.rowCapacity > table.rowCount) {
+        for (const name in table.columns) {
+            const column = table.columns[name];
+            column.capacity = table.rowCount;
+        }
+        table.rowCapacity = table.rowCount;
+    }
+};
+

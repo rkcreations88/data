@@ -19,7 +19,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from './copy.js';
-export * from './resize.js';
-export * from './is-array-buffer.js';
-export * from './is-shared-array-buffer.js';
+import { copy } from "./copy.js";
+
+/**
+ * Resizes an ArrayBuffer to a new capacity, preserving data up to the minimum of old and new sizes.
+ * Can be used for both growing and shrinking.
+ */
+export function resize<T extends ArrayBufferLike>(arrayBuffer: T, newCapacity: number): T {
+    const constructor = arrayBuffer.constructor as new (size: number) => T;
+    const newArrayBuffer = new constructor(newCapacity);
+    // Copy only the amount that fits in the new buffer
+    const copyLength = Math.min(arrayBuffer.byteLength, newCapacity);
+    copy(arrayBuffer, newArrayBuffer, copyLength);
+    return newArrayBuffer;
+}

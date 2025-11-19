@@ -27,4 +27,5 @@ export * from "./add-row.js";
 export * from "./delete-row.js";
 export * from "./get-row-data.js";
 export * from "./ensure-capacity.js";
+export * from "./compact-table.js";
 export * from "./copy-column-to-gpu-buffer.js";

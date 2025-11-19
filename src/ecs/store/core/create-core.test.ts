@@ -588,6 +588,130 @@ export function createCoreTestSuite(
             });
         });
 
+        describe("compact", () => {
+            it("should compact all archetypes after deletions", () => {
+                const core = factory({
+                    position: positionSchema,
+                    health: healthSchema,
+                });
+
+                const archetype1 = core.ensureArchetype(["id", "position"]);
+                const archetype2 = core.ensureArchetype(["id", "health"]);
+
+                // Add entities to both archetypes
+                const entity1 = archetype1.insert({ position: { x: 1, y: 2, z: 3 } });
+                const entity2 = archetype1.insert({ position: { x: 4, y: 5, z: 6 } });
+                const entity3 = archetype1.insert({ position: { x: 7, y: 8, z: 9 } });
+                
+                const entity4 = archetype2.insert({ health: { current: 100, max: 100 } });
+                const entity5 = archetype2.insert({ health: { current: 50, max: 100 } });
+
+                const arch1InitialCapacity = archetype1.rowCapacity;
+                const arch2InitialCapacity = archetype2.rowCapacity;
+
+                // Delete some entities
+                core.delete(entity3);
+                core.delete(entity5);
+
+                expect(archetype1.rowCount).toBe(2);
+                expect(archetype2.rowCount).toBe(1);
+                expect(archetype1.rowCapacity).toBe(arch1InitialCapacity);
+                expect(archetype2.rowCapacity).toBe(arch2InitialCapacity);
+
+                // Compact
+                core.compact();
+
+                expect(archetype1.rowCount).toBe(2);
+                expect(archetype1.rowCapacity).toBe(2);
+                expect(archetype2.rowCount).toBe(1);
+                expect(archetype2.rowCapacity).toBe(1);
+            });
+
+            it("should preserve data after compaction", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                const entity1 = archetype.insert({ position: { x: 10, y: 20, z: 30 } });
+                const entity2 = archetype.insert({ position: { x: 40, y: 50, z: 60 } });
+                const entity3 = archetype.insert({ position: { x: 70, y: 80, z: 90 } });
+
+                core.delete(entity2);
+                core.compact();
+
+                const data1 = core.read(entity1);
+                const data3 = core.read(entity3);
+
+                expect(data1?.position).toEqual({ x: 10, y: 20, z: 30 });
+                expect(data3?.position).toEqual({ x: 70, y: 80, z: 90 });
+            });
+
+            it("should reduce serialization size after compaction", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                
+                // Add many entities
+                for (let i = 0; i < 20; i++) {
+                    archetype.insert({ position: { x: i, y: i * 2, z: i * 3 } });
+                }
+
+                // Delete most of them
+                for (let i = 2; i < 20; i++) {
+                    core.delete(i);
+                }
+
+                expect(archetype.rowCount).toBe(2);
+                const capacityBeforeCompact = archetype.rowCapacity;
+                expect(capacityBeforeCompact).toBeGreaterThan(2);
+
+                // Serialize before compact
+                const dataBeforeCompact = core.toData() as any;
+                const sizeBeforeCompact = JSON.stringify(dataBeforeCompact).length;
+
+                // Compact and serialize
+                core.compact();
+                const dataAfterCompact = core.toData() as any;
+                const sizeAfterCompact = JSON.stringify(dataAfterCompact).length;
+
+                expect(archetype.rowCapacity).toBe(2);
+                expect(sizeAfterCompact).toBeLessThan(sizeBeforeCompact);
+            });
+
+            it("should handle empty archetypes", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                
+                expect(() => core.compact()).not.toThrow();
+                expect(archetype.rowCount).toBe(0);
+                expect(archetype.rowCapacity).toBe(0);
+            });
+
+            it("should work correctly when no deletions occurred", () => {
+                const core = factory({
+                    position: positionSchema,
+                });
+
+                const archetype = core.ensureArchetype(["id", "position"]);
+                archetype.insert({ position: { x: 1, y: 2, z: 3 } });
+                archetype.insert({ position: { x: 4, y: 5, z: 6 } });
+
+                const rowCountBefore = archetype.rowCount;
+                const capacityBefore = archetype.rowCapacity;
+
+                core.compact();
+
+                expect(archetype.rowCount).toBe(rowCountBefore);
+                expect(archetype.rowCapacity).toBe(rowCountBefore);
+            });
+        });
+
     });
 }
 

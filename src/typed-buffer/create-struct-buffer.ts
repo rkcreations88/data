@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { grow } from "../internal/array-buffer-like/grow.js";
+import { resize } from "../internal/array-buffer-like/resize.js";
 import { DataView32 } from "../internal/data-view-32/data-view-32.js";
 import { createDataView32 } from "../internal/data-view-32/create-data-view-32.js";
 import { FromSchema, Schema } from "../schema/schema.js";
@@ -78,7 +78,7 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
     set capacity(value: number) {
         if (value !== this._capacity) {
             this._capacity = value;
-            this.arrayBuffer = grow(this.arrayBuffer, value * this.layout.size);
+            this.arrayBuffer = resize(this.arrayBuffer, value * this.layout.size);
             this.dataView = createDataView32(this.arrayBuffer);
             this.typedArray = this.dataView[this.arrayType];
         }

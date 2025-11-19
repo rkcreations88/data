@@ -72,5 +72,6 @@ export interface Core<
     locate: (entity: Entity) => { archetype: Archetype<CoreComponents>, row: number } | null;
     delete: (entity: Entity) => void;
     update: (entity: Entity, values: EntityUpdateValues<C>) => void;
+    compact: () => void;
     fromData(data: unknown): void
 }

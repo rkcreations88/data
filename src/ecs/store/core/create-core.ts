@@ -163,6 +163,12 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         return column?.get(location.row)
     }
 
+    const compact = () => {
+        for (const archetype of archetypes) {
+            TABLE.compactTable(archetype);
+        }
+    };
+
     const core: Core<C> = {
         componentSchemas: componentSchemas,
         queryArchetypes,
@@ -178,6 +184,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         read: readEntity,
         delete: deleteEntity,
         update: updateEntity,
+        compact,
         toData: () => ({
             componentSchemas,
             entityLocationTableData: entityLocationTable.toData(),

@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { grow } from "../../internal/array-buffer-like/grow.js";
+import { resize } from "../../internal/array-buffer-like/resize.js";
 import { EntityLocationTable } from "./entity-location-table.js";
 import { EntityLocation } from "./entity-location.js";
 import { Entity } from "../entity.js";
@@ -42,7 +42,7 @@ export const createEntityLocationTable = (initialCapacity: number = 16): EntityL
             entity = nextIndex++;
             if (nextIndex >= capacity) {
                 capacity *= 2;
-                entities = new Int32Array(grow(entities.buffer, capacity * 2 * 4));
+                entities = new Int32Array(resize(entities.buffer, capacity * 2 * 4));
             }
         }
 
