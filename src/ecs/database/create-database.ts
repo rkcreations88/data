@@ -71,12 +71,10 @@ export function createDatabase<
                         values = null;
                     }
                 }
-                console.log("OBSERVE ASYNC CALL", { entity, values });
                 originalObserver(values);
             }
         }
         // Call immediately with current values
-        console.log("OBSERVE IMMEDIATE CALL", { entity, values: store.read(entity) });
         observer(store.read(entity));
         // Add to observers for future changes
         const dispose = addToMapSet(entity, entityObservers)(observer);
