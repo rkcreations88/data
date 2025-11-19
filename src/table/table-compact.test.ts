@@ -20,14 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
-import { compactTable } from "./compact-table.js";
+import { Table } from "./table.js";
 import { createTable } from "./create-table.js";
 import { addRow } from "./add-row.js";
 import { deleteRow } from "./delete-row.js";
 import { U32Schema } from "../schema/u32.js";
 import { F32Schema } from "../schema/f32.js";
 
-describe("compactTable", () => {
+describe("Table.compact", () => {
     it("should reduce rowCapacity to match rowCount after deletions", () => {
         const table = createTable({
             value: U32Schema,
@@ -51,7 +51,7 @@ describe("compactTable", () => {
         expect(table.rowCapacity).toBe(initialCapacity); // Capacity unchanged
 
         // Compact the table
-        compactTable(table);
+        Table.compact(table);
 
         expect(table.rowCount).toBe(2);
         expect(table.rowCapacity).toBe(2); // Capacity now matches rowCount
@@ -68,7 +68,7 @@ describe("compactTable", () => {
         addRow(table, { value: 3, score: 3.5 });
         deleteRow(table, 2);
 
-        compactTable(table);
+        Table.compact(table);
 
         expect(table.columns.value.capacity).toBe(2);
         expect(table.columns.score.capacity).toBe(2);
@@ -85,7 +85,7 @@ describe("compactTable", () => {
         addRow(table, { value: 30 });
         deleteRow(table, 2);
 
-        compactTable(table);
+        Table.compact(table);
 
         expect(table.columns.value.get(0)).toBe(10);
         expect(table.columns.value.get(1)).toBe(20);
@@ -100,11 +100,11 @@ describe("compactTable", () => {
         addRow(table, { value: 2 });
 
         // Compact once
-        compactTable(table);
+        Table.compact(table);
         const capacity = table.rowCapacity;
 
         // Compact again
-        compactTable(table);
+        Table.compact(table);
 
         expect(table.rowCapacity).toBe(capacity);
     });
@@ -114,7 +114,7 @@ describe("compactTable", () => {
             value: U32Schema,
         });
 
-        compactTable(table);
+        Table.compact(table);
 
         expect(table.rowCount).toBe(0);
         expect(table.rowCapacity).toBe(0);
@@ -142,7 +142,7 @@ describe("compactTable", () => {
         expect(table.rowCount).toBe(0);
         expect(table.rowCapacity).toBe(largeCapacity); // Still has large capacity
 
-        compactTable(table);
+        Table.compact(table);
 
         expect(table.rowCount).toBe(0);
         expect(table.rowCapacity).toBe(0); // Capacity compacted to 0

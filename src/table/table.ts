@@ -40,4 +40,14 @@ export namespace Table {
         return component in table.columns && table.columns[component] !== undefined;
     }
 
+    export const compact = <C>(table: Table<C>): void => {
+        if (table.rowCapacity > table.rowCount) {
+            for (const name in table.columns) {
+                const column = table.columns[name];
+                column.capacity = table.rowCount;
+            }
+            table.rowCapacity = table.rowCount;
+        }
+    };
+
 }

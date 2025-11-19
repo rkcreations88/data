@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { FromSchema, Schema } from "../../../schema/schema.js";
 import { createEntityLocationTable } from "../../entity-location-table/index.js";
 import * as ARCHETYPE from "../../archetype/index.js";
-import * as TABLE from "../../../table/index.js";
+import { Table, getRowData, addRow, updateRow } from "../../../table/index.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { CoreComponents } from "../../core-components.js";
 import { Entity, schema } from "../../entity.js";
@@ -90,7 +90,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         if (minArchetype && location.archetype !== minArchetype.id && !archetype.components.isSupersetOf(minArchetype.components)) {
             return null;
         }
-        return TABLE.getRowData(archetype, location.row);
+        return getRowData(archetype, location.row);
     }
 
     const deleteEntity = (entity: Entity) => {
@@ -142,14 +142,14 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         }
         if (newArchetype !== currentArchetype) {
             // create a new row in the new archetype
-            const currentData = TABLE.getRowData(currentArchetype, currentLocation.row);
+            const currentData = getRowData(currentArchetype, currentLocation.row);
             // deletes the row from the current archetype (this will update the entity location table for any row which may have been moved into it's position)
             ARCHETYPE.deleteRow(currentArchetype, currentLocation.row, entityLocationTable);
-            const newRow = TABLE.addRow(newArchetype, { ...currentData, ...components });
+            const newRow = addRow(newArchetype, { ...currentData, ...components });
             // update the entity location table for the entity so it points to the new archetype and row
             entityLocationTable.update(entity, { archetype: newArchetype.id, row: newRow });
         } else {
-            TABLE.updateRow(newArchetype, currentLocation.row, components as any);
+            updateRow(newArchetype, currentLocation.row, components as any);
         }
     }
 
@@ -165,7 +165,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
 
     const compact = () => {
         for (const archetype of archetypes) {
-            TABLE.compactTable(archetype);
+            Table.compact(archetype);
         }
     };
 
