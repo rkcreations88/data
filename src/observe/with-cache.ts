@@ -51,6 +51,8 @@ export function withCache<T>(observable: Observe<T>): Observe<T> {
       observers.delete(observer);
       if (observers.size === 0 && unobserve) {
         unobserve();
+        value = undefined;
+        hasValue = false;
         unobserve = null;
       }
     };
