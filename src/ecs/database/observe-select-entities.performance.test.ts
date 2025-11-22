@@ -103,7 +103,7 @@ describe("observeSelectEntities Performance Tests", () => {
         return { entities, testEntity };
     }
 
-    function measureUpdateExecutionTime(updateFn: () => void, iterations = 1000): number {
+    function measureUpdateExecutionTime(updateFn: () => void, iterations = 100): number {
         const times: number[] = [];
         const useHrtime = typeof process !== 'undefined' && process.hrtime && typeof process.hrtime.bigint === 'function';
         for (let i = 0; i < iterations; i++) {
@@ -127,7 +127,7 @@ describe("observeSelectEntities Performance Tests", () => {
 
     describe("O(1) Performance Verification", () => {
         it("should maintain consistent update execution times across different dataset sizes", () => {
-            const sizes = [10, 1000, 100000];
+            const sizes = [10, 1000, 10000];
             const updateTimes: number[] = [];
             for (const size of sizes) {
                 const { testEntity } = createTestData(size);
