@@ -1,0 +1,729 @@
+import { describe, it, expect, vi } from "vitest";
+import { createObservedDatabase } from "./create-observed-database.js";
+import { createStore } from "../../store/create-store.js";
+import { Schema, FromSchema } from "../../../schema/schema.js";
+import { Entity } from "../../entity.js";
+
+const positionSchema = {
+    type: "object",
+    properties: {
+        x: { type: "number" },
+        y: { type: "number" },
+        z: { type: "number" },
+    },
+    required: ["x", "y", "z"],
+    additionalProperties: false,
+} as const satisfies Schema;
+type Position = FromSchema<typeof positionSchema>;
+
+const healthSchema = {
+    type: "object",
+    properties: {
+        current: { type: "number" },
+        max: { type: "number" },
+    },
+    required: ["current", "max"],
+    additionalProperties: false,
+} as const satisfies Schema;
+type Health = FromSchema<typeof healthSchema>;
+
+const nameSchema = {
+    type: "string",
+    maxLength: 50,
+} as const satisfies Schema;
+type Name = FromSchema<typeof nameSchema>;
+
+type ObservedFixture = ReturnType<typeof createObservedFixture>;
+
+const createObservedFixture = () => {
+    const store = createStore(
+        { position: positionSchema, health: healthSchema, name: nameSchema },
+        {
+            time: { default: { delta: 0.016, elapsed: 0 } },
+            generating: { type: "boolean", default: false },
+        },
+        {
+            Position: ["position"],
+            Health: ["health"],
+            PositionHealth: ["position", "health"],
+            PositionName: ["position", "name"],
+            Full: ["position", "health", "name"],
+        } as const,
+    );
+
+    type TestStore = typeof store;
+
+    const observed = createObservedDatabase(store);
+    const run = (
+        handler: (db: TestStore) => Entity | void,
+        options?: { transient?: boolean },
+    ) => observed.execute(handler, options);
+
+    const transactions = {
+        createPositionEntity: (args: { position: Position }) => {
+            const result = run(db => db.archetypes.Position.insert(args));
+            return result.value as Entity;
+        },
+        createPositionHealthEntity: (args: { position: Position; health: Health }) => {
+            const result = run(db => db.archetypes.PositionHealth.insert(args));
+            return result.value as Entity;
+        },
+        createPositionNameEntity: (args: { position: Position; name: Name }) => {
+            const result = run(db => db.archetypes.PositionName.insert(args));
+            return result.value as Entity;
+        },
+        createFullEntity: (args: { position: Position; health: Health; name: Name }) => {
+            const result = run(db => db.archetypes.Full.insert(args));
+            return result.value as Entity;
+        },
+        updateEntity: (args: { entity: Entity; values: Partial<Record<string, unknown>> }) => {
+            run(db => {
+                db.update(args.entity, args.values);
+            });
+        },
+        deleteEntity: (args: { entity: Entity }) => {
+            run(db => {
+                db.delete(args.entity);
+            });
+        },
+        updateTime: (args: { delta: number; elapsed: number }) => {
+            run(db => {
+                db.resources.time = args;
+            });
+        },
+        createEntityAndReturn: (args: { position: Position; name: Name }) => {
+            const result = run(db => db.archetypes.PositionName.insert(args));
+            return result.value as Entity;
+        },
+    };
+
+    return { observed, transactions };
+};
+
+describe("createObservedDatabase", () => {
+    it("should notify component observers when components change", () => {
+        const { observed, transactions } = createObservedFixture();
+        const positionObserver = vi.fn();
+        const nameObserver = vi.fn();
+
+        const unsubscribePosition = observed.observe.components.position(positionObserver);
+        const unsubscribeName = observed.observe.components.name(nameObserver);
+
+        const entity = transactions.createFullEntity({
+            position: { x: 1, y: 2, z: 3 },
+            name: "Test",
+            health: { current: 100, max: 100 },
+        });
+
+        expect(positionObserver).toHaveBeenCalledTimes(1);
+        expect(nameObserver).toHaveBeenCalledTimes(1);
+
+        transactions.updateEntity({
+            entity,
+            values: { position: { x: 4, y: 5, z: 6 } },
+        });
+
+        expect(positionObserver).toHaveBeenCalledTimes(2);
+        expect(nameObserver).toHaveBeenCalledTimes(1);
+
+        unsubscribePosition();
+        unsubscribeName();
+
+        transactions.updateEntity({
+            entity,
+            values: { position: { x: 7, y: 8, z: 9 }, name: "Updated" },
+        });
+
+        expect(positionObserver).toHaveBeenCalledTimes(2);
+        expect(nameObserver).toHaveBeenCalledTimes(1);
+    });
+
+    it("should notify entity observers with correct values", () => {
+        const { observed, transactions } = createObservedFixture();
+
+        const entity = transactions.createFullEntity({
+            position: { x: 1, y: 2, z: 3 },
+            name: "Test",
+            health: { current: 100, max: 100 },
+        });
+
+        const observer = vi.fn();
+        const unsubscribe = observed.observe.entity(entity)(observer);
+
+        expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+            position: { x: 1, y: 2, z: 3 },
+            name: "Test",
+            health: { current: 100, max: 100 },
+        }));
+
+        transactions.updateEntity({
+            entity,
+            values: { name: "Updated", health: { current: 50, max: 100 } },
+        });
+
+        expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+            position: { x: 1, y: 2, z: 3 },
+            name: "Updated",
+            health: { current: 50, max: 100 },
+        }));
+
+        transactions.deleteEntity({ entity });
+        expect(observer).toHaveBeenCalledWith(null);
+
+        unsubscribe();
+    });
+
+    it("should notify transaction observers with full transaction results", () => {
+        const { observed, transactions } = createObservedFixture();
+        const transactionObserver = vi.fn();
+        const unsubscribe = observed.observe.transactions(transactionObserver);
+
+        transactions.createFullEntity({
+            position: { x: 1, y: 2, z: 3 },
+            name: "Test",
+            health: { current: 100, max: 100 },
+        });
+
+        expect(transactionObserver).toHaveBeenCalledTimes(1);
+        const result = transactionObserver.mock.calls[0][0];
+        expect(result.changedEntities.size).toBe(1);
+        expect(result.changedComponents.has("position")).toBe(true);
+        expect(result.changedComponents.has("name")).toBe(true);
+
+        unsubscribe();
+    });
+
+    it("should notify archetype observers when entities change archetypes", () => {
+        const { observed, transactions } = createObservedFixture();
+
+        const entity = transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        const archetype = observed.locate(entity)?.archetype;
+        expect(archetype).toBeDefined();
+
+        const archetypeObserver = vi.fn();
+        const unsubscribe = observed.observe.archetype(archetype!.id)(archetypeObserver);
+
+        expect(archetypeObserver).toHaveBeenCalledTimes(0);
+
+        transactions.updateEntity({
+            entity,
+            values: { name: "Test" },
+        });
+
+        expect(archetypeObserver).toHaveBeenCalledTimes(1);
+        unsubscribe();
+    });
+
+    it("should notify resource observers with immediate and update notifications", () => {
+        const { observed, transactions } = createObservedFixture();
+        const timeObserver = vi.fn();
+        const unsubscribe = observed.observe.resources.time(timeObserver);
+
+        expect(timeObserver).toHaveBeenCalledWith({ delta: 0.016, elapsed: 0 });
+
+        transactions.updateTime({ delta: 0.032, elapsed: 1 });
+        expect(timeObserver).toHaveBeenCalledWith({ delta: 0.032, elapsed: 1 });
+
+        unsubscribe();
+    });
+
+    it("should support multiple observers for the same target", () => {
+        const { observed, transactions } = createObservedFixture();
+
+        const observer1 = vi.fn();
+        const observer2 = vi.fn();
+        const observer3 = vi.fn();
+
+        const unsubscribe1 = observed.observe.components.position(observer1);
+        const unsubscribe2 = observed.observe.components.position(observer2);
+        const unsubscribe3 = observed.observe.components.position(observer3);
+
+        const entity = transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        expect(observer1).toHaveBeenCalledTimes(1);
+        expect(observer2).toHaveBeenCalledTimes(1);
+        expect(observer3).toHaveBeenCalledTimes(1);
+
+        unsubscribe2();
+
+        transactions.updateEntity({
+            entity,
+            values: { position: { x: 4, y: 5, z: 6 } },
+        });
+
+        expect(observer1).toHaveBeenCalledTimes(2);
+        expect(observer2).toHaveBeenCalledTimes(1);
+        expect(observer3).toHaveBeenCalledTimes(2);
+
+        unsubscribe1();
+        unsubscribe3();
+    });
+
+    it("should handle observer cleanup correctly", () => {
+        const { observed, transactions } = createObservedFixture();
+
+        const observer = vi.fn();
+        const unsubscribe = observed.observe.components.position(observer);
+
+        const entity = transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+        expect(observer).toHaveBeenCalledTimes(1);
+
+        unsubscribe();
+
+        transactions.updateEntity({
+            entity,
+            values: { position: { x: 4, y: 5, z: 6 } },
+        });
+
+        expect(observer).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle observing non-existent entities", () => {
+        const { observed } = createObservedFixture();
+        const observer = vi.fn();
+        const unsubscribe = observed.observe.entity(999 as Entity)(observer);
+
+        expect(observer).toHaveBeenCalledWith(null);
+        unsubscribe();
+    });
+
+    it("should handle complex transaction scenarios with multiple observers", () => {
+        const { observed, transactions } = createObservedFixture();
+
+        const positionObserver = vi.fn();
+        const healthObserver = vi.fn();
+        const transactionObserver = vi.fn();
+        const entityObserver = vi.fn();
+
+        const unsubscribePosition = observed.observe.components.position(positionObserver);
+        const unsubscribeHealth = observed.observe.components.health(healthObserver);
+        const unsubscribeTransaction = observed.observe.transactions(transactionObserver);
+
+        const entity = transactions.createPositionHealthEntity({
+            position: { x: 1, y: 2, z: 3 },
+            health: { current: 100, max: 100 },
+        });
+
+        const unsubscribeEntity = observed.observe.entity(entity)(entityObserver);
+
+        expect(positionObserver).toHaveBeenCalledTimes(1);
+        expect(healthObserver).toHaveBeenCalledTimes(1);
+        expect(transactionObserver).toHaveBeenCalledTimes(1);
+        expect(entityObserver).toHaveBeenCalledTimes(1);
+
+        transactions.updateEntity({
+            entity,
+            values: {
+                position: { x: 4, y: 5, z: 6 },
+                health: { current: 50, max: 100 },
+            },
+        });
+
+        expect(positionObserver).toHaveBeenCalledTimes(2);
+        expect(healthObserver).toHaveBeenCalledTimes(2);
+        expect(transactionObserver).toHaveBeenCalledTimes(2);
+        expect(entityObserver).toHaveBeenCalledTimes(2);
+        expect(entityObserver).toHaveBeenCalledWith(expect.objectContaining({
+            position: { x: 4, y: 5, z: 6 },
+            health: { current: 50, max: 100 },
+        }));
+
+        unsubscribePosition();
+        unsubscribeHealth();
+        unsubscribeTransaction();
+        unsubscribeEntity();
+    });
+
+    it("should handle rapid successive changes efficiently", () => {
+        const { observed, transactions } = createObservedFixture();
+        const observer = vi.fn();
+        const unsubscribe = observed.observe.components.position(observer);
+
+        const entity = transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        for (let i = 0; i < 5; i++) {
+            transactions.updateEntity({
+                entity,
+                values: { position: { x: i, y: i, z: i } },
+            });
+        }
+
+        expect(observer).toHaveBeenCalledTimes(6);
+        unsubscribe();
+    });
+
+    describe("entity observation with minArchetype filtering", () => {
+        it("should observe entity when it matches minArchetype exactly", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionEntity({
+                position: { x: 1, y: 2, z: 3 },
+            });
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(entity, observed.archetypes.Position)(observer);
+
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+            }));
+
+            unsubscribe();
+        });
+
+        it("should observe entity when it has more components than minArchetype", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 },
+            });
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(entity, observed.archetypes.Position)(observer);
+
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+            }));
+
+            unsubscribe();
+        });
+
+        it("should return null when entity has fewer components than minArchetype", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionEntity({
+                position: { x: 1, y: 2, z: 3 },
+            });
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(entity, observed.archetypes.PositionHealth)(observer);
+
+            expect(observer).toHaveBeenCalledWith(null);
+            unsubscribe();
+        });
+
+        it("should return null when entity has different components than minArchetype", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionNameEntity({
+                position: { x: 1, y: 2, z: 3 },
+                name: "Test",
+            });
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(entity, observed.archetypes.PositionHealth)(observer);
+
+            expect(observer).toHaveBeenCalledWith(null);
+            unsubscribe();
+        });
+
+        it("should update observation when entity gains required components", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionEntity({
+                position: { x: 1, y: 2, z: 3 },
+            });
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(entity, observed.archetypes.PositionHealth)(observer);
+
+            expect(observer).toHaveBeenCalledWith(null);
+
+            transactions.updateEntity({
+                entity,
+                values: { health: { current: 100, max: 100 } },
+            });
+
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 },
+            }));
+
+            unsubscribe();
+        });
+
+        it("should update observation when entity loses required components", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 },
+            });
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(entity, observed.archetypes.PositionHealth)(observer);
+
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 },
+            }));
+
+            transactions.updateEntity({
+                entity,
+                values: { health: undefined },
+            });
+
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should handle entity deletion correctly with minArchetype", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 },
+            });
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(entity, observed.archetypes.PositionHealth)(observer);
+
+            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+            }));
+
+            transactions.deleteEntity({ entity });
+            expect(observer).toHaveBeenCalledWith(null);
+
+            unsubscribe();
+        });
+
+        it("should handle non-existent entity with minArchetype", () => {
+            const { observed } = createObservedFixture();
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(999 as Entity, observed.archetypes.Position)(observer);
+
+            expect(observer).toHaveBeenCalledWith(null);
+            unsubscribe();
+        });
+
+        it("should handle invalid entity ID with minArchetype", () => {
+            const { observed } = createObservedFixture();
+
+            const observer = vi.fn();
+            const unsubscribe = observed.observe.entity(-1, observed.archetypes.Position)(observer);
+
+            expect(observer).toHaveBeenCalledWith(null);
+            unsubscribe();
+        });
+
+        it("should maintain separate observations for different minArchetypes", () => {
+            const { observed, transactions } = createObservedFixture();
+
+            const entity = transactions.createPositionHealthEntity({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 },
+            });
+
+            const positionObserver = vi.fn();
+            const healthObserver = vi.fn();
+            const fullObserver = vi.fn();
+
+            const unsubscribePosition = observed.observe.entity(entity, observed.archetypes.Position)(positionObserver);
+            const unsubscribeHealth = observed.observe.entity(entity, observed.archetypes.Health)(healthObserver);
+            const unsubscribeFull = observed.observe.entity(entity, observed.archetypes.PositionHealth)(fullObserver);
+
+            expect(positionObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+            }));
+            expect(healthObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                health: { current: 100, max: 100 },
+            }));
+            expect(fullObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 },
+            }));
+
+            transactions.updateEntity({
+                entity,
+                values: { health: undefined },
+            });
+
+            expect(positionObserver).toHaveBeenCalledWith(expect.objectContaining({
+                id: entity,
+                position: { x: 1, y: 2, z: 3 },
+            }));
+            expect(healthObserver).toHaveBeenCalledWith(null);
+            expect(fullObserver).toHaveBeenCalledWith(null);
+
+            unsubscribePosition();
+            unsubscribeHealth();
+            unsubscribeFull();
+        });
+    });
+
+    it("should notify observers when database is restored from serialized data", () => {
+        const original = createObservedFixture();
+        const { observed: originalObserved, transactions: originalTx } = original;
+
+        const entity = originalTx.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+        originalTx.updateTime({ delta: 0.016, elapsed: 0 });
+
+        const positionObserver = vi.fn();
+        const timeObserver = vi.fn();
+        const entityObserver = vi.fn();
+        const transactionObserver = vi.fn();
+
+        const unsubscribePosition = originalObserved.observe.components.position(positionObserver);
+        const unsubscribeTime = originalObserved.observe.resources.time(timeObserver);
+        const unsubscribeEntity = originalObserved.observe.entity(entity)(entityObserver);
+        const unsubscribeTransaction = originalObserved.observe.transactions(transactionObserver);
+
+        positionObserver.mockClear();
+        timeObserver.mockClear();
+        entityObserver.mockClear();
+        transactionObserver.mockClear();
+
+        const serialized = originalObserved.toData();
+
+        const restored = createObservedFixture();
+        const { observed: restoredObserved, transactions: restoredTx } = restored;
+        const newEntity = restoredTx.createFullEntity({
+            position: { x: 10, y: 20, z: 30 },
+            health: { current: 50, max: 100 },
+            name: "NewEntity",
+        });
+        restoredTx.updateTime({ delta: 0.025, elapsed: 2.0 });
+
+        const newPositionObserver = vi.fn();
+        const newTimeObserver = vi.fn();
+        const newEntityObserver = vi.fn();
+        const newTransactionObserver = vi.fn();
+
+        const newUnsubscribePosition = restoredObserved.observe.components.position(newPositionObserver);
+        const newUnsubscribeTime = restoredObserved.observe.resources.time(newTimeObserver);
+        const newUnsubscribeEntity = restoredObserved.observe.entity(newEntity)(newEntityObserver);
+        const newUnsubscribeTransaction = restoredObserved.observe.transactions(newTransactionObserver);
+
+        newPositionObserver.mockClear();
+        newTimeObserver.mockClear();
+        newEntityObserver.mockClear();
+        newTransactionObserver.mockClear();
+
+        restoredObserved.fromData(serialized);
+
+        expect(newPositionObserver).toHaveBeenCalledTimes(1);
+        expect(newTimeObserver).toHaveBeenCalledTimes(1);
+        expect(newEntityObserver).toHaveBeenCalledTimes(1);
+        expect(newTransactionObserver).toHaveBeenCalledTimes(1);
+
+        newUnsubscribePosition();
+        newUnsubscribeTime();
+        newUnsubscribeEntity();
+        newUnsubscribeTransaction();
+
+        unsubscribePosition();
+        unsubscribeTime();
+        unsubscribeEntity();
+        unsubscribeTransaction();
+    });
+
+    it("should notify observers even when restoring empty data", () => {
+        const original = createObservedFixture();
+        const { observed: originalObserved, transactions: originalTx } = original;
+
+        const positionObserver = vi.fn();
+        const timeObserver = vi.fn();
+        const transactionObserver = vi.fn();
+
+        const unsubscribePosition = originalObserved.observe.components.position(positionObserver);
+        const unsubscribeTime = originalObserved.observe.resources.time(timeObserver);
+        const unsubscribeTransaction = originalObserved.observe.transactions(transactionObserver);
+
+        positionObserver.mockClear();
+        timeObserver.mockClear();
+        transactionObserver.mockClear();
+
+        const serialized = originalObserved.toData();
+
+        const restored = createObservedFixture();
+        const { observed: restoredObserved, transactions: restoredTx } = restored;
+        restoredTx.createPositionEntity({ position: { x: 1, y: 2, z: 3 } });
+        restoredTx.updateTime({ delta: 0.033, elapsed: 1.5 });
+
+        const newPositionObserver = vi.fn();
+        const newTimeObserver = vi.fn();
+        const newTransactionObserver = vi.fn();
+
+        const newUnsubscribePosition = restoredObserved.observe.components.position(newPositionObserver);
+        const newUnsubscribeTime = restoredObserved.observe.resources.time(newTimeObserver);
+        const newUnsubscribeTransaction = restoredObserved.observe.transactions(newTransactionObserver);
+
+        newPositionObserver.mockClear();
+        newTimeObserver.mockClear();
+        newTransactionObserver.mockClear();
+
+        restoredObserved.fromData(serialized);
+
+        expect(newPositionObserver).toHaveBeenCalledTimes(1);
+        expect(newTimeObserver).toHaveBeenCalledTimes(1);
+        expect(newTransactionObserver).toHaveBeenCalledTimes(1);
+
+        newUnsubscribePosition();
+        newUnsubscribeTime();
+        newUnsubscribeTransaction();
+
+        unsubscribePosition();
+        unsubscribeTime();
+        unsubscribeTransaction();
+    });
+
+    it("should handle entity observers correctly during restoration", () => {
+        const original = createObservedFixture();
+        const { observed: originalObserved, transactions: originalTx } = original;
+
+        const entity = originalTx.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        const entityObserver = vi.fn();
+        const unsubscribe = originalObserved.observe.entity(entity)(entityObserver);
+        entityObserver.mockClear();
+
+        const serialized = originalObserved.toData();
+
+        const restored = createObservedFixture();
+        const { observed: restoredObserved, transactions: restoredTx } = restored;
+        const newEntity = restoredTx.createFullEntity({
+            position: { x: 10, y: 20, z: 30 },
+            health: { current: 100, max: 100 },
+            name: "NewEntity",
+        });
+
+        const newObserver = vi.fn();
+        const newUnsubscribe = restoredObserved.observe.entity(newEntity)(newObserver);
+        newObserver.mockClear();
+
+        restoredObserved.fromData(serialized);
+
+        expect(newObserver).toHaveBeenCalledTimes(1);
+        expect(newObserver.mock.calls[0][0]).toEqual({
+            id: newEntity,
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        unsubscribe();
+        newUnsubscribe();
+    });
+});

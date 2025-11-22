@@ -21,6 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 export * from "./create-database.js";
+export * from "./reconciling/create-reconciling-database.js";
+export * from "./reconciling/reconciling-database.js";
+export * from "./reconciling/reconciling-entry.js";
+export * from "./observed/create-observed-database.js";
+export * from "./observed/observed-database.js";
 export * from "./database.js";
 export * from "./observe-dependent-value.js";
 export * from "./transactional-store/index.js";

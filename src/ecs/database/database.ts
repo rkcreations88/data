@@ -87,6 +87,7 @@ export interface Database<
   }
   toData(): unknown
   fromData(data: unknown): void
+  cancelTransaction(id: number): void
 }
 
 type TestTransactionFunctions = ToTransactionFunctions<{

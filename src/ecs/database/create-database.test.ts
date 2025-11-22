@@ -22,6 +22,7 @@ SOFTWARE.*/
 
 import { describe, it, expect, vi } from "vitest";
 import { createDatabase } from "./create-database.js";
+import { createReconcilingDatabase } from "./reconciling/create-reconciling-database.js";
 import { createStore } from "../store/create-store.js";
 import { FromSchema, Schema } from "../../schema/schema.js";
 import { Entity } from "../entity.js";
@@ -58,7 +59,7 @@ const nameSchema = {
 } as const satisfies Schema;
 type Name = FromSchema<typeof nameSchema>;
 
-function createTestDatabase() {
+const createStoreConfig = () => {
     const baseStore = createStore(
         { position: positionSchema, health: healthSchema, name: nameSchema },
         {
@@ -74,23 +75,25 @@ function createTestDatabase() {
         }
     );
 
-    return createDatabase(baseStore, {
-        createPositionEntity(t, args: { position: { x: number, y: number, z: number } }) {
+    type TestStore = typeof baseStore;
+
+    const transactions = {
+        createPositionEntity(t: TestStore, args: { position: { x: number, y: number, z: number } }) {
             return t.archetypes.Position.insert(args);
         },
-        createPositionHealthEntity(t, args: { position: { x: number, y: number, z: number }, health: { current: number, max: number } }) {
+        createPositionHealthEntity(t: TestStore, args: { position: { x: number, y: number, z: number }, health: { current: number, max: number } }) {
             return t.archetypes.PositionHealth.insert(args);
         },
-        createPositionNameEntity(t, args: { position: { x: number, y: number, z: number }, name: string }) {
+        createPositionNameEntity(t: TestStore, args: { position: { x: number, y: number, z: number }, name: string }) {
             return t.archetypes.PositionName.insert(args);
         },
-        createFullEntity(t, args: { position: { x: number, y: number, z: number }, health: { current: number, max: number }, name: string }) {
+        createFullEntity(t: TestStore, args: { position: { x: number, y: number, z: number }, health: { current: number, max: number }, name: string }) {
             return t.archetypes.Full.insert(args);
         },
-        createEntityAndReturn(t, args: { position: Position, name: Name }) {
+        createEntityAndReturn(t: TestStore, args: { position: Position, name: Name }) {
             return t.archetypes.PositionName.insert(args);
         },
-        updateEntity(t, args: {
+        updateEntity(t: TestStore, args: {
             entity: Entity,
             values: Partial<{
                 position: { x: number, y: number, z: number },
@@ -100,27 +103,79 @@ function createTestDatabase() {
         }) {
             t.update(args.entity, args.values);
         },
-        deleteEntity(t, args: { entity: Entity }) {
+        deleteEntity(t: TestStore, args: { entity: Entity }) {
             t.delete(args.entity);
         },
-        updateTime(t, args: { delta: number, elapsed: number }) {
+        updateTime(t: TestStore, args: { delta: number, elapsed: number }) {
             t.resources.time = args;
         },
-        startGenerating(t, args: { progress: number }) {
+        createFailingPositionEntity(t: TestStore, args: { position: { x: number; y: number; z: number } }): Entity {
+            const entity = t.archetypes.Position.insert(args);
+            throw new Error("Simulated failure");
+        },
+        startGenerating(t: TestStore, args: { progress: number }) {
             if (args.progress < 1.0) {
                 t.resources.generating = true;
             }
             return -1;
         },
-        deletePositionEntities(t) {
+        deletePositionEntities(t: TestStore) {
             for (const entity of t.select(["position"])) {
                 t.delete(entity);
             }
         }
-    });
+    };
+
+    return { baseStore, transactions };
+};
+
+const createSequentialClock = (sequence: readonly number[], startFallback = 1) => {
+    let index = 0;
+    let current = Math.max(startFallback, 1);
+    return () => {
+        if (index < sequence.length) {
+            const value = sequence[index++];
+            current = Math.max(value, current);
+            return value;
+        }
+        current += 1;
+        return current;
+    };
+};
+
+function createTestDatabase(now: () => number = Date.now) {
+    const { baseStore, transactions } = createStoreConfig();
+    return createDatabase(baseStore, transactions, now);
 }
 
 describe("createDatabase", () => {
+    it("should replay out-of-order commits by absolute time in reconciling database", () => {
+        const { baseStore, transactions } = createStoreConfig();
+        const reconciling = createReconcilingDatabase(baseStore, transactions);
+
+        reconciling.apply({
+            id: 1,
+            name: "createPositionNameEntity",
+            args: { position: { x: 10, y: 20, z: 30 }, name: "LateCommit" },
+            time: 5,
+        });
+
+        reconciling.apply({
+            id: 2,
+            name: "createPositionNameEntity",
+            args: { position: { x: 40, y: 50, z: 60 }, name: "EarlyCommit" },
+            time: 1,
+        });
+
+        const entities = reconciling.select(["name"]);
+        const namesById = entities
+            .map(entity => reconciling.read(entity)?.name)
+            .filter((name): name is string => !!name);
+
+        expect(namesById).toHaveLength(2);
+        expect(namesById).toEqual(["EarlyCommit", "LateCommit"]);
+    });
+
     it("should support deleting entities", () => {
         const store = createTestDatabase();
         const entity = store.transactions.createPositionEntity({ position: { x: 1, y: 2, z: 3 } });
@@ -128,324 +183,17 @@ describe("createDatabase", () => {
         expect(store.locate(entity)).toBeNull();
     });
 
-    it("should notify component observers when components change", () => {
-        const store = createTestDatabase();
-        const positionObserver = vi.fn();
-        const nameObserver = vi.fn();
-
-        // Subscribe to component changes
-        const unsubscribePosition = store.observe.components.position(positionObserver);
-        const unsubscribeName = store.observe.components.name(nameObserver);
-
-        // Create an entity that affects both components
-        const testEntity = store.transactions.createFullEntity({
-            position: { x: 1, y: 2, z: 3 },
-            name: "Test",
-            health: { current: 100, max: 100 }
-        });
-
-        // Both observers should be notified
-        expect(positionObserver).toHaveBeenCalledTimes(1);
-        expect(nameObserver).toHaveBeenCalledTimes(1);
-
-        // Update only position
-        store.transactions.updateEntity({
-            entity: testEntity,
-            values: { position: { x: 4, y: 5, z: 6 } }
-        });
-
-        // Only position observer should be notified
-        expect(positionObserver).toHaveBeenCalledTimes(2);
-        expect(nameObserver).toHaveBeenCalledTimes(1);
-
-        // Unsubscribe and verify no more notifications
-        unsubscribePosition();
-        unsubscribeName();
-
-        store.transactions.updateEntity({
-            entity: testEntity,
-            values: { position: { x: 7, y: 8, z: 9 }, name: "Updated" }
-        });
-
-        expect(positionObserver).toHaveBeenCalledTimes(2);
-        expect(nameObserver).toHaveBeenCalledTimes(1);
-    });
-
-    it("should notify entity observers with correct values", () => {
+    it("should roll back state when a transaction throws synchronously", () => {
         const store = createTestDatabase();
 
-        // Create initial entity
-        const testEntity = store.transactions.createFullEntity({
-            position: { x: 1, y: 2, z: 3 },
-            name: "Test",
-            health: { current: 100, max: 100 }
-        });
+        expect(() =>
+            store.transactions.createFailingPositionEntity({
+                position: { x: 1, y: 2, z: 3 },
+            })
+        ).toThrow("Simulated failure");
 
-        // Subscribe to entity changes
-        const observer = vi.fn();
-        const unsubscribe = store.observe.entity(testEntity)(observer);
-
-        // Initial notification should have current values
-        expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-            position: { x: 1, y: 2, z: 3 },
-            name: "Test",
-            health: { current: 100, max: 100 }
-        }));
-
-        // Update entity
-        store.transactions.updateEntity({
-            entity: testEntity,
-            values: { name: "Updated", health: { current: 50, max: 100 } }
-        });
-
-        // Observer should be notified with new values
-        expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-            position: { x: 1, y: 2, z: 3 }, // unchanged
-            name: "Updated",
-            health: { current: 50, max: 100 }
-        }));
-
-        // Delete entity
-        store.transactions.deleteEntity({ entity: testEntity });
-
-        // Observer should be notified with null
-        expect(observer).toHaveBeenCalledWith(null);
-
-        unsubscribe();
-    });
-
-    it("should notify transaction observers with full transaction results", () => {
-        const store = createTestDatabase();
-        const transactionObserver = vi.fn();
-
-        const unsubscribe = store.observe.transactions(transactionObserver);
-
-        // Execute a transaction with multiple operations
-        store.transactions.createFullEntity({
-            position: { x: 1, y: 2, z: 3 },
-            name: "Test",
-            health: { current: 100, max: 100 }
-        });
-
-        // Transaction observer should be called with the full result
-        expect(transactionObserver).toHaveBeenCalledWith(expect.objectContaining({
-            changedEntities: expect.any(Map),
-            changedComponents: expect.any(Set),
-            changedArchetypes: expect.any(Set),
-            redo: expect.any(Array),
-            undo: expect.any(Array)
-        }));
-
-        const result = transactionObserver.mock.calls[0][0];
-        expect(result.changedEntities.size).toBe(1);
-        expect(result.changedComponents.has("position")).toBe(true);
-        expect(result.changedComponents.has("name")).toBe(true);
-
-        unsubscribe();
-    });
-
-    it("should notify archetype observers when entities change archetypes", () => {
-        const store = createTestDatabase();
-
-        // Create initial entity
-        const entity = store.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        const archetype = store.locate(entity)?.archetype;
-        expect(archetype).toBeDefined();
-
-        const archetypeObserver = vi.fn();
-        const unsubscribe = store.observe.archetype(archetype!.id)(archetypeObserver);
-
-        // No initial notification for archetype observers
-        expect(archetypeObserver).toHaveBeenCalledTimes(0);
-
-        // Update entity to add name component, potentially changing archetype
-        store.transactions.updateEntity({
-            entity,
-            values: { name: "Test" }
-        });
-
-        // Archetype observer should be notified of the change
-        expect(archetypeObserver).toHaveBeenCalledTimes(1);
-
-        unsubscribe();
-    });
-
-    it("should notify resource observers with immediate and update notifications", () => {
-        const store = createTestDatabase();
-
-        const timeObserver = vi.fn();
-
-        // Subscribe to resource changes
-        const unsubscribeTime = store.observe.resources.time(timeObserver);
-
-        // Observer should be notified immediately with initial value
-        expect(timeObserver).toHaveBeenCalledWith({ delta: 0.016, elapsed: 0 });
-
-        // Update time resource
-        store.transactions.updateTime({ delta: 0.032, elapsed: 1 });
-
-        // Observer should be notified with new value
-        expect(timeObserver).toHaveBeenCalledWith({ delta: 0.032, elapsed: 1 });
-    });
-
-    it("should support multiple observers for the same target", () => {
-        const store = createTestDatabase();
-
-        const observer1 = vi.fn();
-        const observer2 = vi.fn();
-        const observer3 = vi.fn();
-
-        // Subscribe multiple observers to the same component
-        const unsubscribe1 = store.observe.components.position(observer1);
-        const unsubscribe2 = store.observe.components.position(observer2);
-        const unsubscribe3 = store.observe.components.position(observer3);
-
-        // Create entity with position
-        const entity = store.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        // All observers should be notified
-        expect(observer1).toHaveBeenCalledTimes(1);
-        expect(observer2).toHaveBeenCalledTimes(1);
-        expect(observer3).toHaveBeenCalledTimes(1);
-
-        // Unsubscribe one observer
-        unsubscribe2();
-
-        // Update position
-        store.transactions.updateEntity({
-            entity,
-            values: { position: { x: 4, y: 5, z: 6 } }
-        });
-
-        // Only remaining observers should be notified
-        expect(observer1).toHaveBeenCalledTimes(2);
-        expect(observer2).toHaveBeenCalledTimes(1); // No more calls
-        expect(observer3).toHaveBeenCalledTimes(2);
-
-        unsubscribe1();
-        unsubscribe3();
-    });
-
-    it("should handle observer cleanup correctly", () => {
-        const store = createTestDatabase();
-
-        const observer = vi.fn();
-        const unsubscribe = store.observe.components.position(observer);
-
-        // Create entity
-        const entity = store.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        expect(observer).toHaveBeenCalledTimes(1);
-
-        // Unsubscribe
-        unsubscribe();
-
-        // Update entity
-        store.transactions.updateEntity({
-            entity,
-            values: { position: { x: 4, y: 5, z: 6 } }
-        });
-
-        // Observer should not be called after unsubscribe
-        expect(observer).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle observing non-existent entities", () => {
-        const store = createTestDatabase();
-
-        const observer = vi.fn();
-        const unsubscribe = store.observe.entity(999 as Entity)(observer);
-
-        // Should be notified with null for non-existent entity
-        expect(observer).toHaveBeenCalledWith(null);
-
-        unsubscribe();
-    });
-
-    it("should handle complex transaction scenarios with multiple observers", () => {
-        const store = createTestDatabase();
-
-        const positionObserver = vi.fn();
-        const healthObserver = vi.fn();
-        const transactionObserver = vi.fn();
-        const entityObserver = vi.fn();
-
-        // Subscribe to various observers
-        const unsubscribePosition = store.observe.components.position(positionObserver);
-        const unsubscribeHealth = store.observe.components.health(healthObserver);
-        const unsubscribeTransaction = store.observe.transactions(transactionObserver);
-
-        // Create entity
-        const entity = store.transactions.createPositionHealthEntity({
-            position: { x: 1, y: 2, z: 3 },
-            health: { current: 100, max: 100 }
-        });
-
-        const unsubscribeEntity = store.observe.entity(entity)(entityObserver);
-
-        // All observers should be notified
-        expect(positionObserver).toHaveBeenCalledTimes(1);
-        expect(healthObserver).toHaveBeenCalledTimes(1);
-        expect(transactionObserver).toHaveBeenCalledTimes(1);
-        expect(entityObserver).toHaveBeenCalledTimes(1);
-
-        // Update multiple components
-        store.transactions.updateEntity({
-            entity,
-            values: {
-                position: { x: 4, y: 5, z: 6 },
-                health: { current: 50, max: 100 }
-            }
-        });
-
-        // All observers should be notified again
-        expect(positionObserver).toHaveBeenCalledTimes(2);
-        expect(healthObserver).toHaveBeenCalledTimes(2);
-        expect(transactionObserver).toHaveBeenCalledTimes(2);
-        expect(entityObserver).toHaveBeenCalledTimes(2);
-
-        // Verify entity observer received correct values
-        expect(entityObserver).toHaveBeenCalledWith(expect.objectContaining({
-            position: { x: 4, y: 5, z: 6 },
-            health: { current: 50, max: 100 }
-        }));
-
-        unsubscribePosition();
-        unsubscribeHealth();
-        unsubscribeTransaction();
-        unsubscribeEntity();
-    });
-
-    it("should handle rapid successive changes efficiently", () => {
-        const store = createTestDatabase();
-
-        const observer = vi.fn();
-        const unsubscribe = store.observe.components.position(observer);
-
-        // Create entity
-        const entity = store.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        // Make rapid successive updates
-        for (let i = 0; i < 5; i++) {
-            store.transactions.updateEntity({
-                entity,
-                values: { position: { x: i, y: i, z: i } }
-            });
-        }
-
-        // Observer should be called for each change
-        expect(observer).toHaveBeenCalledTimes(6); // 1 for create + 5 for updates
-
-        unsubscribe();
+        const entities = store.select(["position"]);
+        expect(entities).toHaveLength(0);
     });
 
     it("should support transaction functions that return an Entity", () => {
@@ -694,15 +442,15 @@ describe("createDatabase", () => {
             // Wait for processing to complete
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            // Verify only the first entity was created before the error
+            // Verify the transient entity was rolled back after the error
             const entities = store.select(["position", "name"]);
-            const beforeErrorEntity = entities.find(entityId => {
+            const beforeErrorEntities = entities.filter(entityId => {
                 const values = store.read(entityId);
                 return values?.name === "BeforeError";
             });
 
-            expect(beforeErrorEntity).toBeDefined();
-            expect(observer).toHaveBeenCalledTimes(1);
+            expect(beforeErrorEntities).toHaveLength(0);
+            expect(observer).toHaveBeenCalled();
 
             unsubscribe();
         });
@@ -738,7 +486,6 @@ describe("createDatabase", () => {
                 const values = store.read(entityId);
                 return values?.name?.startsWith("Even");
             });
-
             // Now that rollback is observable, we may have additional entities during processing
             // The key is that the final entity has the correct data
             const finalEntity = evenEntities.find(entityId => {
@@ -1008,588 +755,164 @@ describe("createDatabase", () => {
         });
     });
 
-    describe("entity observation with minArchetype filtering", () => {
-        it("should observe entity when it matches minArchetype exactly", () => {
+    describe("toData/fromData functionality", () => {
+        it("should serialize and deserialize database state correctly", () => {
             const store = createTestDatabase();
 
-            // Create entity with position only
-            const entity = store.transactions.createPositionEntity({
+            // Create some entities and update resources
+            const entity1 = store.transactions.createPositionEntity({
+                position: { x: 1, y: 2, z: 3 }
+            });
+            const entity2 = store.transactions.createFullEntity({
+                position: { x: 4, y: 5, z: 6 },
+                health: { current: 100, max: 100 },
+                name: "TestEntity"
+            });
+            store.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
+
+            // Serialize the database
+            const serializedData = store.toData();
+
+            // Create a new database and restore from serialized data
+            const newStore = createTestDatabase();
+            newStore.fromData(serializedData);
+
+            // Verify entities are restored
+            const restoredEntities = newStore.select(["position"]);
+            expect(restoredEntities).toHaveLength(2);
+
+            // Verify entity data is correct
+            const restoredData1 = newStore.read(restoredEntities[0]);
+            const restoredData2 = newStore.read(restoredEntities[1]);
+            expect(restoredData1).toEqual({
+                id: restoredEntities[0],
+                position: { x: 1, y: 2, z: 3 }
+            });
+            expect(restoredData2).toEqual({
+                id: restoredEntities[1],
+                position: { x: 4, y: 5, z: 6 },
+                health: { current: 100, max: 100 },
+                name: "TestEntity"
+            });
+
+            // Verify resources are restored
+            expect(newStore.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
+        });
+
+        it("should restore applied entry ordering after serialization", () => {
+            const store = createTestDatabase(createSequentialClock([2, 1], 2));
+
+            store.transactions.createPositionNameEntity({
+                position: { x: 10, y: 20, z: 30 },
+                name: "LateCommit",
+            });
+
+            store.transactions.createPositionNameEntity({
+                position: { x: 40, y: 50, z: 60 },
+                name: "EarlyCommit",
+            });
+
+            const serializedData = store.toData();
+            expect(Array.isArray((serializedData as any).appliedEntries)).toBe(true);
+
+            const newStore = createTestDatabase(createSequentialClock([0.5], 1));
+
+            newStore.fromData(serializedData);
+
+            newStore.transactions.createPositionNameEntity({
+                position: { x: 70, y: 80, z: 90 },
+                name: "EarliestCommit",
+            });
+
+            const entities = newStore.select(["name"]);
+            const names = entities
+                .map(entityId => newStore.read(entityId)?.name)
+                .filter((name): name is string => Boolean(name));
+
+            expect(new Set(names)).toEqual(new Set(["EarliestCommit", "LateCommit", "EarlyCommit"]));
+        });
+
+        it("should remove cancelled applied entries", async () => {
+            const store = createTestDatabase();
+
+            let rejectGenerator: (error: Error) => void = () => { };
+
+            const generator = async function* () {
+                yield { position: { x: 1, y: 1, z: 1 }, name: "Transient" };
+                await new Promise<never>((_, reject) => {
+                    rejectGenerator = reject;
+                });
+            };
+
+            const promise = store.transactions.createPositionNameEntity(generator);
+
+            // Allow the first yield to be processed
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            const serializedBefore = store.toData() as { appliedEntries?: Array<{ id?: number }> };
+            expect(serializedBefore.appliedEntries).toHaveLength(1);
+
+            const transientId = serializedBefore.appliedEntries![0]!.id!;
+            store.cancelTransaction(transientId);
+
+            rejectGenerator(new Error("cancelled"));
+            await expect(promise).rejects.toThrow("cancelled");
+
+            const serializedAfter = store.toData() as { appliedEntries?: Array<{ id?: number }> };
+            expect(serializedAfter.appliedEntries ?? []).toHaveLength(0);
+
+            const entities = store.select(["position"]);
+            expect(entities).toHaveLength(0);
+        });
+
+        it("should preserve transaction functionality after restoration", () => {
+            const store = createTestDatabase();
+
+            // Create initial state
+            store.transactions.updateTime({ delta: 0.016, elapsed: 0 });
+
+            // Serialize the database
+            const serializedData = store.toData();
+
+            // Create a new database and restore
+            const newStore = createTestDatabase();
+            newStore.fromData(serializedData);
+
+            // Verify transactions still work
+            const entity = newStore.transactions.createPositionEntity({
                 position: { x: 1, y: 2, z: 3 }
             });
 
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.Position)(observer);
+            expect(entity).toBeDefined();
+            expect(typeof entity).toBe("number");
 
-            // Should receive the entity data since it matches exactly
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
+            const entityData = newStore.read(entity);
+            expect(entityData).toEqual({
                 id: entity,
                 position: { x: 1, y: 2, z: 3 }
-            }));
+            });
 
-            unsubscribe();
+            // Verify resource transactions work
+            newStore.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
+            expect(newStore.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
         });
 
-        it("should observe entity when it has more components than minArchetype", () => {
+        it("all transient operations should be rolled back", async () => {
             const store = createTestDatabase();
 
-            // Create entity with position and health
-            const entity = store.transactions.createPositionHealthEntity({
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
+            const promise = store.transactions.startGenerating(async function* () {
+                yield { progress: 0 };
+                yield { progress: 1 };
             });
 
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.Position)(observer);
+            // Check that the result is a promise
+            expect(promise).toBeInstanceOf(Promise);
 
-            // Should receive the entity data since it has all required components
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 }
-            }));
-
-            unsubscribe();
+            const result = await promise;
+            expect(result).toBe(-1);
+            const generating = await toPromise(store.observe.resources.generating);
+            expect(generating).toBe(false);
         });
 
-        it("should return null when entity has fewer components than minArchetype", () => {
-            const store = createTestDatabase();
-
-            // Create entity with position only
-            const entity = store.transactions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 }
-            });
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
-
-            // Should return null since entity doesn't have health component
-            expect(observer).toHaveBeenCalledWith(null);
-
-            unsubscribe();
-        });
-
-        it("should return null when entity has different components than minArchetype", () => {
-            const store = createTestDatabase();
-
-            // Create entity with position and name
-            const entity = store.transactions.createPositionNameEntity({
-                position: { x: 1, y: 2, z: 3 },
-                name: "Test"
-            });
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
-
-            // Should return null since entity doesn't have health component
-            expect(observer).toHaveBeenCalledWith(null);
-
-            unsubscribe();
-        });
-
-        it("should update observation when entity gains required components", () => {
-            const store = createTestDatabase();
-
-            // Create entity with position only
-            const entity = store.transactions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 }
-            });
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
-
-            // Initially should be null
-            expect(observer).toHaveBeenCalledWith(null);
-
-            // Add health component
-            store.transactions.updateEntity({
-                entity,
-                values: { health: { current: 100, max: 100 } }
-            });
-
-            // Should now receive the entity data
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
-            }));
-
-            unsubscribe();
-        });
-
-        it("should update observation when entity loses required components", () => {
-            const store = createTestDatabase();
-
-            // Create entity with position and health
-            const entity = store.transactions.createPositionHealthEntity({
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
-            });
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
-
-            // Initially should receive data
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
-            }));
-
-            // Remove health component
-            store.transactions.updateEntity({
-                entity,
-                values: { health: undefined }
-            });
-
-            // Should now return null
-            expect(observer).toHaveBeenCalledWith(null);
-
-            unsubscribe();
-        });
-
-        it("should handle entity deletion correctly with minArchetype", () => {
-            const store = createTestDatabase();
-
-            // Create entity with position and health
-            const entity = store.transactions.createPositionHealthEntity({
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
-            });
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
-
-            // Initially should receive data
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 }
-            }));
-
-            // Delete entity
-            store.transactions.deleteEntity({ entity });
-
-            // Should return null for deleted entity
-            expect(observer).toHaveBeenCalledWith(null);
-
-            unsubscribe();
-        });
-
-        it("should handle non-existent entity with minArchetype", () => {
-            const store = createTestDatabase();
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(999 as Entity, store.archetypes.Position)(observer);
-
-            // Should return null for non-existent entity
-            expect(observer).toHaveBeenCalledWith(null);
-
-            unsubscribe();
-        });
-
-        it("should handle invalid entity ID with minArchetype", () => {
-            const store = createTestDatabase();
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(-1, store.archetypes.Position)(observer);
-
-            // Should return null for invalid entity ID
-            expect(observer).toHaveBeenCalledWith(null);
-
-            unsubscribe();
-        });
-
-        it("should maintain separate observations for different minArchetypes", () => {
-            const store = createTestDatabase();
-
-            // Create entity with position and health
-            const entity = store.transactions.createPositionHealthEntity({
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
-            });
-
-            const positionObserver = vi.fn();
-            const healthObserver = vi.fn();
-            const fullObserver = vi.fn();
-
-            const unsubscribePosition = store.observe.entity(entity, store.archetypes.Position)(positionObserver);
-            const unsubscribeHealth = store.observe.entity(entity, store.archetypes.Health)(healthObserver);
-            const unsubscribeFull = store.observe.entity(entity, store.archetypes.PositionHealth)(fullObserver);
-
-            // All should receive data since entity has all components
-            expect(positionObserver).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 }
-            }));
-            expect(healthObserver).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                health: { current: 100, max: 100 }
-            }));
-            expect(fullObserver).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
-            }));
-
-            // Remove health component
-            store.transactions.updateEntity({
-                entity,
-                values: { health: undefined }
-            });
-
-            // Position observer should still receive data
-            expect(positionObserver).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 }
-            }));
-            // Health and full observers should return null
-            expect(healthObserver).toHaveBeenCalledWith(null);
-            expect(fullObserver).toHaveBeenCalledWith(null);
-
-            unsubscribePosition();
-            unsubscribeHealth();
-            unsubscribeFull();
-        });
-
-        it("should handle component updates that don't affect minArchetype requirements", () => {
-            const store = createTestDatabase();
-
-            // Create entity with position and health
-            const entity = store.transactions.createPositionHealthEntity({
-                position: { x: 1, y: 2, z: 3 },
-                health: { current: 100, max: 100 }
-            });
-
-            const observer = vi.fn();
-            const unsubscribe = store.observe.entity(entity, store.archetypes.PositionHealth)(observer);
-
-            // Initially should receive data
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 1, y: 2, z: 3 }
-            }));
-
-            // Update position (should trigger notification)
-            store.transactions.updateEntity({
-                entity,
-                values: { position: { x: 10, y: 20, z: 30 } }
-            });
-
-            // Should receive updated data
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 10, y: 20, z: 30 }
-            }));
-
-            // Update health (should not affect position observation)
-            store.transactions.updateEntity({
-                entity,
-                values: { health: { current: 50, max: 100 } }
-            });
-
-            // Should still receive position data (health update shouldn't trigger position observer)
-            expect(observer).toHaveBeenCalledWith(expect.objectContaining({
-                id: entity,
-                position: { x: 10, y: 20, z: 30 }
-            }));
-
-            unsubscribe();
-        });
     });
 });
-
-describe("toData/fromData functionality", () => {
-    it("should serialize and deserialize database state correctly", () => {
-        const store = createTestDatabase();
-
-        // Create some entities and update resources
-        const entity1 = store.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-        const entity2 = store.transactions.createFullEntity({
-            position: { x: 4, y: 5, z: 6 },
-            health: { current: 100, max: 100 },
-            name: "TestEntity"
-        });
-        store.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
-
-        // Serialize the database
-        const serializedData = store.toData();
-
-        // Create a new database and restore from serialized data
-        const newStore = createTestDatabase();
-        newStore.fromData(serializedData);
-
-        // Verify entities are restored
-        const restoredEntities = newStore.select(["position"]);
-        expect(restoredEntities).toHaveLength(2);
-
-        // Verify entity data is correct
-        const restoredData1 = newStore.read(restoredEntities[0]);
-        const restoredData2 = newStore.read(restoredEntities[1]);
-        expect(restoredData1).toEqual({
-            id: restoredEntities[0],
-            position: { x: 1, y: 2, z: 3 }
-        });
-        expect(restoredData2).toEqual({
-            id: restoredEntities[1],
-            position: { x: 4, y: 5, z: 6 },
-            health: { current: 100, max: 100 },
-            name: "TestEntity"
-        });
-
-        // Verify resources are restored
-        expect(newStore.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
-    });
-
-    it("should notify all observers when database is restored from serialized data", () => {
-        const store = createTestDatabase();
-
-        // Create initial state
-        const entity = store.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-        store.transactions.updateTime({ delta: 0.016, elapsed: 0 });
-
-        // Set up observers
-        const positionObserver = vi.fn();
-        const timeObserver = vi.fn();
-        const entityObserver = vi.fn();
-        const transactionObserver = vi.fn();
-
-        const unsubscribePosition = store.observe.components.position(positionObserver);
-        const unsubscribeTime = store.observe.resources.time(timeObserver);
-        const unsubscribeEntity = store.observe.entity(entity)(entityObserver);
-        const unsubscribeTransaction = store.observe.transactions(transactionObserver);
-
-        // Clear initial notifications
-        positionObserver.mockClear();
-        timeObserver.mockClear();
-        entityObserver.mockClear();
-        transactionObserver.mockClear();
-
-        // Serialize the database
-        const serializedData = store.toData();
-
-        // Create a new database with different state
-        const newStore = createTestDatabase();
-        const newEntity = newStore.transactions.createFullEntity({
-            position: { x: 10, y: 20, z: 30 },
-            health: { current: 50, max: 100 },
-            name: "NewEntity"
-        });
-        newStore.transactions.updateTime({ delta: 0.025, elapsed: 2.0 });
-
-        // Set up observers on the new store
-        const newPositionObserver = vi.fn();
-        const newTimeObserver = vi.fn();
-        const newEntityObserver = vi.fn();
-        const newTransactionObserver = vi.fn();
-
-        const newUnsubscribePosition = newStore.observe.components.position(newPositionObserver);
-        const newUnsubscribeTime = newStore.observe.resources.time(newTimeObserver);
-        const newUnsubscribeEntity = newStore.observe.entity(newEntity)(newEntityObserver);
-        const newUnsubscribeTransaction = newStore.observe.transactions(newTransactionObserver);
-
-        // Clear initial notifications
-        newPositionObserver.mockClear();
-        newTimeObserver.mockClear();
-        newEntityObserver.mockClear();
-        newTransactionObserver.mockClear();
-
-        // Restore from serialized data
-        newStore.fromData(serializedData);
-
-        // All observers should be notified because the entire state changed
-        expect(newPositionObserver).toHaveBeenCalledTimes(1);
-        expect(newTimeObserver).toHaveBeenCalledTimes(1);
-        expect(newEntityObserver).toHaveBeenCalledTimes(1);
-        expect(newTransactionObserver).toHaveBeenCalledTimes(1);
-
-        // Verify the transaction observer received the correct notification
-        const transactionResult = newTransactionObserver.mock.calls[0][0];
-        expect(transactionResult.changedComponents.has("position")).toBe(true);
-        expect(transactionResult.transient).toBe(false);
-
-        // Verify the entity observer received the correct data
-        const entityData = newEntityObserver.mock.calls[0][0];
-        expect(entityData).toEqual({
-            id: newEntity,
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        // Verify the time observer received the correct data
-        const timeData = newTimeObserver.mock.calls[0][0];
-        expect(timeData).toEqual({ delta: 0.016, elapsed: 0 });
-
-        // Clean up
-        unsubscribePosition();
-        unsubscribeTime();
-        unsubscribeEntity();
-        unsubscribeTransaction();
-        newUnsubscribePosition();
-        newUnsubscribeTime();
-        newUnsubscribeEntity();
-        newUnsubscribeTransaction();
-    });
-
-    it("should notify observers even when no entities exist in restored data", () => {
-        const store = createTestDatabase();
-
-        // Set up observers on empty store
-        const positionObserver = vi.fn();
-        const timeObserver = vi.fn();
-        const transactionObserver = vi.fn();
-
-        const unsubscribePosition = store.observe.components.position(positionObserver);
-        const unsubscribeTime = store.observe.resources.time(timeObserver);
-        const unsubscribeTransaction = store.observe.transactions(transactionObserver);
-
-        // Clear initial notifications
-        positionObserver.mockClear();
-        timeObserver.mockClear();
-        transactionObserver.mockClear();
-
-        // Serialize empty database
-        const serializedData = store.toData();
-
-        // Create a new database with some data
-        const newStore = createTestDatabase();
-        newStore.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-        newStore.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
-
-        // Set up observers on the new store
-        const newPositionObserver = vi.fn();
-        const newTimeObserver = vi.fn();
-        const newTransactionObserver = vi.fn();
-
-        const newUnsubscribePosition = newStore.observe.components.position(newPositionObserver);
-        const newUnsubscribeTime = newStore.observe.resources.time(newTimeObserver);
-        const newUnsubscribeTransaction = newStore.observe.transactions(newTransactionObserver);
-
-        // Clear initial notifications
-        newPositionObserver.mockClear();
-        newTimeObserver.mockClear();
-        newTransactionObserver.mockClear();
-
-        // Restore from empty serialized data
-        newStore.fromData(serializedData);
-
-        // All observers should still be notified
-        expect(newPositionObserver).toHaveBeenCalledTimes(1);
-        expect(newTimeObserver).toHaveBeenCalledTimes(1);
-        expect(newTransactionObserver).toHaveBeenCalledTimes(1);
-
-        // Verify the store is now empty
-        const entities = newStore.select(["position"]);
-        expect(entities).toHaveLength(0);
-        expect(newStore.resources.time).toEqual({ delta: 0.016, elapsed: 0 });
-
-        // Clean up
-        unsubscribePosition();
-        unsubscribeTime();
-        unsubscribeTransaction();
-        newUnsubscribePosition();
-        newUnsubscribeTime();
-        newUnsubscribeTransaction();
-    });
-
-    it("should handle entity observers correctly during restoration", () => {
-        const store = createTestDatabase();
-
-        // Create entity and set up observer
-        const entity = store.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        const entityObserver = vi.fn();
-        const unsubscribe = store.observe.entity(entity)(entityObserver);
-
-        // Clear initial notification
-        entityObserver.mockClear();
-
-        // Serialize the database
-        const serializedData = store.toData();
-
-        // Create a new database
-        const newStore = createTestDatabase();
-
-        // Set up observer on the new store for a different entity
-        const newEntity = newStore.transactions.createFullEntity({
-            position: { x: 10, y: 20, z: 30 },
-            health: { current: 100, max: 100 },
-            name: "NewEntity"
-        });
-
-        const newEntityObserver = vi.fn();
-        const newUnsubscribe = newStore.observe.entity(newEntity)(newEntityObserver);
-
-        // Clear initial notification
-        newEntityObserver.mockClear();
-
-        // Restore from serialized data
-        newStore.fromData(serializedData);
-
-        // The entity observer should be notified with the restored entity data
-        expect(newEntityObserver).toHaveBeenCalledTimes(1);
-        const restoredEntityData = newEntityObserver.mock.calls[0][0];
-        expect(restoredEntityData).toEqual({
-            id: newEntity,
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        // Clean up
-        unsubscribe();
-        newUnsubscribe();
-    });
-
-    it("should preserve transaction functionality after restoration", () => {
-        const store = createTestDatabase();
-
-        // Create initial state
-        store.transactions.updateTime({ delta: 0.016, elapsed: 0 });
-
-        // Serialize the database
-        const serializedData = store.toData();
-
-        // Create a new database and restore
-        const newStore = createTestDatabase();
-        newStore.fromData(serializedData);
-
-        // Verify transactions still work
-        const entity = newStore.transactions.createPositionEntity({
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        expect(entity).toBeDefined();
-        expect(typeof entity).toBe("number");
-
-        const entityData = newStore.read(entity);
-        expect(entityData).toEqual({
-            id: entity,
-            position: { x: 1, y: 2, z: 3 }
-        });
-
-        // Verify resource transactions work
-        newStore.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
-        expect(newStore.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
-    });
-
-    it("all transient operations should be rolled back", async () => {
-        const store = createTestDatabase();
-
-        const promise = store.transactions.startGenerating(async function* () {
-            yield { progress: 0 };
-            yield { progress: 1 };
-        });
-
-        // Check that the result is a promise
-        expect(promise).toBeInstanceOf(Promise);
-
-        const result = await promise;
-        expect(result).toBe(-1);
-        const generating = await toPromise(store.observe.resources.generating);
-        expect(generating).toBe(false);
-    });
-
-}); 
