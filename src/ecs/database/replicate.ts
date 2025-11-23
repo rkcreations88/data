@@ -28,14 +28,13 @@ import { EntityReadValues, EntityUpdateValues } from "../store/core/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
 import { EntityInsertValues } from "../archetype/index.js";
 
-export interface Replication<
+export type ReplicationStop<
     C extends Components,
     R extends ResourceComponents,
     A extends ArchetypeComponents<StringKeyof<C>>,
-> {
-    readonly entityMap: Map<Entity, Entity>;
-    readonly dispose: () => void;
-}
+> = (() => void) & {
+    readonly entityMap: ReadonlyMap<Entity, Entity>;
+};
 
 export interface ReplicateOptions<
     C extends Components,
@@ -68,7 +67,7 @@ export const replicate = <
     database: Database<C, R, A, any>,
     target: Store<TC, TR, any>,
     options: ReplicateOptions<C, TC> = {},
-): Replication<C, R, A> => {
+): ReplicationStop<C, R, A> => {
     const { onCreate, onUpdate, onDelete } = options;
 
     const entityMap = new Map<Entity, Entity>();
@@ -211,10 +210,18 @@ export const replicate = <
     };
 
     const dispose = database.observe.transactions(handleTransaction);
+    let stopped = false;
 
-    return {
-        entityMap,
-        dispose,
+    const stop = () => {
+        if (stopped) {
+            return;
+        }
+        stopped = true;
+        dispose();
     };
+
+    return Object.assign(stop, {
+        entityMap,
+    }) as ReplicationStop<C, R, A>;
 };
 

@@ -22,6 +22,7 @@ import { createDatabase } from "./create-database.js";
 import { replicate, type ReplicateOptions } from "./replicate.js";
 import { Schema } from "../../schema/schema.js";
 import { Entity } from "../entity.js";
+import type { Store } from "../store/store.js";
 
 const vectorSchema = {
     type: "object",
@@ -72,19 +73,22 @@ interface TestContext {
     readonly mutateEntity: (entity: Entity, values: Partial<{ position: Position; label: string }>) => void;
     readonly deleteEntity: (entity: Entity) => void;
     readonly setCounter: (value: number) => void;
-    readonly dispose: () => void;
+    readonly stop: () => void;
     readonly sourceRead: (entity: Entity) => Record<string, unknown> | null;
     readonly targetRead: (entity: Entity) => Record<string, unknown> | null;
-    readonly sourceToTarget: Map<Entity, Entity>;
+    readonly sourceToTarget: ReadonlyMap<Entity, Entity>;
     readonly targetStore: TargetStore;
 }
 
 const makeSourceStore = () => createStore(sourceComponents, resourceSchemas, archetypeComponents);
 const makeTargetStore = () => createStore(targetComponents, resourceSchemas, archetypeComponents);
 
+type SourceStore = ReturnType<typeof makeSourceStore>;
 type TargetStore = ReturnType<typeof makeTargetStore>;
+type SourceComponentValues = Store.Components<SourceStore>;
+type TargetComponentValues = Store.Components<TargetStore>;
 
-const createTestContext = (options: ReplicateOptions<object, object> = {}): TestContext => {
+const createTestContext = (options: ReplicateOptions<SourceComponentValues, TargetComponentValues> = {}): TestContext => {
     const sourceStore = makeSourceStore();
     const database = createDatabase(sourceStore, {
         createMover(t, { position }: { position: Position }) {
@@ -102,7 +106,7 @@ const createTestContext = (options: ReplicateOptions<object, object> = {}): Test
     });
 
     const targetStore = makeTargetStore();
-    const replication = replicate(database, targetStore, options);
+    const stopReplication = replicate(database, targetStore, options);
 
     return {
         createMover: (position) => database.transactions.createMover({ position }),
@@ -113,10 +117,10 @@ const createTestContext = (options: ReplicateOptions<object, object> = {}): Test
         setCounter: (value) => {
             database.transactions.setCounter(value);
         },
-        dispose: replication.dispose,
+        stop: () => stopReplication(),
         sourceRead: (entity) => database.read(entity),
         targetRead: (entity) => targetStore.read(entity),
-        sourceToTarget: replication.entityMap,
+        sourceToTarget: stopReplication.entityMap,
         targetStore,
     };
 };
@@ -138,7 +142,7 @@ describe("replicate", () => {
         expect(replicated).not.toBeNull();
         expectPosition(replicated?.position, position);
 
-        context.dispose();
+        context.stop();
     });
 
     test("updates existing target entity with component changes", () => {
@@ -162,7 +166,7 @@ describe("replicate", () => {
         expect(unlabeled).not.toBeNull();
         expect("label" in (unlabeled ?? {})).toBe(false);
 
-        context.dispose();
+        context.stop();
     });
 
     test("throws when target entity is missing during update", () => {
@@ -178,7 +182,7 @@ describe("replicate", () => {
             context.mutateEntity(sourceEntity, { position: { x: 11, y: 21, z: 31 } });
         }).toThrowError(/Target entity missing/);
 
-        context.dispose();
+        context.stop();
     });
 
     test("deletes corresponding target entity", () => {
@@ -193,7 +197,7 @@ describe("replicate", () => {
         const replicated = targetEntity ? context.targetRead(targetEntity) : null;
         expect(replicated).toBeNull();
 
-        context.dispose();
+        context.stop();
     });
 
     test("does not affect extra entities present only in target store", () => {
@@ -207,7 +211,7 @@ describe("replicate", () => {
         const extraAfter = context.targetRead(extraEntity);
         expect(extraAfter).not.toBeNull();
 
-        context.dispose();
+        context.stop();
     });
 
     test("replicates resource updates", () => {
@@ -218,7 +222,7 @@ describe("replicate", () => {
 
         expect(context.targetStore.resources.counter).toBe(42);
 
-        context.dispose();
+        context.stop();
     });
 
     test("invokes callbacks after writes", () => {
@@ -263,7 +267,27 @@ describe("replicate", () => {
             oldValues: { position },
         });
 
-        context.dispose();
+        context.stop();
+    });
+
+    test("stop function cancels further replication", () => {
+        const context = createTestContext();
+        const initialPosition = { x: 1, y: 2, z: 3 };
+        const sourceEntity = context.createMover(initialPosition);
+        const targetEntity = context.sourceToTarget.get(sourceEntity);
+        expect(targetEntity).toBeDefined();
+        const target = targetEntity!;
+        expect(context.targetRead(target)?.position).toEqual(initialPosition);
+
+        context.stop();
+
+        const updatedPosition = { x: 4, y: 5, z: 6 };
+        context.mutateEntity(sourceEntity, { position: updatedPosition });
+        expect(context.targetRead(target)?.position).toEqual(initialPosition);
+
+        const newSourceEntity = context.createMover({ x: 9, y: 9, z: 9 });
+        expect(context.sourceToTarget.has(newSourceEntity)).toBe(false);
+        expect(context.targetRead(newSourceEntity)).toBeNull();
     });
 });
 
