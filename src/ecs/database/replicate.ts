@@ -52,7 +52,6 @@ export const replicate = <
     const { onCreate, onUpdate, onDelete } = options;
 
     const entityMap = new Map<Entity, Entity>();
-    const componentValues = new Map<Entity, Record<string, unknown>>();
     const resourceEntityMap = new Map<Entity, { target: Entity; name: StringKeyof<R> }>();
     const archetypeMap = new Map<number, ReturnType<typeof target.ensureArchetype>>();
 
