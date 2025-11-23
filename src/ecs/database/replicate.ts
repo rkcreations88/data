@@ -61,7 +61,7 @@ export const replicate = <
     for (const name of resourceNames) {
         const sourceArchetype = database.ensureArchetype(["id", name as unknown as StringKeyof<C & CoreComponents>]);
         const sourceEntity = sourceArchetype.columns.id.get(0);
-        const targetArchetype = target.ensureArchetype(["id", name as unknown as StringKeyof<TC & CoreComponents>]);
+        const targetArchetype = target.ensureArchetype(sourceArchetype.components as ReadonlySet<StringKeyof<TC & CoreComponents>>);
         const targetEntity = targetArchetype.columns.id.get(0);
         resourceEntityMap.set(sourceEntity, { target: targetEntity, name });
         (target.resources as Record<string, unknown>)[name as string] = database.resources[name];

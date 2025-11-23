@@ -57,8 +57,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
     }
 
     const ensureArchetype = <CC extends StringKeyof<C>>(componentNames: readonly CC[] | ReadonlySet<CC>): Archetype<CoreComponents & { [K in CC]: C[K] }> => {
-        const isArray = Array.isArray(componentNames);
-        const componentCount = isArray
+        const componentCount = Array.isArray(componentNames)
             ? (componentNames as readonly CC[]).length
             : (componentNames as ReadonlySet<CC>).size;
         for (const archetype of queryArchetypes(componentNames)) {
@@ -69,20 +68,11 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         const id = archetypes.length;
         const archetypeComponentSchemas: { [K in CC]: Schema } = {} as { [K in CC]: Schema };
         let hasId = false;
-        if (isArray) {
-            for (const comp of componentNames as readonly CC[]) {
-                if (comp === "id") {
-                    hasId = true;
-                }
-                archetypeComponentSchemas[comp] = componentSchemas[comp];
+        for (const comp of componentNames as Iterable<CC>) {
+            if (comp === "id") {
+                hasId = true;
             }
-        } else {
-            for (const comp of componentNames as ReadonlySet<CC>) {
-                if (comp === "id") {
-                    hasId = true;
-                }
-                archetypeComponentSchemas[comp] = componentSchemas[comp];
-            }
+            archetypeComponentSchemas[comp] = componentSchemas[comp];
         }
         if (!hasId) {
             throw new Error("id is required");
@@ -151,7 +141,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
                     newComponents.delete(comp);
                 }
             }
-            newArchetype = ensureArchetype(Array.from(newComponents) as StringKeyof<C>[]) as unknown as Archetype<C>;
+            newArchetype = ensureArchetype(newComponents as ReadonlySet<StringKeyof<C>>) as unknown as Archetype<C>;
         }
         if (newArchetype !== currentArchetype) {
             // create a new row in the new archetype
