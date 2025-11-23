@@ -67,12 +67,12 @@ export const replicate = <
         (target.resources as Record<string, unknown>)[name as string] = database.resources[name];
     }
 
-    const getTargetArchetype = (sourceArchetypeId: number, components: Record<string, unknown>) => {
-        let targetArchetype = archetypeMap.get(sourceArchetypeId);
+    const getTargetArchetype = (sourceArchetype: { readonly id: number; readonly components: ReadonlySet<string> }) => {
+        let targetArchetype = archetypeMap.get(sourceArchetype.id);
         if (!targetArchetype) {
-            const componentNames = Object.keys(components) as StringKeyof<TC & CoreComponents>[];
-            targetArchetype = target.ensureArchetype(["id", ...componentNames] as StringKeyof<TC & CoreComponents>[]);
-            archetypeMap.set(sourceArchetypeId, targetArchetype);
+            const components = ["id", ...sourceArchetype.components] as StringKeyof<TC & CoreComponents>[];
+            targetArchetype = target.ensureArchetype(components);
+            archetypeMap.set(sourceArchetype.id, targetArchetype);
         }
         return targetArchetype;
     };
@@ -110,10 +110,10 @@ export const replicate = <
             if (!sourceLocation) {
                 continue;
             }
-            const sourceArchetypeId = sourceLocation.archetype.id;
+            const sourceArchetype = sourceLocation.archetype;
 
             if (!entityMap.has(sourceEntity)) {
-                const targetArchetype = getTargetArchetype(sourceArchetypeId, nextComponents);
+                const targetArchetype = getTargetArchetype(sourceArchetype);
                 const targetEntity = targetArchetype.insert(nextComponents as any);
                 entityMap.set(sourceEntity, targetEntity);
                 componentValues.set(sourceEntity, { ...nextComponents });
