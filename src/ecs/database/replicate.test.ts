@@ -116,6 +116,7 @@ const createTestContext = (
             options.onCreate?.(payload);
         },
         onUpdate: (payload) => {
+            pairs.set(payload.source, payload.target);
             options.onUpdate?.(payload);
         },
         onDelete: (payload) => {
@@ -183,7 +184,8 @@ describe("replicate", () => {
         context.mutateEntity(sourceEntity, { label: undefined });
         const unlabeled = targetEntity ? context.targetRead(targetEntity) : null;
         expect(unlabeled).not.toBeNull();
-        expect("label" in (unlabeled ?? {})).toBe(false);
+        expect(unlabeled?.label).toBeUndefined();
+        expect(context.targetSelect(["label"])).not.toContain(targetEntity);
 
         context.stop();
     });
@@ -199,7 +201,7 @@ describe("replicate", () => {
 
         expect(() => {
             context.mutateEntity(sourceEntity, { position: { x: 11, y: 21, z: 31 } });
-        }).toThrowError(/Target entity missing/);
+        }).toThrowError(/Entity not found/);
 
         context.stop();
     });
@@ -283,7 +285,7 @@ describe("replicate", () => {
         expect(onDelete).toHaveBeenCalledWith({
             source: sourceEntity,
             target,
-            components: { position },
+            components: null,
         });
 
         context.stop();
