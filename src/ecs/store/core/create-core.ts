@@ -57,7 +57,8 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
     }
 
     const ensureArchetype = <CC extends StringKeyof<C>>(componentNames: readonly CC[] | ReadonlySet<CC>): Archetype<CoreComponents & { [K in CC]: C[K] }> => {
-        const componentCount = Array.isArray(componentNames) ? componentNames.length : componentNames.size;
+        const componentsArray: CC[] = Array.isArray(componentNames) ? [...componentNames] as CC[] : Array.from(componentNames);
+        const componentCount = componentsArray.length;
         for (const archetype of queryArchetypes(componentNames)) {
             if (archetype.components.size === componentCount) {
                 return archetype as unknown as Archetype<CoreComponents & { [K in CC]: C[K] }>;
@@ -66,7 +67,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         const id = archetypes.length;
         const archetypeComponentSchemas: { [K in CC]: Schema } = {} as { [K in CC]: Schema };
         let hasId = false;
-        for (const comp of componentNames as Iterable<CC>) {
+        for (const comp of componentsArray) {
             if (comp === "id") {
                 hasId = true;
             }

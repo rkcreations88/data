@@ -77,7 +77,7 @@ interface TestContext {
     readonly sourceRead: (entity: Entity) => Record<string, unknown> | null;
     readonly targetRead: (entity: Entity) => Record<string, unknown> | null;
     readonly sourceToTarget: ReadonlyMap<Entity, Entity>;
-    readonly targetSelect: (include: readonly string[]) => readonly Entity[];
+    readonly targetSelect: (include: readonly (keyof typeof targetComponents)[]) => readonly Entity[];
     readonly targetStore: TargetStore;
 }
 
@@ -140,7 +140,7 @@ const createTestContext = (
         sourceRead: (entity) => database.read(entity),
         targetRead: (entity) => targetStore.read(entity),
         sourceToTarget: pairs,
-        targetSelect: (include) => targetStore.select(include as readonly (keyof TargetComponentValues & string)[]),
+        targetSelect: (include) => targetStore.select(include),
         targetStore,
     };
 };
