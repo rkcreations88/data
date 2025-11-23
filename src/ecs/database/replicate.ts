@@ -70,7 +70,7 @@ export const replicate = <
     const getTargetArchetype = (sourceArchetype: { readonly id: number; readonly components: ReadonlySet<string> }) => {
         let targetArchetype = archetypeMap.get(sourceArchetype.id);
         if (!targetArchetype) {
-            const components = ["id", ...sourceArchetype.components] as StringKeyof<TC & CoreComponents>[];
+            const components = Array.from(sourceArchetype.components) as StringKeyof<TC & CoreComponents>[];
             targetArchetype = target.ensureArchetype(components);
             archetypeMap.set(sourceArchetype.id, targetArchetype);
         }
