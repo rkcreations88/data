@@ -77,6 +77,7 @@ interface TestContext {
     readonly sourceRead: (entity: Entity) => Record<string, unknown> | null;
     readonly targetRead: (entity: Entity) => Record<string, unknown> | null;
     readonly sourceToTarget: ReadonlyMap<Entity, Entity>;
+    readonly targetSelect: (include: readonly string[]) => readonly Entity[];
     readonly targetStore: TargetStore;
 }
 
@@ -88,7 +89,9 @@ type TargetStore = ReturnType<typeof makeTargetStore>;
 type SourceComponentValues = Store.Components<SourceStore>;
 type TargetComponentValues = Store.Components<TargetStore>;
 
-const createTestContext = (options: ReplicateOptions<SourceComponentValues, TargetComponentValues> = {}): TestContext => {
+const createTestContext = (
+    options: Partial<ReplicateOptions<SourceComponentValues, TargetComponentValues>> = {},
+): TestContext => {
     const sourceStore = makeSourceStore();
     const database = createDatabase(sourceStore, {
         createMover(t, { position }: { position: Position }) {
@@ -106,7 +109,22 @@ const createTestContext = (options: ReplicateOptions<SourceComponentValues, Targ
     });
 
     const targetStore = makeTargetStore();
-    const stopReplication = replicate(database, targetStore, options);
+    const pairs = new Map<Entity, Entity>();
+    const replicateOptions: ReplicateOptions<SourceComponentValues, TargetComponentValues> = {
+        onCreate: (payload) => {
+            pairs.set(payload.source, payload.target);
+            options.onCreate?.(payload);
+        },
+        onUpdate: (payload) => {
+            options.onUpdate?.(payload);
+        },
+        onDelete: (payload) => {
+            pairs.delete(payload.source);
+            options.onDelete?.(payload);
+        },
+    };
+
+    const stopReplication = replicate(database, targetStore, replicateOptions);
 
     return {
         createMover: (position) => database.transactions.createMover({ position }),
@@ -120,7 +138,8 @@ const createTestContext = (options: ReplicateOptions<SourceComponentValues, Targ
         stop: () => stopReplication(),
         sourceRead: (entity) => database.read(entity),
         targetRead: (entity) => targetStore.read(entity),
-        sourceToTarget: stopReplication.entityMap,
+        sourceToTarget: pairs,
+        targetSelect: (include) => targetStore.select(include as readonly (keyof TargetComponentValues & string)[]),
         targetStore,
     };
 };
@@ -278,16 +297,18 @@ describe("replicate", () => {
         expect(targetEntity).toBeDefined();
         const target = targetEntity!;
         expect(context.targetRead(target)?.position).toEqual(initialPosition);
+        const baselineTargets = context.targetSelect(["position"]);
 
         context.stop();
 
         const updatedPosition = { x: 4, y: 5, z: 6 };
         context.mutateEntity(sourceEntity, { position: updatedPosition });
         expect(context.targetRead(target)?.position).toEqual(initialPosition);
+        expect(context.targetSelect(["position"]).length).toEqual(baselineTargets.length);
 
         const newSourceEntity = context.createMover({ x: 9, y: 9, z: 9 });
         expect(context.sourceToTarget.has(newSourceEntity)).toBe(false);
-        expect(context.targetRead(newSourceEntity)).toBeNull();
+        expect(context.targetSelect(["position"]).length).toEqual(baselineTargets.length);
     });
 });
 
