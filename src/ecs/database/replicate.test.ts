@@ -111,17 +111,17 @@ const createTestContext = (
     const targetStore = makeTargetStore();
     const pairs = new Map<Entity, Entity>();
     const replicateOptions: ReplicateOptions<SourceComponentValues, TargetComponentValues> = {
-        onCreate: (payload) => {
-            pairs.set(payload.source, payload.target);
-            options.onCreate?.(payload);
+        onCreate: (source, target) => {
+            pairs.set(source, target);
+            options.onCreate?.(source, target);
         },
-        onUpdate: (payload) => {
-            pairs.set(payload.source, payload.target);
-            options.onUpdate?.(payload);
+        onUpdate: (source, target) => {
+            pairs.set(source, target);
+            options.onUpdate?.(source, target);
         },
-        onDelete: (payload) => {
-            pairs.delete(payload.source);
-            options.onDelete?.(payload);
+        onDelete: (source, target) => {
+            pairs.delete(source);
+            options.onDelete?.(source, target);
         },
     };
 
@@ -247,9 +247,9 @@ describe("replicate", () => {
     });
 
     test("invokes callbacks after writes", () => {
-        const onCreate = vi.fn();
-        const onUpdate = vi.fn();
-        const onDelete = vi.fn();
+        const onCreate = vi.fn<[Entity, Entity], void>();
+        const onUpdate = vi.fn<[Entity, Entity], void>();
+        const onDelete = vi.fn<[Entity, Entity], void>();
         const context = createTestContext({ onCreate, onUpdate, onDelete });
         const position = { x: 3, y: 4, z: 5 };
         const sourceEntity = context.createMover(position);
@@ -258,35 +258,19 @@ describe("replicate", () => {
         const target = targetEntity!;
 
         expect(onCreate).toHaveBeenCalledTimes(1);
-        expect(onCreate).toHaveBeenCalledWith({
-            source: sourceEntity,
-            target,
-            components: { position },
-        });
+        expect(onCreate).toHaveBeenCalledWith(sourceEntity, target);
 
         context.mutateEntity(sourceEntity, { label: "runner" });
         expect(onUpdate).toHaveBeenCalledTimes(1);
-        expect(onUpdate).toHaveBeenLastCalledWith({
-            source: sourceEntity,
-            target,
-            components: { label: "runner" },
-        });
+        expect(onUpdate).toHaveBeenLastCalledWith(sourceEntity, target);
 
         context.mutateEntity(sourceEntity, { label: undefined });
         expect(onUpdate).toHaveBeenCalledTimes(2);
-        expect(onUpdate).toHaveBeenLastCalledWith({
-            source: sourceEntity,
-            target,
-            components: { label: undefined },
-        });
+        expect(onUpdate).toHaveBeenLastCalledWith(sourceEntity, target);
 
         context.deleteEntity(sourceEntity);
         expect(onDelete).toHaveBeenCalledTimes(1);
-        expect(onDelete).toHaveBeenCalledWith({
-            source: sourceEntity,
-            target,
-            components: null,
-        });
+        expect(onDelete).toHaveBeenCalledWith(sourceEntity, target);
 
         context.stop();
     });

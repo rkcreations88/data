@@ -34,21 +34,9 @@ export interface ReplicateOptions<
     C extends Components,
     TC extends Components,
 > {
-    readonly onCreate?: (payload: {
-        readonly source: Entity;
-        readonly target: Entity;
-        readonly components: EntityInsertValues<C>;
-    }) => void;
-    readonly onUpdate?: (payload: {
-        readonly source: Entity;
-        readonly target: Entity;
-        readonly components: EntityUpdateValues<TC>;
-    }) => void;
-    readonly onDelete?: (payload: {
-        readonly source: Entity;
-        readonly target: Entity;
-        readonly components: EntityUpdateValues<TC> | null;
-    }) => void;
+    readonly onCreate?: (source: Entity, target: Entity) => void;
+    readonly onUpdate?: (source: Entity, target: Entity) => void;
+    readonly onDelete?: (source: Entity, target: Entity) => void;
 }
 
 export const replicate = <
@@ -95,11 +83,7 @@ export const replicate = <
                 target.delete(targetEntity);
                 entityMap.delete(sourceEntity);
                 componentValues.delete(sourceEntity);
-                onDelete?.({
-                    source: sourceEntity,
-                    target: targetEntity,
-                    components: null,
-                });
+                onDelete?.(sourceEntity, targetEntity);
                 continue;
             }
             const sourceState = database.read(sourceEntity);
@@ -116,11 +100,7 @@ export const replicate = <
                 const targetEntity = archetype.insert(nextComponents as any);
                 entityMap.set(sourceEntity, targetEntity);
                 componentValues.set(sourceEntity, { ...nextComponents });
-                onCreate?.({
-                    source: sourceEntity,
-                    target: targetEntity,
-                    components: nextComponents as EntityInsertValues<C>,
-                });
+                onCreate?.(sourceEntity, targetEntity);
                 continue;
             }
 
@@ -152,11 +132,7 @@ export const replicate = <
                 componentValues.set(sourceEntity, { ...nextComponents });
             }
 
-            onUpdate?.({
-                source: sourceEntity,
-                target: targetEntity,
-                components: updates as EntityUpdateValues<TC>,
-            });
+            onUpdate?.(sourceEntity, targetEntity);
         }
     });
     let stopped = false;
