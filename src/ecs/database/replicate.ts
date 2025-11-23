@@ -53,12 +53,10 @@ export const replicate = <
 
     const entityMap = new Map<Entity, Entity>();
     const componentValues = new Map<Entity, Record<string, unknown>>();
-    const resourceNames = Object.keys(database.resources) as StringKeyof<R>[];
-    const resourceNameSet = new Set<StringKeyof<R>>(resourceNames);
     const resourceEntityMap = new Map<Entity, { target: Entity; name: StringKeyof<R> }>();
     const archetypeMap = new Map<number, ReturnType<typeof target.ensureArchetype>>();
 
-    for (const name of resourceNames) {
+    for (const name of Object.keys(database.resources) as StringKeyof<R>[]) {
         const sourceArchetype = database.ensureArchetype(["id", name as unknown as StringKeyof<C & CoreComponents>]);
         const sourceEntity = sourceArchetype.columns.id.get(0);
         const targetArchetype = target.ensureArchetype(sourceArchetype.components as ReadonlySet<StringKeyof<TC & CoreComponents>>);
@@ -77,12 +75,6 @@ export const replicate = <
     };
 
     const dispose = database.observe.transactions((transaction: TransactionResult<C>) => {
-        for (const component of transaction.changedComponents) {
-            if (resourceNameSet.has(component as StringKeyof<R>)) {
-                const name = component as StringKeyof<R>;
-                (target.resources as Record<string, unknown>)[name as string] = database.resources[name];
-            }
-        }
         for (const [sourceEntity, change] of transaction.changedEntities) {
             const resourceInfo = resourceEntityMap.get(sourceEntity);
             if (resourceInfo) {
@@ -94,36 +86,49 @@ export const replicate = <
                 const targetEntity = entityMap.get(sourceEntity)!;
                 target.delete(targetEntity);
                 entityMap.delete(sourceEntity);
-                componentValues.delete(sourceEntity);
                 onDelete?.(sourceEntity, targetEntity);
                 continue;
             }
-            const sourceState = database.read(sourceEntity);
-            if (!sourceState) {
-                continue;
-            }
-            const sourceComponents = { ...(sourceState as EntityReadValues<C> & Record<string, unknown>) };
-            const { id: _ignore, ...rest } = sourceComponents;
-            const nextComponents = rest as Record<string, unknown>;
             const sourceLocation = database.locate(sourceEntity);
             if (!sourceLocation) {
                 continue;
             }
             const sourceArchetype = sourceLocation.archetype;
+            const sourceState = database.read(sourceEntity);
+            if (!sourceState) {
+                continue;
+            }
+            const { id: _ignore, ...rest } = sourceState as EntityReadValues<C> & Record<string, unknown>;
+            const nextComponents = rest as Record<string, unknown | undefined>;
 
             if (!entityMap.has(sourceEntity)) {
                 const targetArchetype = getTargetArchetype(sourceArchetype);
                 const targetEntity = targetArchetype.insert(nextComponents as any);
                 entityMap.set(sourceEntity, targetEntity);
-                componentValues.set(sourceEntity, { ...nextComponents });
                 onCreate?.(sourceEntity, targetEntity);
                 continue;
             }
 
             const targetEntity = entityMap.get(sourceEntity)!;
-            const previousComponents = componentValues.get(sourceEntity)!;
-            const updates: Record<string, unknown | undefined> = {};
+            const targetState = target.read(targetEntity);
+            const previousComponents = (() => {
+                if (!targetState) {
+                    return {} as Record<string, unknown | undefined>;
+                }
+                const { id: _ignoreId, ...previousRest } = targetState as Record<string, unknown | undefined>;
+                return previousRest;
+            })();
 
+            const updates: Record<string, unknown | undefined> = {};
+            for (const key in nextComponents) {
+                if (!Object.prototype.hasOwnProperty.call(nextComponents, key)) {
+                    continue;
+                }
+                const nextValue = nextComponents[key];
+                if (!Object.is(previousComponents[key], nextValue)) {
+                    updates[key] = nextValue;
+                }
+            }
             for (const key in previousComponents) {
                 if (!Object.prototype.hasOwnProperty.call(previousComponents, key)) {
                     continue;
@@ -133,22 +138,10 @@ export const replicate = <
                 }
             }
 
-            for (const key in nextComponents) {
-                if (!Object.prototype.hasOwnProperty.call(nextComponents, key)) {
-                    continue;
-                }
-                const value = nextComponents[key];
-                if (!Object.prototype.hasOwnProperty.call(previousComponents, key) || !Object.is(previousComponents[key], value)) {
-                    updates[key] = value;
-                }
-            }
-
             if (Object.keys(updates).length > 0) {
                 target.update(targetEntity, updates as EntityUpdateValues<TC>);
-                componentValues.set(sourceEntity, { ...nextComponents });
+                onUpdate?.(sourceEntity, targetEntity);
             }
-
-            onUpdate?.(sourceEntity, targetEntity);
         }
     });
     let stopped = false;
