@@ -37,17 +37,17 @@ export interface ReplicateOptions<
     readonly onCreate?: (payload: {
         readonly source: Entity;
         readonly target: Entity;
-        readonly values: EntityInsertValues<C>;
+        readonly components: EntityInsertValues<C>;
     }) => void;
     readonly onUpdate?: (payload: {
         readonly source: Entity;
         readonly target: Entity;
-        readonly changes: EntityUpdateValues<TC>;
+        readonly components: EntityUpdateValues<TC>;
     }) => void;
     readonly onDelete?: (payload: {
         readonly source: Entity;
         readonly target: Entity;
-        readonly oldValues: Omit<EntityReadValues<TC>, "id">;
+        readonly components: EntityUpdateValues<TC>;
     }) => void;
 }
 
@@ -111,7 +111,7 @@ export const replicate = <
         onDelete?.({
             source: sourceEntity,
             target: targetEntity,
-            oldValues: oldValues as Omit<EntityReadValues<TC>, "id">,
+            components: oldValues as EntityUpdateValues<TC>,
         });
     };
 
@@ -127,7 +127,7 @@ export const replicate = <
         onCreate?.({
             source: sourceEntity,
             target: targetEntity,
-            values: insertValues,
+            components: insertValues,
         });
         return targetEntity;
     };
@@ -165,7 +165,7 @@ export const replicate = <
             onUpdate?.({
                 source: sourceEntity,
                 target: targetEntity,
-                changes: updates as EntityUpdateValues<TC>,
+                components: updates as EntityUpdateValues<TC>,
             });
         } else {
             managedComponents.set(targetEntity, nextManaged);

@@ -259,7 +259,7 @@ describe("replicate", () => {
         expect(onCreate).toHaveBeenCalledWith({
             source: sourceEntity,
             target,
-            values: { position },
+            components: { position },
         });
 
         context.mutateEntity(sourceEntity, { label: "runner" });
@@ -267,7 +267,7 @@ describe("replicate", () => {
         expect(onUpdate).toHaveBeenLastCalledWith({
             source: sourceEntity,
             target,
-            changes: { label: "runner" },
+            components: { label: "runner" },
         });
 
         context.mutateEntity(sourceEntity, { label: undefined });
@@ -275,7 +275,7 @@ describe("replicate", () => {
         expect(onUpdate).toHaveBeenLastCalledWith({
             source: sourceEntity,
             target,
-            changes: { label: undefined },
+            components: { label: undefined },
         });
 
         context.deleteEntity(sourceEntity);
@@ -283,7 +283,7 @@ describe("replicate", () => {
         expect(onDelete).toHaveBeenCalledWith({
             source: sourceEntity,
             target,
-            oldValues: { position },
+            components: { position },
         });
 
         context.stop();
