@@ -26,7 +26,6 @@ import { Entity } from "../entity.js";
 import { CoreComponents } from "../core-components.js";
 import { EntityReadValues, EntityUpdateValues } from "../store/core/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
-import { EntityInsertValues } from "../archetype/index.js";
 
 export type ReplicationStop = () => void;
 
@@ -57,6 +56,7 @@ export const replicate = <
     const resourceNames = Object.keys(database.resources) as StringKeyof<R>[];
     const resourceNameSet = new Set<StringKeyof<R>>(resourceNames);
     const resourceEntities = new Set<Entity>();
+    const archetypeMap = new Map<number, ReturnType<typeof target.ensureArchetype>>();
 
     for (const name of resourceNames) {
         const archetype = database.ensureArchetype(
@@ -66,6 +66,16 @@ export const replicate = <
         resourceEntities.add(resourceId);
         (target.resources as Record<string, unknown>)[name as string] = database.resources[name];
     }
+
+    const getTargetArchetype = (sourceArchetypeId: number, components: Record<string, unknown>) => {
+        let targetArchetype = archetypeMap.get(sourceArchetypeId);
+        if (!targetArchetype) {
+            const componentNames = Object.keys(components) as StringKeyof<TC & CoreComponents>[];
+            targetArchetype = target.ensureArchetype(["id", ...componentNames] as StringKeyof<TC & CoreComponents>[]);
+            archetypeMap.set(sourceArchetypeId, targetArchetype);
+        }
+        return targetArchetype;
+    };
 
     const dispose = database.observe.transactions((transaction: TransactionResult<C>) => {
         for (const component of transaction.changedComponents) {
@@ -93,11 +103,15 @@ export const replicate = <
             const sourceComponents = { ...(sourceState as EntityReadValues<C> & Record<string, unknown>) };
             const { id: _ignore, ...rest } = sourceComponents;
             const nextComponents = rest as Record<string, unknown>;
+            const sourceLocation = database.locate(sourceEntity);
+            if (!sourceLocation) {
+                continue;
+            }
+            const sourceArchetypeId = sourceLocation.archetype.id;
 
             if (!entityMap.has(sourceEntity)) {
-                const componentNames = Object.keys(nextComponents) as StringKeyof<TC & CoreComponents>[];
-                const archetype = target.ensureArchetype(["id", ...componentNames] as StringKeyof<TC & CoreComponents>[]);
-                const targetEntity = archetype.insert(nextComponents as any);
+                const targetArchetype = getTargetArchetype(sourceArchetypeId, nextComponents);
+                const targetEntity = targetArchetype.insert(nextComponents as any);
                 entityMap.set(sourceEntity, targetEntity);
                 componentValues.set(sourceEntity, { ...nextComponents });
                 onCreate?.(sourceEntity, targetEntity);
