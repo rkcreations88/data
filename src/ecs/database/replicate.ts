@@ -55,15 +55,15 @@ export const replicate = <
     const componentValues = new Map<Entity, Record<string, unknown>>();
     const resourceNames = Object.keys(database.resources) as StringKeyof<R>[];
     const resourceNameSet = new Set<StringKeyof<R>>(resourceNames);
-    const resourceEntities = new Set<Entity>();
+    const resourceEntityMap = new Map<Entity, { target: Entity; name: StringKeyof<R> }>();
     const archetypeMap = new Map<number, ReturnType<typeof target.ensureArchetype>>();
 
     for (const name of resourceNames) {
-        const archetype = database.ensureArchetype(
-            ["id", name as unknown as StringKeyof<C & CoreComponents>],
-        );
-        const resourceId = archetype.columns.id.get(0);
-        resourceEntities.add(resourceId);
+        const sourceArchetype = database.ensureArchetype(["id", name as unknown as StringKeyof<C & CoreComponents>]);
+        const sourceEntity = sourceArchetype.columns.id.get(0);
+        const targetArchetype = target.ensureArchetype(["id", name as unknown as StringKeyof<TC & CoreComponents>]);
+        const targetEntity = targetArchetype.columns.id.get(0);
+        resourceEntityMap.set(sourceEntity, { target: targetEntity, name });
         (target.resources as Record<string, unknown>)[name as string] = database.resources[name];
     }
 
@@ -85,9 +85,12 @@ export const replicate = <
             }
         }
         for (const [sourceEntity, change] of transaction.changedEntities) {
-            if (resourceEntities.has(sourceEntity)) {
+            const resourceInfo = resourceEntityMap.get(sourceEntity);
+            if (resourceInfo) {
+                (target.resources as Record<string, unknown>)[resourceInfo.name as string] = database.resources[resourceInfo.name];
                 continue;
             }
+
             if (change === null) {
                 const targetEntity = entityMap.get(sourceEntity)!;
                 target.delete(targetEntity);
