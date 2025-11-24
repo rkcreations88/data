@@ -402,6 +402,33 @@ describe("createTransactionalStore", () => {
         expect(result.changedComponents).toEqual(new Set(["position", "health"]));
     });
 
+    it("should flag removed components with undefined in changedEntities", () => {
+        const baseStore = createStore(
+            { position: positionSchema, health: healthSchema },
+            {}
+        );
+        const store = createTransactionalStore(baseStore);
+
+        let entity: number;
+        store.execute((transactionStore) => {
+            const archetype = transactionStore.ensureArchetype(["id", "position", "health"]);
+            entity = archetype.insert({
+                position: { x: 1, y: 2, z: 3 },
+                health: { current: 100, max: 100 }
+            });
+        });
+
+        const result = store.execute((transactionStore) => {
+            transactionStore.update(entity!, { health: undefined });
+        });
+
+        const change = result.changedEntities.get(entity!);
+        expect(change).not.toBeNull();
+        expect(Object.prototype.hasOwnProperty.call(change ?? {}, "health")).toBe(true);
+        expect(change?.health).toBeUndefined();
+        expect(result.changedComponents).toEqual(new Set(["health"]));
+    });
+
     it("should track changedEntities with final combined values for complex update sequences", () => {
         const baseStore = createStore(
             { position: positionSchema, health: healthSchema },

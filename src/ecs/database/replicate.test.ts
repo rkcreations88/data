@@ -19,7 +19,7 @@ SOFTWARE.*/
 import { describe, expect, test, vi } from "vitest";
 import { createStore } from "../store/create-store.js";
 import { createDatabase } from "./create-database.js";
-import { replicate, type ReplicateOptions } from "./replicate.js";
+import { replicate } from "./replicate.js";
 import { Schema } from "../../schema/schema.js";
 import { Entity } from "../entity.js";
 import type { Store } from "../store/store.js";
@@ -89,9 +89,10 @@ type TargetStore = ReturnType<typeof makeTargetStore>;
 type SourceComponentValues = Store.Components<SourceStore>;
 type TargetComponentValues = Store.Components<TargetStore>;
 
-const createTestContext = (
-    options: Partial<ReplicateOptions<SourceComponentValues, TargetComponentValues>> = {},
-): TestContext => {
+type ReplicateOperation = Parameters<NonNullable<Parameters<typeof replicate>[2]>>[0];
+type ReplicateEventHandlers = Partial<Record<ReplicateOperation, (source: Entity, target: Entity) => void>>;
+
+const createTestContext = (handlers: ReplicateEventHandlers = {}): TestContext => {
     const sourceStore = makeSourceStore();
     const database = createDatabase(sourceStore, {
         createMover(t, { position }: { position: Position }) {
@@ -110,22 +111,21 @@ const createTestContext = (
 
     const targetStore = makeTargetStore();
     const pairs = new Map<Entity, Entity>();
-    const replicateOptions: ReplicateOptions<SourceComponentValues, TargetComponentValues> = {
-        onCreate: (source, target) => {
-            pairs.set(source, target);
-            options.onCreate?.(source, target);
-        },
-        onUpdate: (source, target) => {
-            pairs.set(source, target);
-            options.onUpdate?.(source, target);
-        },
-        onDelete: (source, target) => {
+    const stopReplication = replicate(database, targetStore, (operation, source, target) => {
+        if (operation === "delete") {
             pairs.delete(source);
-            options.onDelete?.(source, target);
-        },
-    };
-
-    const stopReplication = replicate(database, targetStore, replicateOptions);
+            handlers.delete?.(source, target);
+            return;
+        }
+        pairs.set(source, target);
+        if (operation === "create") {
+            handlers.create?.(source, target);
+            return;
+        }
+        if (operation === "update") {
+            handlers.update?.(source, target);
+        }
+    });
 
     return {
         createMover: (position) => database.transactions.createMover({ position }),
@@ -180,6 +180,7 @@ describe("replicate", () => {
         context.mutateEntity(sourceEntity, { label: "runner" });
         const labeled = targetEntity ? context.targetRead(targetEntity) : null;
         expect(labeled?.label).toBe("runner");
+
 
         context.mutateEntity(sourceEntity, { label: undefined });
         const unlabeled = targetEntity ? context.targetRead(targetEntity) : null;
@@ -250,27 +251,35 @@ describe("replicate", () => {
         const onCreate = vi.fn<[Entity, Entity], void>();
         const onUpdate = vi.fn<[Entity, Entity], void>();
         const onDelete = vi.fn<[Entity, Entity], void>();
-        const context = createTestContext({ onCreate, onUpdate, onDelete });
+        const context = createTestContext({
+            create: onCreate,
+            update: onUpdate,
+            delete: onDelete,
+        });
         const position = { x: 3, y: 4, z: 5 };
         const sourceEntity = context.createMover(position);
         const targetEntity = context.sourceToTarget.get(sourceEntity);
         expect(targetEntity).toBeDefined();
         const target = targetEntity!;
 
-        expect(onCreate).toHaveBeenCalledTimes(1);
-        expect(onCreate).toHaveBeenCalledWith(sourceEntity, target);
+        const createCallsForEntity = onCreate.mock.calls.filter(([entity]) => entity === sourceEntity);
+        expect(createCallsForEntity).toHaveLength(1);
+        expect(onCreate).toHaveBeenLastCalledWith(sourceEntity, target);
 
         context.mutateEntity(sourceEntity, { label: "runner" });
-        expect(onUpdate).toHaveBeenCalledTimes(1);
+        const updateCallsForEntity = onUpdate.mock.calls.filter(([entity]) => entity === sourceEntity);
+        expect(updateCallsForEntity).toHaveLength(1);
         expect(onUpdate).toHaveBeenLastCalledWith(sourceEntity, target);
 
         context.mutateEntity(sourceEntity, { label: undefined });
-        expect(onUpdate).toHaveBeenCalledTimes(2);
+        const updateCallsAfterReset = onUpdate.mock.calls.filter(([entity]) => entity === sourceEntity);
+        expect(updateCallsAfterReset).toHaveLength(2);
         expect(onUpdate).toHaveBeenLastCalledWith(sourceEntity, target);
 
         context.deleteEntity(sourceEntity);
-        expect(onDelete).toHaveBeenCalledTimes(1);
-        expect(onDelete).toHaveBeenCalledWith(sourceEntity, target);
+        const deleteCallsForEntity = onDelete.mock.calls.filter(([entity]) => entity === sourceEntity);
+        expect(deleteCallsForEntity).toHaveLength(1);
+        expect(onDelete).toHaveBeenLastCalledWith(sourceEntity, target);
 
         context.stop();
     });

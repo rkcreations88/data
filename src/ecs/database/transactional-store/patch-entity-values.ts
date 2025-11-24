@@ -21,9 +21,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { EntityReadValues, EntityUpdateValues } from "../../store/core/index.js";
 
-export function patchEntityValues<C extends object>(a: EntityUpdateValues<C> | EntityReadValues<C> | null | undefined, b: EntityUpdateValues<C> | null) {
-    if (!a || !b) {
+export function patchEntityValues<C extends object>(
+    a: EntityUpdateValues<C> | EntityReadValues<C> | null | undefined,
+    b: EntityUpdateValues<C> | null,
+) {
+    if (!b) {
         return b;
+    }
+    if (!a) {
+        return { ...b };
     }
     return { ...a, ...b };
 }
