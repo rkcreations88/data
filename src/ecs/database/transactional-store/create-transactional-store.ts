@@ -31,7 +31,7 @@ import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { patchEntityValues } from "./patch-entity-values.js";
 
 // Sentinel value used to indicate a component should be deleted
-export const DELETE: unknown = "_$_DELETE_$_";
+const DELETE: unknown = "_$_DELETE_$_";
 
 interface Transaction<
     C extends Components = never,
