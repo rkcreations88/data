@@ -25,7 +25,22 @@ import { EntityLocation } from "./entity-location.js";
 import { Entity } from "../entity.js";
 import { createSharedArrayBuffer } from "../../internal/shared-array-buffer/create-shared-array-buffer.js";
 
-export const createEntityLocationTable = (initialCapacity: number = 16): EntityLocationTable => {
+export const createEntityLocationTable = (initialCapacity: number = 16, transient: boolean = false): EntityLocationTable => {
+    return transient ? createNegativeEntityLocationTable(initialCapacity) : createPositiveEntityLocationTable(initialCapacity);
+}
+
+const createNegativeEntityLocationTable = (initialCapacity: number = 16): EntityLocationTable => {
+    const table = createEntityLocationTable(initialCapacity);
+    return {
+        ...table,
+        create: (location: EntityLocation): Entity => -1 - table.create(location),
+        delete: (entity: Entity) => table.delete(-1 - entity),
+        locate: (entity: Entity) => table.locate(-1 - entity),
+        update: (entity: Entity, location: EntityLocation) => table.update(-1 - entity, location)
+    }
+}
+
+const createPositiveEntityLocationTable = (initialCapacity: number = 16): EntityLocationTable => {
     let freeListHead = -1;
     let nextIndex = 0;
     let capacity = initialCapacity;

@@ -23,16 +23,16 @@ SOFTWARE.*/
 import { FromSchema } from "../../schema/schema.js";
 import * as TABLE from "../../table/index.js";
 import { Archetype } from "./archetype.js";
-import { CoreComponents } from "../core-components.js";
+import { RequiredComponents } from "../required-components.js";
 import { EntityLocationTable } from "../entity-location-table/entity-location-table.js";
-import { Entity, schema } from "../entity.js";
+import { Entity } from "../entity.js";
 import { StringKeyof } from "../../types/types.js";
 
-export const createArchetype = <C extends { id: typeof schema }>(
+export const createArchetype = <C extends { id: typeof Entity.schema }>(
     components: C,
     id: number,
     entityLocationTable: EntityLocationTable,
-): Archetype<CoreComponents & { [K in keyof C]: FromSchema<C[K]> }> => {
+): Archetype<RequiredComponents & { [K in keyof C]: FromSchema<C[K]> }> => {
     const table = TABLE.createTable(components);
     const createEntity = (rowData: Omit<{ [K in keyof C]: FromSchema<C[K]> }, "id">): Entity => {
         // add the row (excluding entity id)
@@ -44,7 +44,7 @@ export const createArchetype = <C extends { id: typeof schema }>(
         return entity;
     }
 
-    const componentSet = new Set(Object.keys(components) as StringKeyof<C & CoreComponents>[]);
+    const componentSet = new Set(Object.keys(components) as StringKeyof<C & RequiredComponents>[]);
 
     const archetype = {
         id,
@@ -60,6 +60,6 @@ export const createArchetype = <C extends { id: typeof schema }>(
             Object.assign(archetype, data);
             // component set cannot be changed by this as the archetype components should be the same.
         }
-    } as const satisfies Archetype<{ [K in keyof C]: FromSchema<C[K]> }> as Archetype<CoreComponents & { [K in keyof C]: FromSchema<C[K]> }>;
+    } as const satisfies Archetype<{ [K in keyof C]: FromSchema<C[K]> }> as Archetype<RequiredComponents & { [K in keyof C]: FromSchema<C[K]> }>;
     return archetype;
 }

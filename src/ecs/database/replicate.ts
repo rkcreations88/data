@@ -23,7 +23,7 @@ import { ArchetypeComponents } from "../store/archetype-components.js";
 import { Store } from "../store/index.js";
 import { StringKeyof } from "../../types/types.js";
 import { Entity } from "../entity.js";
-import { CoreComponents } from "../core-components.js";
+import { RequiredComponents } from "../required-components.js";
 import { TransactionResult } from "./transactional-store/index.js";
 
 export type ReplicationStop = () => void;
@@ -46,7 +46,7 @@ export const replicate = <
     function getTargetArchetype(sourceArchetype: { readonly id: number; readonly components: ReadonlySet<string> }) {
         let targetArchetype = archetypeMap.get(sourceArchetype.id);
         if (!targetArchetype) {
-            targetArchetype = target.ensureArchetype(sourceArchetype.components as unknown as ReadonlySet<StringKeyof<TC & CoreComponents>>);
+            targetArchetype = target.ensureArchetype(sourceArchetype.components as unknown as ReadonlySet<StringKeyof<TC & RequiredComponents>>);
             archetypeMap.set(sourceArchetype.id, targetArchetype);
         }
         return targetArchetype;
@@ -55,7 +55,7 @@ export const replicate = <
     // Initialize the resource entity map with the resources from the database
     // And copy the source resources to the target store
     for (const name of Object.keys(database.resources) as StringKeyof<R>[]) {
-        const sourceArchetype = database.ensureArchetype(["id", name as unknown as StringKeyof<C & CoreComponents>]);
+        const sourceArchetype = database.ensureArchetype(["id", name as unknown as StringKeyof<C & RequiredComponents>]);
         const sourceEntity = sourceArchetype.columns.id.get(0);
         const targetArchetype = getTargetArchetype(sourceArchetype);
         const targetEntity = targetArchetype.columns.id.get(0);

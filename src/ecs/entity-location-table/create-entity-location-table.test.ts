@@ -173,4 +173,22 @@ describe('createEntityLocationTable', () => {
         const location = table.locate(-1);
         expect(location).toBeNull();
     });
-}); 
+});
+
+describe('createTransientEntityLocationTable', () => {
+    it('should create entities with increasing ids starting from -1', () => {
+        const table = createEntityLocationTable(16, true);
+
+        const entity0 = table.create({ archetype: 1, row: 10 });
+        const entity1 = table.create({ archetype: 2, row: 20 });
+        const entity2 = table.create({ archetype: 3, row: 30 });
+
+        expect(entity0).toBe(-1);
+        expect(entity1).toBe(-2);
+        expect(entity2).toBe(-3);
+
+        expect(table.locate(entity0)).toEqual({ archetype: 1, row: 10 });
+        expect(table.locate(entity1)).toEqual({ archetype: 2, row: 20 });
+        expect(table.locate(entity2)).toEqual({ archetype: 3, row: 30 });
+    });
+});

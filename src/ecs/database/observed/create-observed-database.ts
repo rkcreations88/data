@@ -27,7 +27,7 @@ import { Store } from "../../store/index.js";
 import { TransactionResult } from "../transactional-store/index.js";
 import { observeSelectEntities } from "../observe-select-entities.js";
 import { createTransactionalStore } from "../transactional-store/create-transactional-store.js";
-import { CoreComponents } from "../../core-components.js";
+import { RequiredComponents } from "../../required-components.js";
 import { Entity } from "../../entity.js";
 import { EntityReadValues, EntityUpdateValues } from "../../store/core/index.js";
 import { ObservedDatabase } from "./observed-database.js";
@@ -99,7 +99,7 @@ export function createObservedDatabase<
         return result;
     };
 
-    const observeEntity = <T extends CoreComponents>(entity: Entity, minArchetype?: ReadonlyArchetype<T> | Archetype<T>) => (observer: (values: EntityReadValues<C> | null) => void) => {
+    const observeEntity = <T extends RequiredComponents>(entity: Entity, minArchetype?: ReadonlyArchetype<T> | Archetype<T>) => (observer: (values: EntityReadValues<C> | null) => void) => {
         if (minArchetype) {
             const originalObserver = observer;
             observer = (values) => {

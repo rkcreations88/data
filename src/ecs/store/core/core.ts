@@ -23,35 +23,32 @@ SOFTWARE.*/
 import { Entity } from "../../entity.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
 import { Schema } from "../../../schema/schema.js";
-import { CoreComponents } from "../../core-components.js";
+import { RequiredComponents } from "../../required-components.js";
 import { StringKeyof } from "../../../types/index.js";
 import { Components } from "../components.js";
-import { ComponentSchemas } from "../../component-schemas.js";
-import { FromSchema } from "../../../schema/schema.js";
 
-export type EntityValues<C> = { readonly [K in (CoreComponents & StringKeyof<C>)]: C[K] }
-export type EntityReadValues<C> = CoreComponents & { readonly [K in StringKeyof<C>]?: C[K] }
+export type EntityValues<C> = { readonly [K in (RequiredComponents & StringKeyof<C>)]: C[K] }
+export type EntityReadValues<C> = RequiredComponents & { readonly [K in StringKeyof<C>]?: C[K] }
 export type EntityUpdateValues<C> = Partial<Omit<C, "id">>;
 
 export type ArchetypeQueryOptions<C extends object> =
     { exclude?: readonly StringKeyof<C>[] };
-
 export interface ReadonlyCore<
     C extends Components = never,
 > {
-    readonly componentSchemas: { readonly [K in StringKeyof<C & CoreComponents>]: Schema };
+    readonly componentSchemas: { readonly [K in StringKeyof<C & RequiredComponents>]: Schema };
 
     queryArchetypes<
-        Include extends StringKeyof<C & CoreComponents>,
+        Include extends StringKeyof<C & RequiredComponents>,
     >(
         include: readonly Include[] | ReadonlySet<string>,
         options?: ArchetypeQueryOptions<C>
-    ): readonly ReadonlyArchetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
-    ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[] | ReadonlySet<CC>) => ReadonlyArchetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
+    ): readonly ReadonlyArchetype<RequiredComponents & Pick<C & RequiredComponents, Include>>[];
+    ensureArchetype: <const CC extends StringKeyof<C & RequiredComponents>>(components: readonly CC[] | ReadonlySet<CC>) => ReadonlyArchetype<RequiredComponents & { [K in CC]: (C & RequiredComponents)[K] }>;
 
-    locate: (entity: Entity) => { archetype: ReadonlyArchetype<CoreComponents>, row: number } | null;
-    read<T extends CoreComponents>(entity: Entity, minArchetype: ReadonlyArchetype<T> | Archetype<T>): { readonly [K in (StringKeyof<CoreComponents & T>)]: (CoreComponents & T)[K] } & EntityReadValues<C> | null;
-    read(entity: Entity): { readonly [K in (StringKeyof<CoreComponents & C>)]: (CoreComponents & C)[K] } | null;
+    locate: (entity: Entity) => { archetype: ReadonlyArchetype<RequiredComponents>, row: number } | null;
+    read<T extends RequiredComponents>(entity: Entity, minArchetype: ReadonlyArchetype<T> | Archetype<T>): { readonly [K in (StringKeyof<RequiredComponents & T>)]: (RequiredComponents & T)[K] } & EntityReadValues<C> | null;
+    read(entity: Entity): { readonly [K in (StringKeyof<RequiredComponents & C>)]: (RequiredComponents & C)[K] } | null;
     get<K extends StringKeyof<C>>(entity: Entity, component: K): C[K] | undefined;
     toData(): unknown
 }
@@ -63,13 +60,13 @@ export interface Core<
     C extends Components = never,
 > extends ReadonlyCore<C> {
     queryArchetypes<
-        Include extends StringKeyof<C & CoreComponents>,
+        Include extends StringKeyof<C & RequiredComponents>,
     >(
         include: readonly Include[] | ReadonlySet<string>,
         options?: ArchetypeQueryOptions<C>
-    ): readonly Archetype<CoreComponents & Pick<C & CoreComponents, Include>>[];
-    ensureArchetype: <const CC extends StringKeyof<C & CoreComponents>>(components: readonly CC[] | ReadonlySet<CC>) => Archetype<CoreComponents & { [K in CC]: (C & CoreComponents)[K] }>;
-    locate: (entity: Entity) => { archetype: Archetype<CoreComponents>, row: number } | null;
+    ): readonly Archetype<RequiredComponents & Pick<C & RequiredComponents, Include>>[];
+    ensureArchetype: <const CC extends StringKeyof<C & RequiredComponents>>(components: readonly CC[] | ReadonlySet<CC>) => Archetype<RequiredComponents & { [K in CC]: (C & RequiredComponents)[K] }>;
+    locate: (entity: Entity) => { archetype: Archetype<RequiredComponents>, row: number } | null;
     delete: (entity: Entity) => void;
     update: (entity: Entity, values: EntityUpdateValues<C>) => void;
     compact: () => void;

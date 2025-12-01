@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { CoreComponents } from "../core-components.js";
+import { RequiredComponents } from "../required-components.js";
 import { ResourceComponents } from "./resource-components.js";
 import { Core, ReadonlyCore } from "./core/core.js";
 import { Entity } from "../entity.js";
@@ -41,7 +41,7 @@ interface BaseStore<C extends object = never> {
         Include extends StringKeyof<C>
     >(
         include: readonly Include[] | ReadonlySet<string>,
-        options?: EntitySelectOptions<C, Pick<C & CoreComponents, Include>>
+        options?: EntitySelectOptions<C, Pick<C & RequiredComponents, Include>>
     ): readonly Entity[];
     toData(): unknown
 }
@@ -52,7 +52,7 @@ export interface ReadonlyStore<
     A extends ArchetypeComponents<StringKeyof<C>> = never,
 > extends BaseStore<C>, ReadonlyCore<C> {
     readonly resources: { readonly [K in StringKeyof<R>]: R[K] };
-    readonly archetypes: { -readonly [K in StringKeyof<A>]: ReadonlyArchetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
+    readonly archetypes: { -readonly [K in StringKeyof<A>]: ReadonlyArchetype<RequiredComponents & { [P in A[K][number]]: C[P] }> }
 }
 
 export type ToReadonlyStore<T extends Store<any, any>> = T extends Store<infer C, infer R> ? ReadonlyStore<C, R> : never;
@@ -71,7 +71,7 @@ export interface Store<
      */
     undoable?: Undoable;
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };
-    readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<CoreComponents & { [P in A[K][number]]: C[P] }> }
+    readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<RequiredComponents & { [P in A[K][number]]: C[P] }> }
     fromData(data: unknown): void
 }
 
@@ -80,7 +80,7 @@ export namespace Store {
     export type Components<S extends Store<any, any, any>> = S extends Store<infer C, infer R, infer A> ? C & R & A : never;
     export type Resources<S extends Store<any, any, any>> = S extends Store<any, infer R, any> ? R : never;
     export type Archetypes<S extends Store<any, any, any>> = S extends Store<any, any, infer A> ? A : never;
-    export type EntityValues<S extends Store<any, any, any>, K extends S extends Store<any, any, infer A> ? StringKeyof<A> : never> = Simplify<Parameters<S["archetypes"][K]["insert"]>[0] & CoreComponents>;
+    export type EntityValues<S extends Store<any, any, any>, K extends S extends Store<any, any, infer A> ? StringKeyof<A> : never> = Simplify<Parameters<S["archetypes"][K]["insert"]>[0] & RequiredComponents>;
     export type InsertValues<S extends Store<any, any, any>, K extends S extends Store<any, any, infer A> ? StringKeyof<A> : never> = Parameters<S["archetypes"][K]["insert"]>[0];
 
     export type Schema<
@@ -144,10 +144,10 @@ type CheckStoreFromSchema = Store.FromSchema<Store.Schema<{
     DynamicParticle: ["particle", "velocity"],
 }>>;
 declare const testStore: CheckStoreFromSchema;
-type CheckDynamicParticle = Assert<Equal<typeof testStore.archetypes.DynamicParticle, Archetype<CoreComponents & {
+type CheckDynamicParticle = Assert<Equal<typeof testStore.archetypes.DynamicParticle, Archetype<RequiredComponents & {
     particle: boolean;
     velocity: number;
 }>>>;
-type CheckParticle = Assert<Equal<typeof testStore.archetypes.Particle, Archetype<CoreComponents & {
+type CheckParticle = Assert<Equal<typeof testStore.archetypes.Particle, Archetype<RequiredComponents & {
     particle: boolean;
 }>>>;

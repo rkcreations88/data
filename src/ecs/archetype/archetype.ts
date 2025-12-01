@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { CoreComponents } from "../core-components.js";
+import { RequiredComponents } from "../required-components.js";
 import { Entity } from "../entity.js";
 import { Table, ReadonlyTable } from "../../table/index.js";
 import { Assert } from "../../types/assert.js";
@@ -33,11 +33,11 @@ interface BaseArchetype {
     readonly id: ArchetypeId;
     readonly components: ReadonlySet<string>;
 }
-export interface ReadonlyArchetype<C extends CoreComponents> extends BaseArchetype, ReadonlyTable<C> {
+export interface ReadonlyArchetype<C extends RequiredComponents> extends BaseArchetype, ReadonlyTable<C> {
     toData: () => unknown
 }
 
-export interface Archetype<C extends CoreComponents = CoreComponents> extends BaseArchetype, Table<C> {
+export interface Archetype<C extends RequiredComponents = RequiredComponents> extends BaseArchetype, Table<C> {
     insert: <T extends EntityInsertValues<C>>(rowData: Exact<EntityInsertValues<C>, T>) => Entity;
     toData: () => unknown
     fromData: (data: unknown) => void
@@ -57,13 +57,13 @@ type TestFromArchetype = Assert<Equal<FromArchetype<Archetype<{ id: number, a: n
     type TestArchetype = Archetype<{ id: Entity, position: [number, number, number], color: [number, number, number, number] }>;
     type TestInsertValid = { position: [number, number, number], color: [number, number, number, number] };
     type TestInsertExtra = { position: [number, number, number], color: [number, number, number, number], extra: string };
-    
+
     // Valid insert should work
     const testValidInsert = (arch: TestArchetype) => {
         const validData: TestInsertValid = { position: [0, 0, 0], color: [1, 1, 1, 1] };
         arch.insert(validData); // Should compile
     };
-    
+
     // Insert with extra properties should fail
     const testInvalidInsert = (arch: TestArchetype) => {
         const invalidData: TestInsertExtra = { position: [0, 0, 0], color: [1, 1, 1, 1], extra: "bad" };

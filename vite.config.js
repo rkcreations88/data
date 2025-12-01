@@ -15,10 +15,13 @@ export default defineConfig({
   test: {
     tsconfig: './tsconfig-base.json',
     browser: IS_RUNNING_VSCODE_DEBUG ? {} : {
-      provider: 'webdriverio', // or 'webdriverio'
+      provider: 'playwright',
       enabled: true,
-      name: 'chrome', // browser name is required
+      name: 'chromium', // browser name is required
       headless: true,
+      options: {
+        launch: {},
+      },
     },
     silent: false,
     reporters: 'verbose',

@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { Observe, withCache } from "../../observe/index.js";
 import { getRowPredicateFromFilter } from "../../table/select-rows.js";
 import { StringKeyof } from "../../types/types.js";
-import { CoreComponents } from "../core-components.js";
+import { RequiredComponents } from "../required-components.js";
 import { Entity } from "../entity.js";
 import { ReadonlyStore } from "../index.js";
 import { EntitySelectOptions } from "../store/entity-select-options.js";
@@ -34,7 +34,7 @@ export const observeSelectEntities = <C extends object>(store: ReadonlyStore<C, 
 
     const createSelectObserveFunction = <Include extends StringKeyof<C>>(
         include: readonly Include[] | ReadonlySet<string>,
-        options?: EntitySelectOptions<C, Pick<C & CoreComponents, Include>>
+        options?: EntitySelectOptions<C, Pick<C & RequiredComponents, Include>>
     ): Observe<readonly Entity[]> => {
         return (observer: (entities: readonly Entity[]) => void) => {
             const includeSet = new Set<string>(include);
@@ -125,7 +125,7 @@ export const observeSelectEntities = <C extends object>(store: ReadonlyStore<C, 
 
     return <Include extends StringKeyof<C>>(
         include: readonly Include[] | ReadonlySet<string>,
-        options?: EntitySelectOptions<C, Pick<C & CoreComponents, Include>>
+        options?: EntitySelectOptions<C, Pick<C & RequiredComponents, Include>>
     ) => {
         const key = JSON.stringify({ include, options });
         let observeFunction = cachedSelectObserveFunctions.get(key);

@@ -51,7 +51,7 @@ export const nameSchema = {
 // Reusable test suite for any core-like interface
 export function createCoreTestSuite(
     name: string,
-    factory: typeof createCore = createCore
+    factory: typeof createCore
 ) {
     describe(name, () => {
         it("should create with basic components", () => {
@@ -441,6 +441,40 @@ export function createCoreTestSuite(
             }
         });
 
+        it("should create transient entities with negative ids", () => {
+            const core = factory({
+                position: positionSchema,
+                health: healthSchema,
+            });
+
+            const transientPositionTable = core.ensureArchetype(["id", "position", "transient"]);
+            const writeId = transientPositionTable.insert({ position: { x: 1, y: 2, z: 3 }, transient: true });
+            expect(writeId).toBe(-1);
+
+            const readId = transientPositionTable.columns.id.get(0);
+            expect(readId).toBe(writeId);
+        });
+
+        it("should throw when trying to update transient component", () => {
+            const core = factory({
+                position: positionSchema,
+                health: healthSchema,
+            });
+
+            const transientPositionTable = core.ensureArchetype(["id", "position", "transient"]);
+            const writeId = transientPositionTable.insert({ position: { x: 1, y: 2, z: 3 }, transient: true });
+
+            expect(() => {
+                core.update(writeId, { transient: false as true });
+            }).toThrow();
+            expect(() => {
+                core.update(writeId, { transient: true });
+            }).toThrow();
+            expect(() => {
+                core.update(writeId, { transient: undefined });
+            }).toThrow();
+        });
+
         describe("core read with minArchetype", () => {
             it("should read entity data when entity has matching components", () => {
                 const core = factory({
@@ -602,7 +636,7 @@ export function createCoreTestSuite(
                 const entity1 = archetype1.insert({ position: { x: 1, y: 2, z: 3 } });
                 const entity2 = archetype1.insert({ position: { x: 4, y: 5, z: 6 } });
                 const entity3 = archetype1.insert({ position: { x: 7, y: 8, z: 9 } });
-                
+
                 const entity4 = archetype2.insert({ health: { current: 100, max: 100 } });
                 const entity5 = archetype2.insert({ health: { current: 50, max: 100 } });
 
@@ -653,7 +687,7 @@ export function createCoreTestSuite(
                 });
 
                 const archetype = core.ensureArchetype(["id", "position"]);
-                
+
                 // Add many entities
                 for (let i = 0; i < 20; i++) {
                     archetype.insert({ position: { x: i, y: i * 2, z: i * 3 } });
@@ -687,7 +721,7 @@ export function createCoreTestSuite(
                 });
 
                 const archetype = core.ensureArchetype(["id", "position"]);
-                
+
                 expect(() => core.compact()).not.toThrow();
                 expect(archetype.rowCount).toBe(0);
                 expect(archetype.rowCapacity).toBe(0);
@@ -717,5 +751,5 @@ export function createCoreTestSuite(
 
 // Original core-specific tests
 describe("createCore", () => {
-    createCoreTestSuite("Core functionality");
+    createCoreTestSuite("Core functionality", createCore);
 }); 
