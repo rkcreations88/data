@@ -448,8 +448,11 @@ export function createCoreTestSuite(
             });
 
             const transientPositionTable = core.ensureArchetype(["id", "position", "transient"]);
-            const id = transientPositionTable.insert({ position: { x: 1, y: 2, z: 3 }, transient: true });
-            expect(id).toBe(-1);
+            const writeId = transientPositionTable.insert({ position: { x: 1, y: 2, z: 3 }, transient: true });
+            expect(writeId).toBe(-1);
+
+            const readId = transientPositionTable.columns.id.get(0);
+            expect(readId).toBe(writeId);
         });
 
         it("should throw when trying to update transient component", () => {
@@ -459,16 +462,16 @@ export function createCoreTestSuite(
             });
 
             const transientPositionTable = core.ensureArchetype(["id", "position", "transient"]);
-            const id = transientPositionTable.insert({ position: { x: 1, y: 2, z: 3 }, transient: true });
+            const writeId = transientPositionTable.insert({ position: { x: 1, y: 2, z: 3 }, transient: true });
 
             expect(() => {
-                core.update(id, { transient: false as true });
+                core.update(writeId, { transient: false as true });
             }).toThrow();
             expect(() => {
-                core.update(id, { transient: true });
+                core.update(writeId, { transient: true });
             }).toThrow();
             expect(() => {
-                core.update(id, { transient: undefined });
+                core.update(writeId, { transient: undefined });
             }).toThrow();
         });
 
