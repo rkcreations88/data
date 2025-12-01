@@ -1,3 +1,5 @@
+import { Entity } from "./entity.js";
+
 /*MIT License
 
 © Copyright 2025 Adobe. All rights reserved.
@@ -19,17 +21,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-export * from "./store/index.js";
-export * from "./database/index.js";
-export * from "./archetype/index.js";
-export * from "./required-components.js";
-export * from "./component-schemas.js";
-export * from "./resource-schemas.js";
-export * from "./undo-redo-service/index.js";
-export * from "./persistence-service/index.js";
-export { applyOperations } from "./database/transactional-store/apply-operations.js";
-
-// Export the type Entity
-export type Entity = import("./entity.js").Entity;
-// Export the namespace Entity
-export * as Entity from "./entity.js";
+export type RequiredComponents = { id: Entity };

@@ -22,7 +22,7 @@ SOFTWARE.*/
 import { describe, it, expect } from 'vitest';
 import { createEntityLocationTable } from '../entity-location-table/index.js';
 import { createArchetype, deleteRow } from './index.js';
-import { schema } from '../entity.js';
+import { Entity } from '../entity.js';
 import { U32Schema } from '../../schema/u32.js';
 
 describe('Archetype_deleteRow', () => {
@@ -30,7 +30,7 @@ describe('Archetype_deleteRow', () => {
         const entityLocationTable = createEntityLocationTable();
         const archetype = createArchetype(
             {
-                id: schema,
+                id: Entity.schema,
                 value: U32Schema
             },
             1,
@@ -65,7 +65,7 @@ describe('Archetype_deleteRow', () => {
         const entityLocationTable = createEntityLocationTable();
         const archetype = createArchetype(
             {
-                id: schema,
+                id: Entity.schema,
                 value: U32Schema
             },
             1,
@@ -91,7 +91,7 @@ describe('Archetype_deleteRow', () => {
         const entityLocationTable = createEntityLocationTable();
         const archetype = createArchetype(
             {
-                id: schema,
+                id: Entity.schema,
                 value: U32Schema
             },
             1,

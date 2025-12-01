@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { selectRows } from "../../../table/select-rows.js";
 import { StringKeyof } from "../../../types/types.js";
-import { CoreComponents } from "../../core-components.js";
+import { RequiredComponents } from "../../required-components.js";
 import { Entity } from "../../entity.js";
 import { EntitySelectOptions } from "../entity-select-options.js";
 import { Core } from "./core.js";
@@ -33,7 +33,7 @@ export const selectEntities = <
 >(
     core: Core<C>,
     include: readonly Include[] | ReadonlySet<string>,
-    options?: EntitySelectOptions<C & CoreComponents, Pick<C & CoreComponents, Include>>
+    options?: EntitySelectOptions<C & RequiredComponents, Pick<C & RequiredComponents, Include>>
 ): readonly Entity[] => {
     const archetypes = core.queryArchetypes(include, options as any);
     let length = 0;
@@ -57,7 +57,7 @@ export const selectEntities = <
         const entities = new Array<Entity>();
         for (const archetype of archetypes) {
             const idTypedArray = archetype.columns.id.getTypedArray();
-            for (const row of selectRows<Pick<C & CoreComponents, Include>>(archetype as any, options.where)) {
+            for (const row of selectRows<Pick<C & RequiredComponents, Include>>(archetype as any, options.where)) {
                 entities.push(idTypedArray[row]);
             }
         }
@@ -66,10 +66,10 @@ export const selectEntities = <
 
     // now we know there is an order, there might be a where
     // ordering means we are going to want to extract the order values into an array that also contains id
-    const entityValues = new Array<CoreComponents & { [K in Include]: any }>();
+    const entityValues = new Array<RequiredComponents & { [K in Include]: any }>();
     for (const archetype of archetypes) {
         const idTypedArray = archetype.columns.id.getTypedArray();
-        for (const row of selectRows<Pick<C & CoreComponents, Include>>(archetype as any, options.where)) {
+        for (const row of selectRows<Pick<C & RequiredComponents, Include>>(archetype as any, options.where)) {
             const entityValue = { id: idTypedArray[row] } as any;
             for (const order in options.order!) {
                 entityValue[order] = archetype.columns[order]!.get(row);

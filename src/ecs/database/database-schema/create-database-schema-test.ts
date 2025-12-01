@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { Assert } from "../../../types/assert.js";
 import { Equal } from "../../../types/equal.js";
 import { ReadonlyArchetype } from "../../archetype/archetype.js";
-import { CoreComponents } from "../../core-components.js";
+import { RequiredComponents } from "../../required-components.js";
 import { AsyncArgsProvider } from "../database.js";
 import { DatabaseFromSchema } from "./database-schema.js";
 import { createDatabaseSchema } from "./create-database-schema.js";
@@ -55,11 +55,11 @@ const databaseSchema = createDatabaseSchema(
 
 type CheckDatabaseFromSchema = DatabaseFromSchema<typeof databaseSchema>;
 declare const testDatabase: CheckDatabaseFromSchema;
-type CheckDynamicParticle = Assert<Equal<typeof testDatabase.archetypes.DynamicParticle, ReadonlyArchetype<CoreComponents & {
+type CheckDynamicParticle = Assert<Equal<typeof testDatabase.archetypes.DynamicParticle, ReadonlyArchetype<RequiredComponents & {
     particle: boolean;
     velocity: number;
 }>>>;
-type CheckParticle = Assert<Equal<typeof testDatabase.archetypes.Particle, ReadonlyArchetype<CoreComponents & {
+type CheckParticle = Assert<Equal<typeof testDatabase.archetypes.Particle, ReadonlyArchetype<RequiredComponents & {
     particle: boolean;
 }>>>;
 type CheckCreateParticle = Assert<Equal<typeof testDatabase.transactions.createParticle, (arg: {

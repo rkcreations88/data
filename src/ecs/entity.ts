@@ -22,5 +22,7 @@ SOFTWARE.*/
 import { FromSchema } from "../schema/schema.js";
 import { U32Schema } from "../schema/u32.js";
 
-export const schema = U32Schema;
-export type Entity = FromSchema<typeof schema>;
+export type Entity = FromSchema<typeof Entity.schema>;
+export namespace Entity {
+    export const schema = U32Schema;
+}

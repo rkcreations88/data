@@ -22,14 +22,14 @@ SOFTWARE.*/
 import { describe, it, expect } from 'vitest';
 import { createArchetype } from '../archetype/index.js';
 import { createEntityLocationTable } from '../entity-location-table/index.js';
-import { schema } from '../entity.js';
+import { Entity } from '../entity.js';
 import { U32Schema } from '../../schema/u32.js';
 
 describe('createArchetype', () => {
     it('should create an archetype with basic components', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
-            id: schema,
+            id: Entity.schema,
             value: U32Schema,
         };
         const id = 1;
@@ -47,7 +47,7 @@ describe('createArchetype', () => {
     it('should create entities with correct ids and data', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
-            id: schema,
+            id: Entity.schema,
             value: U32Schema,
         };
         const id = 1;
@@ -79,7 +79,7 @@ describe('createArchetype', () => {
     it('should handle multiple component types', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
-            id: schema,
+            id: Entity.schema,
             health: U32Schema,
             mana: U32Schema,
             level: U32Schema,
@@ -116,7 +116,7 @@ describe('createArchetype', () => {
     it('should serialize and deserialize archetype data correctly', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
-            id: schema,
+            id: Entity.schema,
             health: U32Schema,
             mana: U32Schema,
         };
@@ -155,7 +155,7 @@ describe('createArchetype', () => {
     it('should preserve component set during serialization/deserialization', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
-            id: schema,
+            id: Entity.schema,
             value: U32Schema,
         };
         const id = 4;

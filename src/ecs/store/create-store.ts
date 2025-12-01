@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { ComponentSchemas } from "../component-schemas.js";
 import { StringKeyof } from "../../types/types.js";
-import { CoreComponents } from "../core-components.js";
+import { RequiredComponents } from "../required-components.js";
 import { Store } from "./store.js";
 import { FromSchema, FromSchemas, Schema } from "../../schema/schema.js";
 import { createCore } from "./core/create-core.js";
@@ -32,22 +32,25 @@ import { ResourceSchemas } from "../resource-schemas.js";
 import { ArchetypeComponents } from "./archetype-components.js";
 import { EntitySelectOptions } from "./entity-select-options.js";
 import { selectEntities } from "./core/select-entities.js";
+import { OptionalComponents } from "../optional-components.js";
 
 export function createStore<
     NC extends ComponentSchemas,
     NR extends ResourceSchemas,
-    A extends ArchetypeComponents<StringKeyof<NC>> = {}
+    A extends ArchetypeComponents<StringKeyof<NC & OptionalComponents>> = {}
 >(
     newComponentSchemas: NC,
     resourceSchemas: NR = {} as NR,
     archetypeComponentNames: A = {} as A,
-): Store<FromSchemas<NC>, FromSchemas<NR>, A> {
-    type C = CoreComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
+): Store<FromSchemas<NC> & OptionalComponents, FromSchemas<NR>, A> {
+    type C = RequiredComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
     type R = { [K in StringKeyof<NR>]: FromSchema<NR[K]> };
 
     const resources = {} as R;
 
-    const componentAndResourceSchemas: { [K in StringKeyof<C | R>]: Schema } = { ...newComponentSchemas };
+    const componentAndResourceSchemas: { [K in StringKeyof<C | R>]: Schema } = {
+        ...newComponentSchemas,
+    };
     // Resources are stored in the core as components, so we need to add them to the componentSchemas
     for (const name of Object.keys(resourceSchemas)) {
         const resourceId = name as StringKeyof<C | R>;
@@ -82,7 +85,7 @@ export function createStore<
         Include extends StringKeyof<C>
     >(
         include: readonly Include[] | ReadonlySet<string>,
-        options?: EntitySelectOptions<C & CoreComponents, Pick<C & CoreComponents, Include>>
+        options?: EntitySelectOptions<C & RequiredComponents, Pick<C & RequiredComponents, Include>>
     ): readonly Entity[] => {
         return selectEntities<C, Include>(core, include, options);
     }
