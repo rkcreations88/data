@@ -27,6 +27,7 @@ import { TransactionResult } from "../transactional-store/index.js";
 import { RequiredComponents } from "../../required-components.js";
 import { Entity } from "../../entity.js";
 import { EntityReadValues } from "../../store/core/index.js";
+import { OptionalComponents } from "../../optional-components.js";
 export interface ObservedDatabase<
     C extends Components,
     R extends ResourceComponents,

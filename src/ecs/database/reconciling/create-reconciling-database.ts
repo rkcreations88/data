@@ -51,7 +51,16 @@ export function createReconcilingDatabase<
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
+    options: {
+        /**
+         * Maximum time in milliseconds to keep committed entries for reordering.
+         * Entries older than the most recent entry by this amount will be pruned.
+         * Default: 5000ms
+         */
+        maxSynchronizeDurationMs?: number;
+    } = {},
 ): ReconcilingDatabase<C, R, A, TD> {
+    const { maxSynchronizeDurationMs = 5000 } = options;
     type TransactionName = Extract<keyof TD, string>;
 
     const observedDatabase = createObservedDatabase(store);
@@ -81,10 +90,38 @@ export function createReconcilingDatabase<
         for (let i = startIndex; i < reconcilingEntries.length; i++) {
             const entry = reconcilingEntries[i];
             const result = execute(t => entry.transaction(t, entry.args), { transient: ReconcilingEntryOps.isTransient(entry) });
-            entry.result = result;
+            
+            // Only store result if it actually made changes (not a no-op)
+            // A no-op transaction has empty redo/undo operations
+            const isNoOp = result.redo.length === 0 && result.undo.length === 0;
+            if (!isNoOp) {
+                entry.result = result;
+            } else {
+                // For no-ops, don't store a result - this prevents it from being rolled back
+                entry.result = undefined;
+            }
+            
+            // Always track the last result (even if no-op) for return value
             lastResult = result;
         }
         return lastResult;
+    };
+
+    const pruneCommittedEntries = (mostRecentEntryTime: number) => {
+        // Only prune committed entries that are too old to be reordered.
+        // We keep entries within the synchronization window relative to the most recent entry.
+        // This matches action-ecs behavior where pruning is based on the newest action time.
+        const pruneThreshold = Math.abs(mostRecentEntryTime) - maxSynchronizeDurationMs;
+        
+        while (reconcilingEntries.length > 0) {
+            const entry = reconcilingEntries[0];
+            // Only prune committed entries (positive time) that are older than the threshold
+            if (entry.time > 0 && Math.abs(entry.time) < pruneThreshold) {
+                reconcilingEntries.shift();
+            } else {
+                break;
+            }
+        }
     };
 
     const applyEnvelope = (envelope: TransactionEnvelope<TransactionName>): TransactionResult<C> | undefined => {
@@ -112,6 +149,11 @@ export function createReconcilingDatabase<
             if (startIndex < reconcilingEntries.length) {
                 rollbackRange(startIndex);
                 replayRange(startIndex);
+                // Use the most recent entry time for pruning (or 0 if no entries)
+                const mostRecentTime = reconcilingEntries.length > 0 
+                    ? Math.abs(reconcilingEntries[reconcilingEntries.length - 1].time)
+                    : 0;
+                pruneCommittedEntries(mostRecentTime);
             }
             return undefined;
         }
@@ -126,36 +168,37 @@ export function createReconcilingDatabase<
         };
 
         const insertIndex = ReconcilingEntryOps.findInsertIndex(reconcilingEntries, entry);
-        reconcilingEntries.splice(insertIndex, 0, entry);
+        // Calculate the rebuild index before inserting
+        // For replacements: use min of old and new position to ensure we rebuild from earliest affected point
+        // For new entries: startIndex is length, so rebuildIndex will be insertIndex
         const rebuildIndex = Math.min(startIndex, insertIndex);
 
+        // Rollback everything from the rebuild point BEFORE inserting the new entry
+        // This is clearer than rolling back after insert (which would iterate over the new entry unnecessarily)
         rollbackRange(rebuildIndex);
-        replayRange(rebuildIndex);
+        
+        // Now insert the new entry at the calculated position
+        reconcilingEntries.splice(insertIndex, 0, entry);
+        
+        // Replay from the rebuild point, which now includes the newly inserted entry
+        // This returns the result of the last replayed entry (which includes the newly inserted one)
+        const latestResult = replayRange(rebuildIndex);
+        
+        // Prune old entries based on the newly applied entry's time
+        pruneCommittedEntries(Math.abs(entry.time));
 
-        const insertedEntry = reconcilingEntries.find(e => e.id === envelope.id);
-        const latestResult = insertedEntry?.result;
+        // Return the result from replay (which may be a no-op with a value but no stored entry.result)
         return latestResult;
     };
-
-    const removeEntryAtIndex = (index: number, { rollback }: { rollback: boolean }) => {
-        if (index < 0 || index >= reconcilingEntries.length) {
-            return;
-        }
-        if (rollback) {
-            rollbackRange(index);
-        }
-        reconcilingEntries.splice(index, 1);
-        if (rollback) {
-            replayRange(index);
-        }
-    };
-
+    
     const cancelEntry = (id: number) => {
         const index = reconcilingEntries.findIndex(entry => entry.id === id);
         if (index === -1) {
             return;
         }
-        removeEntryAtIndex(index, { rollback: true });
+        rollbackRange(index);
+        reconcilingEntries.splice(index, 1);
+        replayRange(index);
     };
 
     const serializeReconcilingEntries = () =>

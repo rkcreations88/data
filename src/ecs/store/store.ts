@@ -35,13 +35,14 @@ import { FromSchemas } from "../../schema/schema.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { ResourceSchemas } from "../resource-schemas.js";
 import { createStore } from "./create-store.js";
+import { OptionalComponents } from "../optional-components.js";
 
 interface BaseStore<C extends object = never> {
     select<
-        Include extends StringKeyof<C>
+        Include extends StringKeyof<C & OptionalComponents>
     >(
         include: readonly Include[] | ReadonlySet<string>,
-        options?: EntitySelectOptions<C, Pick<C & RequiredComponents, Include>>
+        options?: EntitySelectOptions<C & OptionalComponents, Pick<C & RequiredComponents & OptionalComponents, Include>>
     ): readonly Entity[];
     toData(): unknown
 }
@@ -49,10 +50,10 @@ interface BaseStore<C extends object = never> {
 export interface ReadonlyStore<
     C extends Components = never,
     R extends ResourceComponents = never,
-    A extends ArchetypeComponents<StringKeyof<C>> = never,
+    A extends ArchetypeComponents<StringKeyof<C & OptionalComponents>> = never,
 > extends BaseStore<C>, ReadonlyCore<C> {
     readonly resources: { readonly [K in StringKeyof<R>]: R[K] };
-    readonly archetypes: { -readonly [K in StringKeyof<A>]: ReadonlyArchetype<RequiredComponents & { [P in A[K][number]]: C[P] }> }
+    readonly archetypes: { -readonly [K in StringKeyof<A>]: ReadonlyArchetype<RequiredComponents & { [P in A[K][number]]: (C & RequiredComponents & OptionalComponents)[P] }> }
 }
 
 export type ToReadonlyStore<T extends Store<any, any>> = T extends Store<infer C, infer R> ? ReadonlyStore<C, R> : never;
@@ -63,7 +64,7 @@ export type ToReadonlyStore<T extends Store<any, any>> = T extends Store<infer C
 export interface Store<
     C extends Components = never,
     R extends ResourceComponents = never,
-    A extends ArchetypeComponents<StringKeyof<C>> = never,
+    A extends ArchetypeComponents<StringKeyof<C & OptionalComponents>> = never,
 > extends BaseStore<C>, Core<C> {
     /**
      * This is used when a store is used to represent a transaction.
@@ -71,7 +72,7 @@ export interface Store<
      */
     undoable?: Undoable;
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };
-    readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<RequiredComponents & { [P in A[K][number]]: C[P] }> }
+    readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<RequiredComponents & { [P in A[K][number]]: (C & RequiredComponents & OptionalComponents)[P] }> }
     fromData(data: unknown): void
 }
 
@@ -86,7 +87,7 @@ export namespace Store {
     export type Schema<
         CS extends ComponentSchemas,
         RS extends ResourceSchemas,
-        A extends ArchetypeComponents<StringKeyof<CS>>,
+        A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents>>,
     > = {
         readonly components: CS;
         readonly resources: RS;
@@ -100,7 +101,7 @@ export namespace Store {
         export function create<
             const CS extends ComponentSchemas,
             const RS extends ResourceSchemas,
-            const A extends ArchetypeComponents<StringKeyof<CS>>,
+            const A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents>>,
         >(
             components: CS,
             resources: RS,
@@ -144,6 +145,7 @@ type CheckStoreFromSchema = Store.FromSchema<Store.Schema<{
     DynamicParticle: ["particle", "velocity"],
 }>>;
 declare const testStore: CheckStoreFromSchema;
+type A = typeof testStore.archetypes.DynamicParticle;
 type CheckDynamicParticle = Assert<Equal<typeof testStore.archetypes.DynamicParticle, Archetype<RequiredComponents & {
     particle: boolean;
     velocity: number;

@@ -36,7 +36,7 @@ import { TrueSchema } from "../../../schema/true.js";
 export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC): Core<Simplify<OptionalComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>> {
     type C = RequiredComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
 
-    const componentSchemas: { readonly [K in StringKeyof<C>]: Schema } = {
+    const componentSchemas: { readonly [K in StringKeyof<C & RequiredComponents & OptionalComponents>]: Schema } = {
         id: Entity.schema,
         transient: TrueSchema,
         ...newComponentSchemas
@@ -47,33 +47,34 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
     // entity location table for entities that are transient
     // values < 0
     const transientLocationTable = createEntityLocationTable(16, true);
-    const archetypes = [] as unknown as Archetype<C & RequiredComponents>[] & { readonly [x: string]: Archetype<C> };
+    const getLocationTable = (entity: Entity) => entity < 0 ? transientLocationTable : persistentLocationTable;
+    const archetypes = [] as unknown as Archetype<C & RequiredComponents & OptionalComponents>[] & { readonly [x: string]: Archetype<C> };
 
     const queryArchetypes = <
-        Include extends StringKeyof<C>,
+        Include extends StringKeyof<C & RequiredComponents & OptionalComponents>,
     >(
         include: readonly Include[] | ReadonlySet<string>,
         options?: ArchetypeQueryOptions<C>
-    ): readonly Archetype<RequiredComponents & Pick<C, Include>>[] => {
+    ): readonly Archetype<RequiredComponents & Pick<C & OptionalComponents, Include>>[] => {
         const includeArray = Array.from(include);
-        const results: Archetype<RequiredComponents & Pick<C, Include>>[] = [];
+        const results: Archetype<RequiredComponents & Pick<C & OptionalComponents, Include>>[] = [];
         for (const archetype of archetypes) {
             const hasAllRequired = includeArray.every(comp => archetype.columns[comp] !== undefined);
             const hasNoExcluded = !options?.exclude || options.exclude.every(comp => archetype.columns[comp] === undefined);
             if (hasAllRequired && hasNoExcluded) {
-                results.push(archetype as unknown as Archetype<RequiredComponents & Pick<C, Include>>);
+                results.push(archetype as unknown as Archetype<RequiredComponents & Pick<C & OptionalComponents, Include>>);
             }
         }
         return results;
     }
 
-    const ensureArchetype = <CC extends StringKeyof<C>>(componentNames: readonly CC[] | ReadonlySet<CC>): Archetype<RequiredComponents & { [K in CC]: C[K] }> => {
+    const ensureArchetype = <CC extends StringKeyof<C & RequiredComponents & OptionalComponents>>(componentNames: readonly CC[] | ReadonlySet<CC>): Archetype<RequiredComponents & { [K in CC]: (C & RequiredComponents & OptionalComponents)[K] }> => {
         const componentCount = Array.isArray(componentNames)
             ? (componentNames as readonly CC[]).length
             : (componentNames as ReadonlySet<CC>).size;
         for (const archetype of queryArchetypes(componentNames)) {
             if (archetype.components.size === componentCount) {
-                return archetype as unknown as Archetype<RequiredComponents & { [K in CC]: C[K] }>;
+                return archetype as unknown as Archetype<RequiredComponents & { [K in CC]: (C & RequiredComponents & OptionalComponents)[K] }>;
             }
         }
         const id = archetypes.length;
@@ -97,14 +98,16 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
             id,
             transient ? transientLocationTable : persistentLocationTable
         );
-        archetypes.push(archetype as unknown as Archetype<C>);
-        return archetype as unknown as Archetype<RequiredComponents & { [K in CC]: C[K] }>;
+        archetypes.push(archetype as unknown as Archetype<C & RequiredComponents & OptionalComponents>);
+        return archetype as unknown as Archetype<RequiredComponents & { [K in CC]: (C & RequiredComponents & OptionalComponents)[K] }>;
     }
 
-    const { locate } = persistentLocationTable;
+    const locateInternal = (entity: Entity) => {
+        return (entity < 0 ? transientLocationTable : persistentLocationTable).locate(entity);
+    }
 
     const readEntity = (entity: Entity, minArchetype?: ReadonlyArchetype<C> | Archetype<C>): any => {
-        const location = locate(entity);
+        const location = locateInternal(entity);
         if (location === null) {
             return null;
         }
@@ -116,21 +119,23 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
     }
 
     const deleteEntity = (entity: Entity) => {
-        const location = locate(entity);
+        const locationTable = getLocationTable(entity);
+        const location = locationTable.locate(entity);
         if (location !== null) {
             const archetype = archetypes[location.archetype];
             if (!archetype) {
                 throw new Error("Archetype not found: " + JSON.stringify(location));
             }
-            ARCHETYPE.deleteRow(archetype, location.row, persistentLocationTable);
-            persistentLocationTable.delete(entity);
+            ARCHETYPE.deleteRow(archetype, location.row, locationTable);
+            locationTable.delete(entity);
         }
     }
 
     const updateEntity = (entity: Entity, components: EntityUpdateValues<C>) => {
-        const currentLocation = locate(entity);
+        const currentLocation = locateInternal(entity);
         if (currentLocation === null) {
-            throw "Entity not found";
+            debugger;
+            throw `Entity not found ${entity}`;
         }
         if ("transient" in components) {
             throw new Error("Cannot update transient component");
@@ -163,23 +168,24 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
                     newComponents.delete(comp);
                 }
             }
-            newArchetype = ensureArchetype(newComponents as ReadonlySet<StringKeyof<C>>) as unknown as Archetype<C>;
+            newArchetype = ensureArchetype(newComponents as ReadonlySet<StringKeyof<C & RequiredComponents & OptionalComponents>>) as unknown as Archetype<C & RequiredComponents & OptionalComponents>;
         }
         if (newArchetype !== currentArchetype) {
             // create a new row in the new archetype
             const currentData = getRowData(currentArchetype, currentLocation.row);
+            const currentLocationTable = getLocationTable(entity);
             // deletes the row from the current archetype (this will update the entity location table for any row which may have been moved into it's position)
-            ARCHETYPE.deleteRow(currentArchetype, currentLocation.row, persistentLocationTable);
+            ARCHETYPE.deleteRow(currentArchetype, currentLocation.row, currentLocationTable);
             const newRow = addRow(newArchetype, { ...currentData, ...components });
             // update the entity location table for the entity so it points to the new archetype and row
-            persistentLocationTable.update(entity, { archetype: newArchetype.id, row: newRow });
+            currentLocationTable.update(entity, { archetype: newArchetype.id, row: newRow });
         } else {
             updateRow(newArchetype, currentLocation.row, components as any);
         }
     }
 
     const getComponent = <K extends StringKeyof<C>>(entity: Entity, component: K): C[K] | undefined => {
-        const location = locate(entity);
+        const location = locateInternal(entity);
         if (location === null) {
             return undefined;
         }
@@ -199,7 +205,7 @@ export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC)
         queryArchetypes,
         ensureArchetype,
         locate: (entity) => {
-            const location = (entity < 0 ? transientLocationTable : persistentLocationTable).locate(entity);
+            const location = locateInternal(entity);
             if (location === null) {
                 return null;
             }

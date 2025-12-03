@@ -942,4 +942,5 @@ describe("createStore", () => {
             expect(Object.keys(newStore.resources)).toHaveLength(0);
         });
     });
+
 }); 

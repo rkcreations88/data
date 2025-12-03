@@ -42,7 +42,7 @@ export function createStore<
     newComponentSchemas: NC,
     resourceSchemas: NR = {} as NR,
     archetypeComponentNames: A = {} as A,
-): Store<FromSchemas<NC> & OptionalComponents, FromSchemas<NR>, A> {
+): Store<FromSchemas<NC>, FromSchemas<NR>, A> {
     type C = RequiredComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
     type R = { [K in StringKeyof<NR>]: FromSchema<NR[K]> };
 
@@ -82,10 +82,10 @@ export function createStore<
     ensureDefaultResourcesAndPropertiesExist();
 
     const select = <
-        Include extends StringKeyof<C>
+        Include extends StringKeyof<C & OptionalComponents>
     >(
         include: readonly Include[] | ReadonlySet<string>,
-        options?: EntitySelectOptions<C & RequiredComponents, Pick<C & RequiredComponents, Include>>
+    options?: EntitySelectOptions<C & OptionalComponents, Pick<C & RequiredComponents & OptionalComponents, Include>>
     ): readonly Entity[] => {
         return selectEntities<C, Include>(core, include, options);
     }
