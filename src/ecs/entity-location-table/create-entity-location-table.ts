@@ -47,6 +47,9 @@ const createPositiveEntityLocationTable = (initialCapacity: number = 16): Entity
     let entities = new Int32Array(createSharedArrayBuffer(capacity * 2 * 4));
 
     const createEntity = ({ archetype, row }: EntityLocation): Entity => {
+        if (row < 0) {
+            throw new Error("create row must be >= 0");
+        }
         let entity: number;
         if (freeListHead >= 0) {
             entity = freeListHead;
@@ -69,6 +72,9 @@ const createPositiveEntityLocationTable = (initialCapacity: number = 16): Entity
     }
 
     const deleteEntity = (entity: Entity) => {
+        if (entity < 0) {
+            throw new Error("delete entity must be >= 0");
+        }
         const index = entity << 1;
         entities[index + 0] = -1;
         entities[index + 1] = freeListHead;
@@ -76,7 +82,10 @@ const createPositiveEntityLocationTable = (initialCapacity: number = 16): Entity
     }
 
     const locateEntity = (entity: Entity): EntityLocation | null => {
-        if (entity < 0 || entity >= nextIndex) {
+        if (entity < 0) {
+            throw new Error("locate entity must be >= 0");
+        }
+        if (entity >= nextIndex) {
             return null;
         }
         const index = entity << 1;
@@ -89,6 +98,9 @@ const createPositiveEntityLocationTable = (initialCapacity: number = 16): Entity
     }
 
     const updateEntity = (entity: Entity, location: EntityLocation) => {
+        if (entity < 0 || location.row < 0) {
+            throw new Error("update entity and row must be >= 0");
+        }
         const index = entity << 1;
         entities[index + 0] = location.archetype;
         entities[index + 1] = location.row;

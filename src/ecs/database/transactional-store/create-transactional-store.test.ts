@@ -84,8 +84,9 @@ describe("createTransactionalStore", () => {
         });
 
         expect(result).toBeDefined();
-        expect(result.redo).toHaveLength(3); // insert + update
-        expect(result.undo).toHaveLength(3); // delete + insert with old values
+        expect(result.redo).toHaveLength(3); // insert + update + resource update
+        // Undo is coalesced: update+delete on entity becomes just delete, plus resource update
+        expect(result.undo).toHaveLength(2); // delete entity + restore resource
         expect(result.changedEntities.size).toBe(2);
         expect(result.changedComponents.size).toBe(2); // position
         expect(result.changedArchetypes.size).toBe(2);
@@ -148,7 +149,8 @@ describe("createTransactionalStore", () => {
 
         // Should have combined updates
         expect(result.redo).toHaveLength(2); // insert + combined update
-        expect(result.undo).toHaveLength(2); // delete + insert with old values
+        // Undo is coalesced: update+delete becomes just delete (entity didn't exist before)
+        expect(result.undo).toHaveLength(1); // just delete
 
         const updateOperation = result.redo.find(op => op.type === "update");
         expect(updateOperation?.type).toBe("update");

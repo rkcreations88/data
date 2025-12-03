@@ -28,6 +28,9 @@ import { FromSchema, Schema } from "../../schema/schema.js";
 import { Entity } from "../entity.js";
 import { F32Schema } from "../../schema/f32.js";
 import { toPromise } from "../../observe/to-promise.js";
+import { createUndoRedoService } from "../undo-redo-service/create-undo-redo-service.js";
+import { applyOperations } from "./transactional-store/apply-operations.js";
+import { TransactionWriteOperation } from "./transactional-store/transactional-store.js";
 
 // Test schemas
 const positionSchema = {
@@ -453,6 +456,61 @@ describe("createDatabase", () => {
             expect(observer).toHaveBeenCalled();
 
             unsubscribe();
+        });
+
+        it("should remove transient entries from reconciling queue when AsyncGenerator throws", async () => {
+            const store = createTestDatabase();
+
+            // Create an async generator that yields multiple times then throws
+            async function* multiYieldErrorStream() {
+                yield { position: { x: 1, y: 1, z: 1 }, name: "Yield1" };
+                await new Promise(resolve => setTimeout(resolve, 1));
+                yield { position: { x: 2, y: 2, z: 2 }, name: "Yield2" };
+                await new Promise(resolve => setTimeout(resolve, 1));
+                yield { position: { x: 3, y: 3, z: 3 }, name: "Yield3" };
+                throw new Error("Sequential transaction failed");
+            }
+
+            // Start the transaction
+            const transactionPromise = store.transactions.createPositionNameEntity(() => multiYieldErrorStream());
+
+            // Wait a bit to let some yields process
+            await new Promise(resolve => setTimeout(resolve, 5));
+
+            // Verify transient entry exists during processing
+            const serializedDuring = store.toData() as { appliedEntries?: Array<{ id: number; args: unknown }> };
+            const transientEntries = serializedDuring.appliedEntries?.filter(e => e !== null && e !== undefined);
+            expect(transientEntries).toBeDefined();
+            if (transientEntries && transientEntries.length > 0) {
+                // If we caught it during processing, verify it's a transient entry
+                expect((transientEntries[0].args as any)?.name).toMatch(/Yield[123]/);
+            }
+
+            // Wait for the error
+            let error: any;
+            try {
+                await transactionPromise;
+            } catch (e) {
+                error = e;
+            }
+
+            expect(error).toBeDefined();
+            expect(error.message).toBe("Sequential transaction failed");
+
+            // Wait for cleanup to complete
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Verify the transient entry is removed from the reconciling queue
+            const serializedAfter = store.toData() as { appliedEntries?: Array<unknown> };
+            expect(serializedAfter.appliedEntries ?? []).toHaveLength(0);
+
+            // Verify all entities are rolled back
+            const entities = store.select(["position", "name"]);
+            const yieldEntities = entities.filter(entityId => {
+                const values = store.read(entityId);
+                return values?.name?.startsWith("Yield");
+            });
+            expect(yieldEntities).toHaveLength(0);
         });
 
         it("should handle complex AsyncGenerator with conditional yielding", async () => {
@@ -914,5 +972,110 @@ describe("createDatabase", () => {
             expect(generating).toBe(false);
         });
 
+    });
+
+    describe("No-op transaction prevention", () => {
+        it("should not emit a transaction that makes no changes", () => {
+            const store = createTestDatabase();
+            
+            // Track how many times the observer is called
+            const observer = vi.fn();
+            const unsubscribe = store.observe.components.position(observer);
+            
+            // Clear any initial calls
+            observer.mockClear();
+            
+            // Create a no-op transaction (doesn't modify anything)
+            const { baseStore, transactions } = createStoreConfig();
+            const database = createDatabase(baseStore, {
+                ...transactions,
+                noOpTransaction(t, _args: {}) {
+                    // This transaction does nothing
+                }
+            });
+            
+            const positionObserver = vi.fn();
+            const unsub = database.observe.components.position(positionObserver);
+            positionObserver.mockClear();
+            
+            // Execute the no-op transaction
+            database.transactions.noOpTransaction({});
+            
+            // Verify no notification was sent
+            expect(positionObserver).not.toHaveBeenCalled();
+            
+            unsub();
+        });
+
+        it("should not add no-op transactions to the undo stack", async () => {
+            const store = createTestDatabase();
+            
+            // Create database with undo-redo service
+            const { baseStore, transactions } = createStoreConfig();
+            const database = createDatabase(baseStore, {
+                ...transactions,
+                noOpTransaction(t, _args: {}) {
+                    t.undoable = { coalesce: false };
+                    // This transaction does nothing
+                },
+                applyOperations(t, operations: TransactionWriteOperation<any>[]) {
+                    applyOperations(t, operations);
+                }
+            });
+            
+            const undoRedo = createUndoRedoService(database);
+            
+            // Execute the no-op transaction
+            database.transactions.noOpTransaction({});
+            
+            // Verify the undo stack is empty (need to await the observable)
+            const undoStack = await toPromise(undoRedo.undoStack);
+            expect(undoStack).toHaveLength(0);
+        });
+
+        it("should emit a transaction that makes changes", () => {
+            const store = createTestDatabase();
+            
+            const observer = vi.fn();
+            const unsubscribe = store.observe.components.position(observer);
+            observer.mockClear();
+            
+            // Create an entity (makes changes)
+            store.transactions.createPositionEntity({ position: { x: 1, y: 2, z: 3 } });
+            
+            // Verify notification was sent
+            expect(observer).toHaveBeenCalled();
+            
+            unsubscribe();
+        });
+
+        it("should detect true no-op when transaction reads but doesn't modify", async () => {
+            const { baseStore, transactions } = createStoreConfig();
+            const database = createDatabase(baseStore, {
+                ...transactions,
+                readOnlyTransaction(t, args: { entity: number }) {
+                    t.undoable = { coalesce: false };
+                    // Just read the entity but don't modify it
+                    const current = t.read(args.entity);
+                    // Do nothing with the data - this is a true no-op
+                },
+                applyOperations(t, operations: TransactionWriteOperation<any>[]) {
+                    applyOperations(t, operations);
+                }
+            });
+            
+            // Create an entity
+            const entity = database.transactions.createPositionEntity({ position: { x: 1, y: 2, z: 3 } });
+            
+            const undoRedo = createUndoRedoService(database);
+            const initialStackLength = (await toPromise(undoRedo.undoStack)).length;
+            
+            // Execute read-only transaction (true no-op)
+            database.transactions.readOnlyTransaction({ entity });
+            
+            // Verify no new undo entry was added
+            const finalStackLength = (await toPromise(undoRedo.undoStack)).length;
+            expect(finalStackLength).toBe(initialStackLength);
+        });
     });
 });

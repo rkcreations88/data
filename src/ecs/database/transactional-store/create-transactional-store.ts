@@ -29,6 +29,7 @@ import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { patchEntityValues } from "./patch-entity-values.js";
+import { coalesceWriteOperations } from "./coalesce-transactions.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
@@ -97,6 +98,7 @@ export function createTransactionalStore<
     const updateEntity = (entity: Entity, values: EntityUpdateValues<C>) => {
         const oldValues = store.read(entity);
         if (!oldValues) {
+            debugger;
             throw new Error(`Entity not found: ${entity}`);
         }
 
@@ -207,13 +209,17 @@ export function createTransactionalStore<
             // Execute the transaction
             const value = transactionFunction(transactionStore);
 
+            // Coalesce operations to optimize redo/undo arrays
+            const coalescedRedo = coalesceWriteOperations([...redoOperations]);
+            const coalescedUndo = coalesceWriteOperations([...undoOperationsInReverseOrder.reverse()]);
+
             // Return the transaction result
             const result: TransactionResult<C> = {
                 value: value ?? undefined,
                 transient: options?.transient ?? false,
                 undoable: transactionStore.undoable ?? null,
-                redo: [...redoOperations],
-                undo: [...undoOperationsInReverseOrder.reverse()],
+                redo: coalescedRedo,
+                undo: coalescedUndo,
                 changedEntities: new Map(changed.entities),
                 changedComponents: new Set(changed.components),
                 changedArchetypes: new Set(changed.archetypes),

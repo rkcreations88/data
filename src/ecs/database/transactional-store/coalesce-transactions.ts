@@ -42,7 +42,7 @@ export function shouldCoalesceTransactions(
 /**
  * Coalesces arrays of write operations, potentially merging and removing redundant operations.
  */
-function coalesceWriteOperations(operations: TransactionWriteOperation<any>[]): TransactionWriteOperation<any>[] {
+export function coalesceWriteOperations(operations: TransactionWriteOperation<any>[]): TransactionWriteOperation<any>[] {
     if (operations.length <= 1) return operations;
 
     // Simple approach: just merge consecutive update operations on the same entity
@@ -83,35 +83,24 @@ function coalesceWriteOperations(operations: TransactionWriteOperation<any>[]): 
                 i++;
             }
         } else if (current.type === "insert") {
-            // Look ahead for updates to merge into this insert
-            const mergedValues = { ...current.values };
-            let j = i + 1;
-            let hasUpdates = false;
-
-            while (j < operations.length && operations[j].type === "update") {
-                const nextOp = operations[j];
-                if (nextOp.type === "update") {
-                    Object.assign(mergedValues, nextOp.values);
-                    hasUpdates = true;
-                }
-                j++;
-            }
-
-            if (hasUpdates) {
-                result.push({
-                    type: "insert",
-                    values: mergedValues
-                });
-                i = j;
-            } else {
-                result.push(current);
-                i++;
-            }
+            // Cannot safely merge insert + update since insert doesn't have an entity ID
+            // to verify the update is on the same entity
+            result.push(current);
+            i++;
         } else {
-            // For delete operations, check if we can cancel with previous insert
-            if (current.type === "delete" && result.length > 0 && result[result.length - 1].type === "insert") {
-                // Cancel insert + delete
-                result.pop();
+            // For delete operations, remove any preceding update operations on the same entity
+            if (current.type === "delete") {
+                // Remove any preceding update operations on the same entity
+                const deleteEntity = current.entity;
+                for (let k = result.length - 1; k >= 0; k--) {
+                    const op = result[k];
+                    if (op.type === "update" && op.entity === deleteEntity) {
+                        result.splice(k, 1);
+                    }
+                }
+                
+                // Add the delete operation
+                result.push(current);
                 i++;
             } else {
                 result.push(current);

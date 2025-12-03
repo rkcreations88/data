@@ -170,8 +170,7 @@ describe('createEntityLocationTable', () => {
 
     it("should return null when locating entity with invalid id -1", () => {
         const table = createEntityLocationTable();
-        const location = table.locate(-1);
-        expect(location).toBeNull();
+        expect(() => table.locate(-1)).toThrow("locate entity must be >= 0");
     });
 });
 

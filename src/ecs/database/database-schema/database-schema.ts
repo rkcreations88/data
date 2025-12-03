@@ -24,7 +24,7 @@ import { FromSchemas } from "../../../schema/schema.js";
 import { ComponentSchemas } from "../../component-schemas.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
 import { StringKeyof } from "../../../types/types.js";
-import { AsyncArgsProvider, Database, ToTransactionFunctions, TransactionDeclaration, TransactionDeclarations } from "../database.js";
+import { AsyncArgsProvider, Database, ToTransactionFunctions, TransactionDeclarations } from "../database.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { Assert } from "../../../types/assert.js";
 import { Equal } from "../../../types/equal.js";

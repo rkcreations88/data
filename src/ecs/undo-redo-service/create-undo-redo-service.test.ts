@@ -129,7 +129,7 @@ describe("createUndoRedoService", () => {
         // Verify entity exists
         const entityData = database.read(entity);
         expect(entityData).toBeDefined();
-        expect(entityData?.position.x).toBe(1);
+        expect(entityData?.position?.x).toBe(1);
 
         // Undo the operation
         undoRedo.undo();
@@ -159,9 +159,9 @@ describe("createUndoRedoService", () => {
         // Verify entity is recreated
         entityData = database.read(entity);
         expect(entityData).toBeDefined();
-        expect(entityData?.position.x).toBe(1);
-        expect(entityData?.position.y).toBe(2);
-        expect(entityData?.position.z).toBe(3);
+        expect(entityData?.position?.x).toBe(1);
+        expect(entityData?.position?.y).toBe(2);
+        expect(entityData?.position?.z).toBe(3);
 
         // Verify stack index is updated
         expect(await toPromise(undoRedo.undoStackIndex)).toBe(1);
@@ -200,27 +200,27 @@ describe("createUndoRedoService", () => {
 
         // Verify update
         let entityData = database.read(entity);
-        expect(entityData?.position.x).toBe(10);
-        expect(entityData?.position.y).toBe(20);
-        expect(entityData?.position.z).toBe(30);
+        expect(entityData?.position?.x).toBe(10);
+        expect(entityData?.position?.y).toBe(20);
+        expect(entityData?.position?.z).toBe(30);
 
         // Undo the update
         undoRedo.undo();
 
         // Verify original values restored
         entityData = database.read(entity);
-        expect(entityData?.position.x).toBe(1);
-        expect(entityData?.position.y).toBe(2);
-        expect(entityData?.position.z).toBe(3);
+        expect(entityData?.position?.x).toBe(1);
+        expect(entityData?.position?.y).toBe(2);
+        expect(entityData?.position?.z).toBe(3);
 
         // Redo the update
         undoRedo.redo();
 
         // Verify update reapplied
         entityData = database.read(entity);
-        expect(entityData?.position.x).toBe(10);
-        expect(entityData?.position.y).toBe(20);
-        expect(entityData?.position.z).toBe(30);
+        expect(entityData?.position?.x).toBe(10);
+        expect(entityData?.position?.y).toBe(20);
+        expect(entityData?.position?.z).toBe(30);
     });
 
     it("should handle delete operations correctly", async () => {
@@ -239,7 +239,7 @@ describe("createUndoRedoService", () => {
         // Verify entity is restored
         const entityData = database.read(entity);
         expect(entityData).toBeDefined();
-        expect(entityData?.position.x).toBe(1);
+        expect(entityData?.position?.x).toBe(1);
 
         // Redo the delete
         undoRedo.redo();
@@ -281,27 +281,27 @@ describe("createUndoRedoService", () => {
 
         // Verify final state
         let entityData = database.read(entity);
-        expect(entityData?.position.x).toBe(10);
-        expect(entityData?.position.y).toBe(20);
-        expect(entityData?.position.z).toBe(30);
+        expect(entityData?.position?.x).toBe(10);
+        expect(entityData?.position?.y).toBe(20);
+        expect(entityData?.position?.z).toBe(30);
 
         // Undo the coalesced update operation
         undoRedo.undo();
 
         // Verify original state is restored
         entityData = database.read(entity);
-        expect(entityData?.position.x).toBe(1);
-        expect(entityData?.position.y).toBe(2);
-        expect(entityData?.position.z).toBe(3);
+        expect(entityData?.position?.x).toBe(1);
+        expect(entityData?.position?.y).toBe(2);
+        expect(entityData?.position?.z).toBe(3);
 
         // Redo the coalesced update operation
         undoRedo.redo();
 
         // Verify final state is restored
         entityData = database.read(entity);
-        expect(entityData?.position.x).toBe(10);
-        expect(entityData?.position.y).toBe(20);
-        expect(entityData?.position.z).toBe(30);
+        expect(entityData?.position?.x).toBe(10);
+        expect(entityData?.position?.y).toBe(20);
+        expect(entityData?.position?.z).toBe(30);
     });
 
     it("should not coalesce non-coalesceable operations", async () => {

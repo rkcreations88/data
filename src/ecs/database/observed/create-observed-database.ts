@@ -60,6 +60,16 @@ export function createObservedDatabase<
     const transactionObservers = new Set<(transaction: TransactionResult<C>) => void>();
 
     const notifyObservers = (result: TransactionResult<C>) => {
+        // Don't notify for no-op transactions (no actual changes made)
+        // Check if there are any changed entities, components, or archetypes
+        const hasChanges = result.changedEntities.size > 0 || 
+                          result.changedComponents.size > 0 || 
+                          result.changedArchetypes.size > 0;
+        
+        if (!hasChanges) {
+            return;
+        }
+        
         for (const observer of transactionObservers) {
             observer(result);
         }

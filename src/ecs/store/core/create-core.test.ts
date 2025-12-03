@@ -453,6 +453,12 @@ export function createCoreTestSuite(
 
             const readId = transientPositionTable.columns.id.get(0);
             expect(readId).toBe(writeId);
+
+            const locate = core.locate(writeId);
+            expect(locate?.archetype).toBe(transientPositionTable);
+
+            const readComponent = core.get(writeId, "position");
+            expect(readComponent).toEqual({ x: 1, y: 2, z: 3 });
         });
 
         it("should throw when trying to update transient component", () => {
@@ -744,6 +750,61 @@ export function createCoreTestSuite(
                 expect(archetype.rowCount).toBe(rowCountBefore);
                 expect(archetype.rowCapacity).toBe(rowCountBefore);
             });
+        });
+
+        it("should delete transient entities correctly", () => {
+            const core = factory({
+                position: positionSchema,
+            });
+
+            const transientArchetype = core.ensureArchetype(["id", "position", "transient"]);
+            const transientEntity = transientArchetype.insert({ 
+                position: { x: 1, y: 2, z: 3 }, 
+                transient: true 
+            });
+
+            // Verify transient entity exists and has negative id
+            expect(transientEntity).toBeLessThan(0);
+            expect(core.locate(transientEntity)).not.toBeNull();
+            expect(core.read(transientEntity)).not.toBeNull();
+
+            // Delete transient entity
+            core.delete(transientEntity);
+
+            // Verify transient entity is deleted
+            expect(core.locate(transientEntity)).toBeNull();
+            expect(core.read(transientEntity)).toBeNull();
+        });
+
+        it("should update transient entities across archetypes correctly", () => {
+            const core = factory({
+                position: positionSchema,
+                health: healthSchema,
+            });
+
+            // Create a transient entity with just position
+            const transientArchetype1 = core.ensureArchetype(["id", "position", "transient"]);
+            const transientEntity = transientArchetype1.insert({ 
+                position: { x: 1, y: 2, z: 3 }, 
+                transient: true 
+            });
+
+            // Verify transient entity exists and has negative id
+            expect(transientEntity).toBeLessThan(0);
+            expect(core.locate(transientEntity)).not.toBeNull();
+
+            // Add health component to trigger archetype change
+            core.update(transientEntity, { health: { current: 100, max: 100 } });
+
+            // Verify entity moved to new archetype and data is correct
+            const location = core.locate(transientEntity);
+            expect(location).not.toBeNull();
+            expect(location?.archetype).not.toBe(transientArchetype1);
+
+            const data = core.read(transientEntity);
+            expect(data?.position).toEqual({ x: 1, y: 2, z: 3 });
+            expect(data?.health).toEqual({ current: 100, max: 100 });
+            expect(data?.transient).toBe(true);
         });
 
     });
