@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createStructBuffer } from "./create-struct-buffer.js";
-import type { Schema } from "../schema/schema.js";
+import type { Schema } from "../schema/index.js";
 
 describe("createStructBuffer.copy", () => {
     it("should deep-copy the underlying bytes and preserve capacity", () => {

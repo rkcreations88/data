@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { Data } from "../../index.js";
-import { FromSchema, Schema } from "../../schema/schema.js";
+import { FromSchema, Schema } from "../../schema/index.js";
 import { Simplify } from "../../types/types.js";
 import { CoreComponents, ECSJSON, Table } from "../core-ecs/core-ecs-types.js";
 import {

@@ -30,3 +30,4 @@ export * from "./database.js";
 export * from "./observe-dependent-value.js";
 export * from "./transactional-store/index.js";
 export * from "./database-schema/index.js";
+export type { Undoable } from "./undoable.js";

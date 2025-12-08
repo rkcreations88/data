@@ -24,7 +24,7 @@ import { ComponentSchemas } from "../component-schemas.js";
 import { StringKeyof } from "../../types/types.js";
 import { RequiredComponents } from "../required-components.js";
 import { Store } from "./store.js";
-import { FromSchema, FromSchemas, Schema } from "../../schema/schema.js";
+import { FromSchema, FromSchemas, Schema } from "../../schema/index.js";
 import { createCore } from "./core/create-core.js";
 import { Entity } from "../entity.js";
 import { Core } from "./core/core.js";

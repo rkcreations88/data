@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { describe, it, expect, beforeEach } from "vitest";
 import { createDatabase } from "../database/create-database.js";
 import { createStore } from "../store/create-store.js";
-import { F32Schema } from "../../schema/f32.js";
+import { F32 } from "../../math/f32/index.js";
 import { createUndoRedoService } from "./create-undo-redo-service.js";
 import { applyOperations } from "../database/transactional-store/apply-operations.js";
 import { toPromise } from "../../observe/to-promise.js";
@@ -33,9 +33,9 @@ import { TransactionWriteOperation } from "../database/transactional-store/trans
 const positionSchema = {
     type: "object",
     properties: {
-        x: F32Schema,
-        y: F32Schema,
-        z: F32Schema,
+        x: F32.schema,
+        y: F32.schema,
+        z: F32.schema,
     },
     required: ["x", "y", "z"],
     additionalProperties: false,

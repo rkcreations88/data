@@ -19,14 +19,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../../schema/schema.js";
-import { U32Schema } from "../../schema/u32.js";
+import { FromSchema, Schema } from "../../schema/index.js";
+import { U32 } from "../../math/u32/index.js";
 
 export const EntityLocationSchema = {
     type: "object",
     properties: {
-        archetype: U32Schema,
-        row: U32Schema
+        archetype: U32.schema,
+        row: U32.schema
     },
     required: ["archetype", "row"],
     additionalProperties: false,

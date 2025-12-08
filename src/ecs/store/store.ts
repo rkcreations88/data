@@ -31,7 +31,7 @@ import { EntitySelectOptions } from "./entity-select-options.js";
 import { Undoable } from "../database/undoable.js";
 import { Assert } from "../../types/assert.js";
 import { Equal } from "../../types/equal.js";
-import { FromSchemas } from "../../schema/schema.js";
+import { FromSchemas } from "../../schema/index.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { ResourceSchemas } from "../resource-schemas.js";
 import { createStore } from "./create-store.js";

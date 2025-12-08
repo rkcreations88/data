@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { fromProperties } from "./from-properties.js";
-import { Observe } from "./types.js";
+import { Observe } from "./index.js";
 import { withMap } from "./with-map.js";
 
 /**

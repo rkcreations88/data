@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import * as presentation from './todo-toolbar-presentation.js';
 import { styles } from './todo-toolbar.css.js';
-import { withMap } from '../../../../observe/index.js';
+import { Observe } from '../../../../observe/index.js';
 import { customElement } from 'lit/decorators.js';
 import { css } from 'lit';
 
@@ -60,8 +60,8 @@ export class TodoToolbar extends TodoElement {
       completedCount: 'completed',
     } as const;
     const values = useObservableValues(() => ({
-      completedCount: withMap(this.service.dependentState.completeTodos, todos => todos.length),
-      todoCount: withMap(this.service.dependentState.allTodos, todos => todos.length),
+      completedCount: Observe.withMap(this.service.dependentState.completeTodos, (todos: unknown) => (todos as { length: number }).length),
+      todoCount: Observe.withMap(this.service.dependentState.allTodos, (todos: unknown) => (todos as { length: number }).length),
     }));
 
     if (!values) return;

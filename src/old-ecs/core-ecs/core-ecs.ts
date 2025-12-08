@@ -47,7 +47,7 @@ import {
   ECSJSON,
   CoreResources,
 } from "./core-ecs-types.js";
-import { U32Schema } from "../../schema/u32.js";
+import { U32 } from "../../math/u32/index.js";
 
 //  This is a sentinel value used to indicate a component should be deleted.
 export const DELETE: unknown = "_@_DELETE_@_";
@@ -82,7 +82,7 @@ export function createCoreECS<
   const DELETED_ARCHETYPE = 0xff;
 
   const componentSchemas = {
-    id: U32Schema,
+    id: U32.schema,
   } as { [K in keyof C]: Schema };
   const getSchema = (name: Component) => {
     const schema = componentSchemas[name];

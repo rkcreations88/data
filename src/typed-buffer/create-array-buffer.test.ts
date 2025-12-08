@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createArrayBuffer } from "./create-array-buffer.js";
-import { Schema } from "../schema/schema.js";
+import { Schema } from "../schema/index.js";
 
 describe("createArrayBuffer.copy", () => {
     it("should copy elements and capacity into a new array", () => {

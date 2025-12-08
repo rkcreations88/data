@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { Service } from './service.js';
 import { isService } from "./is-service.js";
-import { Observe, createObservableEvent } from '../observe/index.js';
+import { Observe } from '../observe/index.js';
 import { EquivalentTypes, Expand, IsVoid, NoNever, True } from '../types/index.js';
 import { isPromise } from '../internal/promise/is-promise.js';
 
@@ -109,13 +109,13 @@ function interceptActions<T extends object>(service: T, prefix: string, callback
 
 // Function to add observable actions to a service
 export function addObservableActions<T extends Service>(service: T): WithObservableActions<T> {
-  const [actions, notifyActions] = createObservableEvent<ServiceActionMessages<T>>();
+  const [actions, notifyActions] = Observe.createEvent<ServiceActionMessages<T>>();
   //  eslint-disable-next-line @typescript-eslint/no-explicit-any -- the compiler is complaining about type recursion for no discernable reason.
   return (interceptActions as any)({ ...service, actions }, '', notifyActions);
 }
 
 // Type to map service functions to action messages
-type FunctionsToMessages<T, Prefix extends string = ''> = {
+export type FunctionsToMessages<T, Prefix extends string = ''> = {
   [K in keyof T]: K extends string
   ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- needed for Parameters<T[K]> to work correctly in this context
   T[K] extends (...args: any[]) => unknown
@@ -125,24 +125,24 @@ type FunctionsToMessages<T, Prefix extends string = ''> = {
 };
 
 // Type to extract sub-services from a service
-type SubServices<T> = NoNever<{
+export type SubServices<T> = NoNever<{
   [K in keyof T]: T[K] extends Service ? T[K] : never;
 }>;
 
 // Type to map sub-service actions to messages with a prefix
-type SubServiceActionMessages<T, ParentPrefix extends string = ''> = {
+export type SubServiceActionMessages<T, ParentPrefix extends string = ''> = {
   [K in keyof T]: K extends string ? ServiceActionMessagesWithPrefix<T[K], `${ParentPrefix}${K}${typeof NESTED_SERVICE_SEPARATOR}`> : never;
 };
 
 type IsPromiseOrVoid<T> = T extends Promise<unknown> ? true : IsVoid<T>;
 
-type PromiseOrVoidFunctions<T> = NoNever<{
+export type PromiseOrVoidFunctions<T> = NoNever<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- needed for the infer R pattern to work correctly with IsPromiseOrVoid
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? (IsPromiseOrVoid<R> extends true ? T[K] : never) : never;
 }>;
 
 // Type to map service actions and sub-service actions to messages with a prefix
-type ServiceActionMessagesWithPrefix<T, Prefix extends string = ''> =
+export type ServiceActionMessagesWithPrefix<T, Prefix extends string = ''> =
   | FunctionsToMessages<PromiseOrVoidFunctions<T>, Prefix>[keyof FunctionsToMessages<PromiseOrVoidFunctions<T>, Prefix>]
   | (T extends Service
     ? Expand<SubServiceActionMessages<SubServices<T>, Prefix>[keyof SubServiceActionMessages<SubServices<T>, Prefix>]>

@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { Data } from "../index.js";
-import { Observe } from "./types.js";
+import { Observe } from "./index.js";
 import { withCopy } from "./with-copy.js";
 import { withDeduplicateData } from "./with-deduplicate-data.js";
 import { withMap } from "./with-map.js";

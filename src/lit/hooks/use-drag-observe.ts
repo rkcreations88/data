@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { DraggableProps, useDraggable } from './use-draggable.js';
 import { useElement } from './use-element.js';
-import { createObservableEvent } from '../../observe/index.js';
+import { Observe } from '../../observe/index.js';
 import { Vec2 } from '../../math/index.js';
 
 export type DragObserveProps = Pick<
@@ -51,7 +51,7 @@ export type DragState = DragStart | DragMove | DragEnd;
  * @returns
  */
 export function useDragObserve(props: DragObserveProps, dependencies: unknown[]) {
-    const [dragState, setDragState] = createObservableEvent<DragState>();
+    const [dragState, setDragState] = Observe.createEvent<DragState>();
     const element = useElement();
     useDraggable(element,
         {

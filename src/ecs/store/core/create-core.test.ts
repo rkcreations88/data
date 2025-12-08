@@ -21,25 +21,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createCore } from "./create-core.js";
-import { Schema } from "../../../schema/schema.js";
+import { Schema } from "../../../schema/index.js";
 import type { Entity } from "../../entity.js";
-import { F32Schema } from "../../../schema/f32.js";
+import { F32 } from "../../../math/f32/index.js";
 
 // Shared test schemas
 export const positionSchema = {
     type: "object",
     properties: {
-        x: F32Schema,
-        y: F32Schema,
-        z: F32Schema,
+        x: F32.schema,
+        y: F32.schema,
+        z: F32.schema,
     }
 } as const satisfies Schema;
 
 export const healthSchema = {
     type: "object",
     properties: {
-        current: F32Schema,
-        max: F32Schema,
+        current: F32.schema,
+        max: F32.schema,
     }
 } as const satisfies Schema;
 

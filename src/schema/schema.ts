@@ -23,8 +23,8 @@ SOFTWARE.*/
 import { TypedBuffer } from "../typed-buffer/typed-buffer.js";
 import { DeepReadonly, EquivalentTypes, True } from "../types/types.js";
 
-type JSONPath = string;
-type JSONMergePatch = unknown;
+export type JSONPath = string;
+export type JSONMergePatch = unknown;
 
 export type Layout = "std140" | "packed";
 
@@ -101,7 +101,7 @@ export type FromSchema<T, Depth extends number = 5> =
     : FromSchemaInternal<T, Depth>
   >;
 
-type FromSchemaInternal<T, Depth extends number = 5> = T extends { const: infer Const } ? Const
+export type FromSchemaInternal<T, Depth extends number = 5> = T extends { const: infer Const } ? Const
   : T extends { enum: infer Enum } ? Enum extends ReadonlyArray<any> ? Enum[number] : never
   : T extends { oneOf: infer Schemas }
   ? Schemas extends ReadonlyArray<Schema> ? FromOneOfSchema<Schemas, Decrement<Depth>> : never
@@ -125,14 +125,14 @@ type FromSchemaInternal<T, Depth extends number = 5> = T extends { const: infer 
   : any
   ;
 
-type Decrement<N extends number> = ((...x: any[]) => void) extends (
+export type Decrement<N extends number> = ((...x: any[]) => void) extends (
   arg: any,
   ...rest: infer R
 ) => void
   ? R['length']
   : never;
 
-type FromSchemaArray<T, Depth extends number> = T extends {
+export type FromSchemaArray<T, Depth extends number> = T extends {
   items: infer Items;
 }
   ? T extends { minItems: infer Min; maxItems: infer Max }
@@ -196,13 +196,13 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <
 
 type Simplify<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
-type FromOneOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number> = Schemas[number] extends infer S
+export type FromOneOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number> = Schemas[number] extends infer S
   ? S extends Schema
   ? FromSchema<S, Depth>
   : never
   : never;
 
-type FromAllOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number> =
+export type FromAllOfSchema<Schemas extends ReadonlyArray<Schema>, Depth extends number> =
   Schemas extends readonly [infer First, ...infer Rest]
   ? First extends Schema
   ? Rest extends ReadonlyArray<Schema>

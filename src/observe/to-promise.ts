@@ -19,12 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Observe, Unobserve } from "./types.js";
+import { Observe, Unobserve } from "./index.js";
 
 /**
  * Converts an Observe function to a Promise that will resolve with the first value.
  * Note that you will never receive subsequent updates since promises can only resolve once.
- * @param observe
+ * @param observable source observable
  * @returns the first value yielded by the observe function.
  */
 export function toPromise<T>(observable: Observe<T>): Promise<T> {

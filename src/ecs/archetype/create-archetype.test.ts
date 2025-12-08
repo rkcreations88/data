@@ -23,14 +23,14 @@ import { describe, it, expect } from 'vitest';
 import { createArchetype } from '../archetype/index.js';
 import { createEntityLocationTable } from '../entity-location-table/index.js';
 import { Entity } from '../entity.js';
-import { U32Schema } from '../../schema/u32.js';
+import { U32 } from '../../math/u32/index.js';
 
 describe('createArchetype', () => {
     it('should create an archetype with basic components', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
             id: Entity.schema,
-            value: U32Schema,
+            value: U32.schema,
         };
         const id = 1;
 
@@ -48,7 +48,7 @@ describe('createArchetype', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
             id: Entity.schema,
-            value: U32Schema,
+            value: U32.schema,
         };
         const id = 1;
 
@@ -80,9 +80,9 @@ describe('createArchetype', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
             id: Entity.schema,
-            health: U32Schema,
-            mana: U32Schema,
-            level: U32Schema,
+            health: U32.schema,
+            mana: U32.schema,
+            level: U32.schema,
         };
         const id = 2;
 
@@ -117,8 +117,8 @@ describe('createArchetype', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
             id: Entity.schema,
-            health: U32Schema,
-            mana: U32Schema,
+            health: U32.schema,
+            mana: U32.schema,
         };
         const id = 3;
 
@@ -156,7 +156,7 @@ describe('createArchetype', () => {
         const entityLocationTable = createEntityLocationTable();
         const components = {
             id: Entity.schema,
-            value: U32Schema,
+            value: U32.schema,
         };
         const id = 4;
 

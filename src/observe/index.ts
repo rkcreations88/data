@@ -21,34 +21,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 /**
- * TESTING SOME INDEX DOCUMENTATION HERE.
+ * An Observe type is a function that can be called to observe a sequence of values.
+ * The Observe function is called with a Callback function that may be called zero or more times.
+ * The Observe function returns an Unobserve function that can be called to stop observing the Observe function.
  */
-export * from "./create-observable-event.js";
-export * from "./create-observable-state.js";
-export * from "./create-persisted-state.js";
-export * from "./create-query-state.js";
-export * from "./from-constant.js";
-export * from "./from-element-id.js";
-export * from "./from-element-properties-and-events.js";
-export * from "./from-element-property.js";
-export * from "./from-array.js";
-export * from "./from-properties.js";
-export * from "./from-promise-with-error.js";
-export * from "./from-promise.js";
-export * from "./to-promise.js";
-export * from "./to-properties.js";
-export * from "./to-async-generator.js";
-export * from "./types.js";
-export * from "./with-cache.js";
-export * from "./with-copy.js";
-export * from "./with-deduplicate-data.js";
-export * from "./with-deduplicate.js";
-export * from "./with-default.js";
-export * from "./with-filter.js";
-export * from "./with-async-map.js";
-export * from "./with-map.js";
-export * from "./with-map-data.js";
-export * from "./with-optional.js";
-export * from "./with-unwrap.js";
-export * from "./with-lazy.js";
-export * from "./with-batch.js";
+export type Observe<T> = (notify: Notify<T>) => Unobserve;
+
+/**
+ * Callback function called zero or more times with a sequence of values.
+ * *may* be called back synchronously, immediately when selector function is called.
+ * *may* also be called back later asynchronously any number of times.
+ * *may* be called multiple sequential times with the same value.
+ */
+export type Notify<T> = (value: T) => void;
+
+/**
+ * Function called to stop observing an Observe function.
+ */
+export type Unobserve = () => void;
+
+export * as Observe from "./public.js";

@@ -20,10 +20,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { resize } from "../internal/array-buffer-like/resize.js";
-import { I32Schema } from "../schema/i32.js";
-import { Schema } from "../schema/schema.js";
+import { I32 } from "../math/i32/index.js";
+import { Schema } from "../schema/index.js";
 import { TypedArrayConstructor, TypedArray } from "../internal/typed-array/index.js";
-import { U32Schema } from "../schema/u32.js";
+import { U32 } from "../math/u32/index.js";
 import { TypedBuffer, TypedBufferType } from "./typed-buffer.js";
 import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
 
@@ -31,10 +31,10 @@ const getTypedArrayConstructor = (schema: Schema): TypedArrayConstructor => {
     if (schema.type === 'number' || schema.type === 'integer') {
         if (schema.type === "integer") {
             if (schema.minimum !== undefined && schema.maximum !== undefined) {
-                if (schema.minimum >= U32Schema.minimum && schema.maximum <= U32Schema.maximum) {
+                if (schema.minimum >= U32.schema.minimum && schema.maximum <= U32.schema.maximum) {
                     return Uint32Array;
                 }
-                if (schema.minimum >= I32Schema.minimum && schema.maximum <= I32Schema.maximum) {
+                if (schema.minimum >= I32.schema.minimum && schema.maximum <= I32.schema.maximum) {
                     return Int32Array;
                 }
             }

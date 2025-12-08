@@ -39,7 +39,7 @@ export interface DataCache<K extends Data, V extends Data> {
    * Stores a new value within the cache.
    * @param key key to use to store the value
    * @param value the value to store
-   * @param maxDuration the time to live relative to the current time
+   * @param options optional TTL settings, relative to now
    */
   put(key: K, value: V, options?: { maximumDuration: number }): Promise<void>;
   /**

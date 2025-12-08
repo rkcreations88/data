@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createStructBuffer } from "./create-struct-buffer.js";
-import { F32Schema } from "../schema/f32.js";
-import type { Schema, Layout } from "../schema/schema.js";
+import { F32 } from "../math/f32/index.js";
+import type { Schema, Layout } from "../schema/index.js";
 
 describe("createStructBuffer", () => {
     // Helper function to create vec3 schema
@@ -64,7 +64,7 @@ describe("createStructBuffer", () => {
                 type: "object", 
                 properties: {
                     position: Vec3Schema,
-                    scale: F32Schema
+                    scale: F32.schema
                 }
             };
 
@@ -78,8 +78,8 @@ describe("createStructBuffer", () => {
             const schema: Schema = {
                 type: "object",
                 properties: {
-                    a: F32Schema,
-                    b: F32Schema
+                    a: F32.schema,
+                    b: F32.schema
                 }
             };
 
@@ -142,7 +142,7 @@ describe("createStructBuffer", () => {
                 type: "object",
                 properties: {
                     id: { type: "integer", minimum: 0, maximum: 65535 }, // u32: 4 bytes
-                    weight: F32Schema
+                    weight: F32.schema
                 },
                 layout: "packed"
             };
@@ -159,7 +159,7 @@ describe("createStructBuffer", () => {
                 type: "object",
                 properties: {
                     position: Vec3Schema,    // 12 bytes
-                    scale: F32Schema        // 4 bytes
+                    scale: F32.schema        // 4 bytes
                 },
                 layout: "packed"
             };
@@ -177,7 +177,7 @@ describe("createStructBuffer", () => {
             const schema: Schema = {
                 type: "object",
                 properties: {
-                    value: F32Schema
+                    value: F32.schema
                 }
             };
 
@@ -201,8 +201,8 @@ describe("createStructBuffer", () => {
             const schema: Schema = {
                 type: "object",
                 properties: {
-                    a: F32Schema,
-                    b: F32Schema
+                    a: F32.schema,
+                    b: F32.schema
                 }
             };
 
@@ -216,7 +216,7 @@ describe("createStructBuffer", () => {
             const schema: Schema = {
                 type: "object",
                 properties: {
-                    value: F32Schema
+                    value: F32.schema
                 }
             };
 

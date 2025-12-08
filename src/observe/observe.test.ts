@@ -25,7 +25,9 @@ import { describe, test } from "vitest";
 import {
   Notify,
   Observe,
-  createObservableState,
+} from "./index.js";
+import {
+  createState,
   fromConstant,
   fromArray,
   fromProperties,
@@ -37,8 +39,8 @@ import {
   withFilter,
   withMap,
   withOptional,
-  createObservableEvent,
-} from "./index.js";
+  createEvent,
+} from "./public.js";
 import { toProperties } from "./to-properties.js";
 import { withAsyncMap } from "./with-async-map.js";
 
@@ -446,7 +448,7 @@ describe("observable", () => {
   });
 
   test("withCache resets when observables unsubscribe", async () => {
-    const [observable, setValue] = createObservableEvent<number>();
+    const [observable, setValue] = createEvent<number>();
     const cachedObservable = withCache(observable);
 
     const observer1Values: number[] = [];
@@ -527,7 +529,7 @@ describe("observable", () => {
   });
 
   test("toObservableProperties", async () => {
-    const [observable, setState] = createObservableState({ a: 1, b: "foo" });
+    const [observable, setState] = createState({ a: 1, b: "foo" });
     const properties = toProperties(observable, ["a", "b"]);
     const observedValues: Array<any> = [];
     const observer = (value: any) => {
@@ -567,7 +569,7 @@ describe("observable", () => {
 
 describe("observable", () => {
   test("createObservableWithSetter", async () => {
-    const [observable, setter] = createObservableState<number>();
+    const [observable, setter] = createState<number>();
 
     const observedValues = [] as number[];
     const unobserve = observable((value) => {

@@ -21,11 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect, vi } from 'vitest';
 import { withBatch } from './with-batch.js';
-import { createObservableState } from './create-observable-state.js';
+import { createState } from './create-state.js';
 
 describe('withBatch', () => {
     it('should batch multiple rapid emissions into a single notification', async () => {
-        const [source, setSource] = createObservableState<number>(1);
+        const [source, setSource] = createState<number>(1);
         const batched = withBatch(source);
         
         const observedValues: number[] = [];
@@ -54,7 +54,7 @@ describe('withBatch', () => {
     });
 
     it('should handle multiple batches correctly', async () => {
-        const [source, setSource] = createObservableState<number>(1);
+        const [source, setSource] = createState<number>(1);
         const batched = withBatch(source);
         
         const observedValues: number[] = [];
@@ -87,7 +87,7 @@ describe('withBatch', () => {
     });
 
     it('should handle unsubscribe correctly', async () => {
-        const [source, setSource] = createObservableState<number>(1);
+        const [source, setSource] = createState<number>(1);
         const batched = withBatch(source);
         
         const observedValues: number[] = [];
@@ -110,7 +110,7 @@ describe('withBatch', () => {
     });
 
     it('should work with multiple observers', async () => {
-        const [source, setSource] = createObservableState<number>(1);
+        const [source, setSource] = createState<number>(1);
         const batched = withBatch(source);
         
         const values1: number[] = [];

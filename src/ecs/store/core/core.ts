@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { Entity } from "../../entity.js";
 import { Archetype, ReadonlyArchetype } from "../../archetype/archetype.js";
-import { Schema } from "../../../schema/schema.js";
+import { Schema } from "../../../schema/index.js";
 import { RequiredComponents } from "../../required-components.js";
 import { StringKeyof } from "../../../types/index.js";
 import { Components } from "../components.js";

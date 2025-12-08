@@ -20,11 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { fromProperties, Observe } from "../../observe/index.js";
+import { Observe } from "../../observe/index.js";
 import { useMemo } from "./use-memo.js";
 import { useObservable } from "./use-observable.js";
 
 export function useObservableValues<T extends Record<string, Observe<unknown>>>(factory: () => T, deps: unknown[] = []): { [K in keyof T]: T[K] extends Observe<infer U> ? U : never } | undefined {
-    const observable = useMemo(() => fromProperties(factory()), deps);
+    const observable = useMemo(() => Observe.fromProperties(factory()), deps);
     return useObservable(observable);
 }

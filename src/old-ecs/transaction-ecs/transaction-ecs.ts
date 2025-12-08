@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Data } from "../../index.js";
-import { FromSchema, Schema } from "../../schema/schema.js";
+import { FromSchema, Schema } from "../../schema/index.js";
 import {
   Archetype,
   ECS,
@@ -43,7 +43,7 @@ import {
   TransactionOptions,
 } from "./transaction-types.js";
 import { createECSTransaction } from "./transactions.js";
-import { Observe } from "../../observe/types.js";
+import { Observe } from "../../observe/index.js";
 import { equalsShallow } from "../../equals-shallow.js";
 
 //  we want to cache this a well on each array.

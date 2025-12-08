@@ -21,10 +21,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { Data } from "../data.js";
-import { createObservableState } from "./create-observable-state.js";
-import { Observe } from "./types.js";
+import { createState } from "./create-state.js";
+import { Observe } from "./index.js";
 
-type SetValue<T> = (value: T) => void;
+export type SetValue<T> = (value: T) => void;
 
 /**
  * Creates an observable state that syncs with URL query parameters.
@@ -54,7 +54,7 @@ export const createQueryState = <T extends Data>(
     const initial = urlValue ? deserialize(urlValue) : initialValue;
 
     // Create the observable state
-    const [observe, setValue] = createObservableState<T>(initial);
+    const [observe, setValue] = createState<T>(initial);
 
     // Create a wrapped setValue that updates both state and URL
     const setQueryValue: SetValue<T> = (newValue: T) => {

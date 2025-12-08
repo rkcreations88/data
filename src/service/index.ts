@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 export { type Service } from './service.js';
 export { isService } from './is-service.js';
-export { type WithObservableActions, type ServiceActionMessages, addObservableActions } from './add-observable-actions.js';
+export { type WithObservableActions, type ServiceActionMessages, type ServiceActionMessagesWithPrefix, addObservableActions } from './add-observable-actions.js';
 export {
     type ErrorResult, type IntermediateResult, type SuccessResult, type FinalResult, type ProgressiveResult,
     isErrorResult, isIntermediateResult, isSuccessResult,

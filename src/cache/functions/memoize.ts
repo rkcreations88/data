@@ -29,10 +29,8 @@ import { getDataCache } from "../index.js";
 /**
  * Uses datacache to store results so we can avoid expensive recomputations of the same input.
  * This function also uses preventParallelExecution to prevent multiple executions of the same function at the same time with the same arguments.
+ * @param uniqueNameAndVersion Application-unique identifier that also encodes a version to avoid stale caches.
  * @param fn The function to memoize by storing results in the DataCache.
- * @param version The version of this function. If the function changes this must also change
- * to avoid returning stale results from an older version of the function.
- * @param name The name of this function which should be application unique to avoid hash collisions.
  * @returns A function with the same signature but memoized results.
  */
 export function memoize<In extends Array<Data>, Out extends Data>(

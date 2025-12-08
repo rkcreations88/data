@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from 'vitest';
 import { toAsyncGenerator } from './to-async-generator.js';
-import { Observe } from './types.js';
+import { Observe } from './index.js';
 
 // Helper function to create test observables
 function createTestObservable<T>(

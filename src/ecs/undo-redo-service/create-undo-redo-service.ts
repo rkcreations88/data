@@ -20,19 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { createObservableState } from "../../observe/create-observable-state.js";
+import { Observe } from "../../observe/index.js";
 import { TransactionResult, TransactionWriteOperation } from "../database/transactional-store/transactional-store.js";
 import { Database } from "../index.js";
 import { shouldCoalesceTransactions, coalesceTransactions } from "../database/transactional-store/coalesce-transactions.js";
 import { UndoRedoService } from "./undo-redo-service.js";
-import { withMap } from "../../observe/with-map.js";
-import { fromProperties } from "../../observe/from-properties.js";
 
 export const createUndoRedoService = (database: Database<any, any, any, { applyOperations: (operations: TransactionWriteOperation<any>[]) => void }>): UndoRedoService => {
     const undoStack: TransactionResult<any>[] = [];
     let stackIndex = 0;
-    const [observeUndoStack, setObserveUndoStack] = createObservableState<TransactionResult<unknown>[]>([]);
-    const [observeStackIndex, setObserveStackIndex] = createObservableState<number>(0);
+    const [observeUndoStack, setObserveUndoStack] = Observe.createState<TransactionResult<unknown>[]>([]);
+    const [observeStackIndex, setObserveStackIndex] = Observe.createState<number>(0);
     database.observe.transactions(t => {
         if (t.undoable && !t.transient) {
             // Check if we should coalesce with the previous transaction
@@ -56,8 +54,8 @@ export const createUndoRedoService = (database: Database<any, any, any, { applyO
             setObserveStackIndex(stackIndex);
         }
     });
-    const undoEnabled = withMap(observeStackIndex, (index) => index > 0);
-    const redoEnabled = withMap(fromProperties({
+    const undoEnabled = Observe.withMap(observeStackIndex, (index) => index > 0);
+    const redoEnabled = Observe.withMap(Observe.fromProperties({
         stack: observeUndoStack,
         index: observeStackIndex,
     }), ({ stack, index }) => index < stack.length);

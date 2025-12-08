@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createTypedBuffer } from "./create-typed-buffer.js";
-import type { Schema } from "../schema/schema.js";
+import type { Schema } from "../schema/index.js";
 
 describe("createTypedBuffer", () => {
     describe("layout property runtime validation", () => {

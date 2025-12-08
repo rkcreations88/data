@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Column, createECS } from "../old-ecs/index.js";
-import { F32Schema, TrueSchema, U32Schema } from "../schema/index.js";
+import { F32, True, U32 } from "../schema/index.js";
 import { PerformanceTest } from "./perf-test.js";
 import * as assembly from "../../dist/assembly/index.js";
 import { createWasmMemoryAllocator } from "../cache/memory-allocator.js";
@@ -38,16 +38,16 @@ function createECSWithParticles(count: number, batch = true) {
     allocator: createWasmMemoryAllocator(assembly.memory),
   })
     .withComponents({
-      color: U32Schema,
-      enabled: TrueSchema,
-      mass: F32Schema,
-      positionX: F32Schema,
-      positionY: F32Schema,
-      positionZ: F32Schema,
-      velocityX: F32Schema,
-      velocityY: F32Schema,
-      velocityZ: F32Schema,
-      visible: TrueSchema,
+      color: U32.schema,
+      enabled: True.schema,
+      mass: F32.schema,
+      positionX: F32.schema,
+      positionY: F32.schema,
+      positionZ: F32.schema,
+      velocityX: F32.schema,
+      velocityY: F32.schema,
+      velocityZ: F32.schema,
+      visible: True.schema,
     })
     .withArchetypes({
       VisibleEnabled: [

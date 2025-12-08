@@ -24,9 +24,9 @@ import { describe, it, expect, vi } from "vitest";
 import { createDatabase } from "./create-database.js";
 import { createReconcilingDatabase } from "./reconciling/create-reconciling-database.js";
 import { createStore } from "../store/create-store.js";
-import { FromSchema, Schema } from "../../schema/schema.js";
+import { FromSchema, Schema } from "../../schema/index.js";
 import { Entity } from "../entity.js";
-import { F32Schema } from "../../schema/f32.js";
+import { F32 } from "../../math/f32/index.js";
 import { toPromise } from "../../observe/to-promise.js";
 import { createUndoRedoService } from "../undo-redo-service/create-undo-redo-service.js";
 import { applyOperations } from "./transactional-store/apply-operations.js";
@@ -36,9 +36,9 @@ import { TransactionWriteOperation } from "./transactional-store/transactional-s
 const positionSchema = {
     type: "object",
     properties: {
-        x: F32Schema,
-        y: F32Schema,
-        z: F32Schema,
+        x: F32.schema,
+        y: F32.schema,
+        z: F32.schema,
     },
     required: ["x", "y", "z"],
     additionalProperties: false,
@@ -48,8 +48,8 @@ type Position = FromSchema<typeof positionSchema>;
 const healthSchema = {
     type: "object",
     properties: {
-        current: F32Schema,
-        max: F32Schema,
+        current: F32.schema,
+        max: F32.schema,
     },
     required: ["current", "max"],
     additionalProperties: false,

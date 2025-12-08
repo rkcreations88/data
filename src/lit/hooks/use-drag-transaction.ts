@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { DragEnd, DragMove, DragObserveProps, useDragObserve } from './use-drag-observe.js';
 import { useEffect } from "./use-effect.js";
 import { AsyncArgsProvider } from '../../ecs/index.js';
-import { toAsyncGenerator, withFilter } from '../../observe/index.js';
+import { Observe } from '../../observe/index.js';
 
 export type DragTransactionProps<T> = DragObserveProps & {
     transaction: (asyncArgs: AsyncArgsProvider<T>) => void;
@@ -39,10 +39,10 @@ export function useDragTransaction<T>(props: DragTransactionProps<T>, dependenci
         transaction(
             // we create the async generator by mapping the dragObserve state changes to transaction args
             () =>
-                toAsyncGenerator(
+                Observe.toAsyncGenerator(
                     // this uses the withMap function and the provided update and finish functions
                     // any type 'start' will just be ignored and filtered out
-                    withFilter(dragObserve, value => {
+                    Observe.withFilter(dragObserve, value => {
                         if (value.type === 'end') {
                             done = true;
                             return update(value);

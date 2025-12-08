@@ -21,16 +21,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 export * from "./constants.js";
-export * from "./mat4x4/mat4x4.js";
-export * from "./f32/f32.js";
-export * from "./u32/u32.js";
-export * from "./i32/i32.js";
-export * from "./vec2/vec2.js";
-export * from "./vec3/vec3.js";
-export * from "./vec4/vec4.js";
-export * from "./quat/quat.js";
-export * from "./aabb/aabb.js";
-export * from "./line2/line2.js";
-export * from "./line3/line3.js";
-export * from "./aabb-face/aabb-face.js";
-export * from "./plane/plane.js";
+export * from "./mat4x4/index.js";
+export * from "./f32/index.js";
+export * from "./u32/index.js";
+export * from "./i32/index.js";
+export * from "./f64/index.js";
+export * from "./vec2/index.js";
+export * from "./vec3/index.js";
+export * from "./vec4/index.js";
+export * from "./quat/index.js";
+export * from "./aabb/index.js";
+export { Aabb } from "./aabb/index.js";
+export * from "./line2/index.js";
+export * from "./line3/index.js";
+export * from "./plane/index.js";

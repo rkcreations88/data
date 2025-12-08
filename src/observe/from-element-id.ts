@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { fromConstant } from "./from-constant.js";
-import { Observe } from "./types.js";
+import { Observe } from "./index.js";
 
 /**
  * Uses DOM MutationObserver to watch for the addition or removal of an element with a specific id.

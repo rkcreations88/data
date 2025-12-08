@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { assert } from "riteway/vitest";
 import { describe, expect, test } from "vitest";
 import { createCoreECS } from "./core-ecs.js";
-import { F32Schema } from "../../schema/f32.js";
+import { F32 } from "../../math/f32/index.js";
 import { Tuple } from "../../schema/tuple.js";
 import { CoreECS, ECSJSON } from "./core-ecs-types.js";
 import { EquivalentTypes, True } from "../../types/types.js";
@@ -447,7 +447,7 @@ describe("Core ECS", () => {
 
 {
   //  some type checks.
-  const Vector3Schema = Tuple(F32Schema, 3);
+  const Vector3Schema = Tuple(F32.schema, 3);
 
   const ecs2 = createCoreECS()
     .withComponents({

@@ -22,7 +22,7 @@ SOFTWARE.*/
 import { resize } from "../internal/array-buffer-like/resize.js";
 import { DataView32 } from "../internal/data-view-32/data-view-32.js";
 import { createDataView32 } from "../internal/data-view-32/create-data-view-32.js";
-import { FromSchema, Schema } from "../schema/schema.js";
+import { FromSchema, Schema } from "../schema/index.js";
 import { createReadStruct } from "./structs/create-read-struct.js";
 import { createWriteStruct } from "./structs/create-write-struct.js";
 import { getStructLayout } from "./structs/get-struct-layout.js";

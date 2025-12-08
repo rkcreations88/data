@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { isAsyncGenerator } from "../../internal/async-generator/is-async-generator.js";
-import { createObservableEvent } from "../../observe/create-observable-event.js";
+import { Observe } from "../../observe/index.js";
 import { SequentialActionResult } from "./sequential-action.js";
 import {
   ECSArchetypes,
@@ -114,7 +114,7 @@ export function createActionECS<
     return 0;
   };
 
-  const [observeActions, notifyActions] = createObservableEvent<Action<F>>();
+  const [observeActions, notifyActions] = Observe.createEvent<Action<F>>();
 
   const apply = (newAction: Action<F>): void => {
     const index = getInsertIndex(newAction);

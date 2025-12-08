@@ -20,9 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-
 import { describe, it, expect } from 'vitest';
-import { Aabb } from '../index.js';
+import { Aabb } from './index.js';
 import { Line3 } from '../index.js';
 
 describe('Aabb.lineIntersection', () => {

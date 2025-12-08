@@ -22,9 +22,9 @@ SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createStore } from "./create-store.js";
 import { createCoreTestSuite, positionSchema, healthSchema, nameSchema } from "./core/create-core.test.js";
-import { Schema } from "../../schema/schema.js";
-import { F32Schema } from "../../schema/f32.js";
-import { TimeSchema } from "../../schema/time.js";
+import { Schema } from "../../schema/index.js";
+import { F32 } from "../../math/f32/index.js";
+import { Time } from "../../schema/index.js";
 
 describe("createStore", () => {
     // Test that store passes all core functionality tests
@@ -37,9 +37,9 @@ describe("createStore", () => {
         const velocitySchema = {
             type: "object",
             properties: {
-                x: F32Schema,
-                y: F32Schema,
-                z: F32Schema,
+                x: F32.schema,
+                y: F32.schema,
+                z: F32.schema,
             }
         } as const satisfies Schema;
 
@@ -316,8 +316,8 @@ describe("createStore", () => {
         const timeSchema = {
             type: "object",
             properties: {
-                delta: F32Schema,
-                elapsed: F32Schema,
+                delta: F32.schema,
+                elapsed: F32.schema,
             }
         } as const satisfies Schema;
 
@@ -601,7 +601,7 @@ describe("createStore", () => {
         it("should store and retrieve Date.now() value correctly", () => {
             const store = createStore(
                 {
-                    timestamp: TimeSchema,
+                    timestamp: Time.schema,
                 },
                 {}
             );

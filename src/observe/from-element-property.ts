@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { fromElementPropertyAndEvents } from "./from-element-properties-and-events.js";
-import { Observe } from "./types.js";
+import { Observe } from "./index.js";
 
 //  private helper function to create an observable from an element property and a mutation observer.
 function fromElementPropertyAndMutationObserver<

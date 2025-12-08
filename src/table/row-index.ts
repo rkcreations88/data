@@ -19,8 +19,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema } from "../schema/schema.js";
-import { U32Schema } from "../schema/u32.js";
+import { FromSchema } from "../schema/index.js";
+import { U32 } from "../math/u32/index.js";
 
-export const RowIndexSchema = U32Schema;
+export const RowIndexSchema = U32.schema;
 export type RowIndex = FromSchema<typeof RowIndexSchema>;

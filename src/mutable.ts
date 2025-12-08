@@ -30,13 +30,13 @@ export type Mutable<T> = T extends readonly (infer U)[]
       : MutableObject<T>  // Handle plain objects
     : T;  // Handle primitives
 
-type MutableObject<T> = {
+export type MutableObject<T> = {
     -readonly [P in keyof T]: Mutable<T[P]>;
 };
 
-type MutableArray<T extends readonly any[]> = T[number][] & MutableObject<T>;
+export type MutableArray<T extends readonly any[]> = T[number][] & MutableObject<T>;
 
-type MutableTuple<T extends readonly any[]> = {
+export type MutableTuple<T extends readonly any[]> = {
     -readonly [K in keyof T]: Mutable<T[K]>;
 };
 

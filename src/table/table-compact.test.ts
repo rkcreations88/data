@@ -24,13 +24,13 @@ import { Table } from "./table.js";
 import { createTable } from "./create-table.js";
 import { addRow } from "./add-row.js";
 import { deleteRow } from "./delete-row.js";
-import { U32Schema } from "../schema/u32.js";
-import { F32Schema } from "../schema/f32.js";
+import { U32 } from "../math/u32/index.js";
+import { F32 } from "../math/f32/index.js";
 
 describe("Table.compact", () => {
     it("should reduce rowCapacity to match rowCount after deletions", () => {
         const table = createTable({
-            value: U32Schema,
+            value: U32.schema,
         });
 
         // Add some rows
@@ -59,8 +59,8 @@ describe("Table.compact", () => {
 
     it("should compact all columns to the same capacity", () => {
         const table = createTable({
-            value: U32Schema,
-            score: F32Schema,
+            value: U32.schema,
+            score: F32.schema,
         });
 
         addRow(table, { value: 1, score: 1.5 });
@@ -77,7 +77,7 @@ describe("Table.compact", () => {
 
     it("should preserve data after compaction", () => {
         const table = createTable({
-            value: U32Schema,
+            value: U32.schema,
         });
 
         addRow(table, { value: 10 });
@@ -93,7 +93,7 @@ describe("Table.compact", () => {
 
     it("should do nothing if rowCapacity already equals rowCount", () => {
         const table = createTable({
-            value: U32Schema,
+            value: U32.schema,
         });
 
         addRow(table, { value: 1 });
@@ -111,7 +111,7 @@ describe("Table.compact", () => {
 
     it("should handle empty tables", () => {
         const table = createTable({
-            value: U32Schema,
+            value: U32.schema,
         });
 
         Table.compact(table);
@@ -122,7 +122,7 @@ describe("Table.compact", () => {
 
     it("should handle tables that have grown and then had all rows deleted", () => {
         const table = createTable({
-            value: U32Schema,
+            value: U32.schema,
         });
 
         // Add many rows to trigger capacity growth

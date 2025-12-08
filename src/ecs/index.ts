@@ -21,9 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 export * from "./store/index.js";
 export * from "./database/index.js";
+export { type EntityLocationTable } from "./entity-location-table/entity-location-table.js";
 export * from "./archetype/index.js";
 export * from "./required-components.js";
 export * from "./optional-components.js";
+export { type Components } from "./store/components.js";
+export { type ResourceComponents } from "./store/resource-components.js";
 export * from "./component-schemas.js";
 export * from "./resource-schemas.js";
 export * from "./undo-redo-service/index.js";

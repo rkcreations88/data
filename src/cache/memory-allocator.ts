@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-shared-array-buffer.js";
 import { TypedArray, TypedArrayConstructor } from "../internal/typed-array/index.js";
-import { createObservableEvent } from "../observe/create-observable-event.js";
-import { Observe } from "../observe/types.js";
+import { Observe } from "../observe/index.js";
 
 export interface MemoryAllocator {
   /**
@@ -79,7 +78,7 @@ export function createWasmMemoryAllocator(
 ): MemoryAllocator {
   const freeList = [{ offset: 0, size: memory.buffer.byteLength }];
 
-  const [needsRefresh, notifyNeedsRefresh] = createObservableEvent<void>();
+  const [needsRefresh, notifyNeedsRefresh] = Observe.createEvent<void>();
 
   const mergeFreeBlocks = (): void => {
     // Sort the free list by offset

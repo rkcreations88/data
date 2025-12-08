@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createObservedDatabase } from "./create-observed-database.js";
 import { createStore } from "../../store/create-store.js";
-import { Schema, FromSchema } from "../../../schema/schema.js";
+import { Schema, FromSchema } from "../../../schema/index.js";
 import { Entity } from "../../entity.js";
 
 const positionSchema = {

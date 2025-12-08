@@ -17,7 +17,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { mapEntries } from "../../../internal/object/index.js";
-import { Observe, withMap } from "../../../observe/index.js";
+import { Observe } from "../../../observe/index.js";
 import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
 import { ResourceComponents } from "../../store/resource-components.js";
@@ -137,7 +137,7 @@ export function createObservedDatabase<
         Object.entries(store.resources).map(([resource]) => {
             const archetype = store.ensureArchetype(["id" as StringKeyof<C>, resource as unknown as StringKeyof<C>]);
             const resourceId = archetype.columns.id.get(0);
-            return [resource, withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>] ?? null)];
+            return [resource, Observe.withMap(observeEntity(resourceId), (values) => values?.[resource as unknown as StringKeyof<C>] ?? null)];
         })
     ) as { [K in StringKeyof<R>]: Observe<R[K]>; };
 

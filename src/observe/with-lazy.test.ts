@@ -21,14 +21,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from 'vitest';
 import { withLazy } from './with-lazy.js';
-import { createObservableState } from './create-observable-state.js';
+import { createState } from './create-state.js';
 
 describe('withLazy', () => {
     it('should defer observable creation until first subscription', () => {
         let factoryCalled = false;
         const factory = () => {
             factoryCalled = true;
-            const [source] = createObservableState<number>(42);
+            const [source] = createState<number>(42);
             return source;
         };
 
@@ -48,7 +48,7 @@ describe('withLazy', () => {
         let callCount = 0;
         const factory = () => {
             callCount++;
-            const [source] = createObservableState<number>(42);
+            const [source] = createState<number>(42);
             return source;
         };
 

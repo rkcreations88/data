@@ -133,7 +133,7 @@ export type DeepReadonly<T> = T extends Function | Branded | Element | Blob
   ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
   : T;
 
-type IsTuple<T> = T extends readonly [...infer Elements]
+export type IsTuple<T> = T extends readonly [...infer Elements]
   ? number extends T['length']
   ? false
   : true

@@ -21,19 +21,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { getStructLayout } from "./get-struct-layout.js";
-import type { Schema } from "../../schema/schema.js";
-import { F32Schema } from "../../schema/f32.js";
-import { U32Schema } from "../../schema/u32.js";
-import { I32Schema } from "../../schema/i32.js";
+import type { Schema } from "../../schema/index.js";
+import { F32 } from "../../math/f32/index.js";
+import { U32 } from "../../math/u32/index.js";
+import { I32 } from "../../math/i32/index.js";
 
 describe("getStructLayout", () => {
     it("should handle primitive types", () => {
         const schema: Schema = {
             type: "object",
             properties: {
-                a: F32Schema,
-                b: U32Schema,
-                c: I32Schema,
+                a: F32.schema,
+                b: U32.schema,
+                c: I32.schema,
             }
         };
 
@@ -70,14 +70,14 @@ describe("getStructLayout", () => {
                     properties: {
                         position: {
                             type: "array",
-                            items: F32Schema,
+                            items: F32.schema,
                             minItems: 3,
                             maxItems: 3
                         },
-                        scale: F32Schema
+                        scale: F32.schema
                     }
                 },
-                active: U32Schema
+                active: U32.schema
             }
         };
 
@@ -424,8 +424,8 @@ describe("getStructLayout", () => {
             const schema: Schema = {
                 type: "object",
                 properties: {
-                    a: F32Schema,
-                    b: F32Schema
+                    a: F32.schema,
+                    b: F32.schema
                 }
             };
 
@@ -438,7 +438,7 @@ describe("getStructLayout", () => {
             const schema: Schema = {
                 type: "object",
                 properties: {
-                    a: F32Schema
+                    a: F32.schema
                 }
             };
 

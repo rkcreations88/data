@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Observe, withDeduplicate, withMap, withBatch, fromArray, withLazy } from "../../observe/index.js";
+import { Observe } from "../../observe/index.js";
 import { Database } from "./database.js";
 import { ReadonlyStore, Store } from "../store/index.js";
 
@@ -30,7 +30,7 @@ export function observeDependentValue<
     D extends Database<any, any, any, any>,
     T,
 >(db: D, compute: (store: D extends Database<infer C, infer R, infer A, any> ? ReadonlyStore<C, R, A> : never) => T): Observe<T> {
-    return withLazy(() => {
+    return Observe.withLazy(() => {
         const resourcesUsed = determineResourcesUsed(db, compute);
         
         // Create observables for only the resources that are actually used
@@ -38,9 +38,9 @@ export function observeDependentValue<
             resourcesUsed.map(resource => (db.observe.resources as any)[resource]);
         
         // Use fromArray to combine the resource observables, batch notifications, then map and deduplicate
-        return withDeduplicate(
-            withMap(
-                withBatch(fromArray(resourceObservables)),
+        return Observe.withDeduplicate(
+            Observe.withMap(
+                Observe.withBatch(Observe.fromArray(resourceObservables)),
                 (_resources) => {
                     return compute(db as any);
                 }

@@ -22,9 +22,9 @@ SOFTWARE.*/
 
 import { describe, expect, test } from "vitest";
 import { createECS } from "./ecs.js";
-import { TrueSchema } from "../../schema/index.js";
+import { True } from "../../schema/index.js";
 import { Archetype, ECS } from "./ecs-types.js";
-import { EquivalentTypes, True } from "../../types/types.js";
+import { EquivalentTypes, True as TrueType } from "../../types/types.js";
 
 const createEcsWithMassAndSize = () => {
   return createECS()
@@ -154,7 +154,7 @@ describe("ECS", () => {
   test("selectEntityValues: without components", () => {
     const ecs = createEcsWithMassAndSize()
       .withComponents({
-        deleted: TrueSchema,
+        deleted: True.schema,
       })
       .withArchetypes({
         physical_deleted: ["id", "mass", "size", "deleted"],
@@ -293,7 +293,7 @@ describe("ECS", () => {
   test("selectEntityValues: where with without option", () => {
     const ecs = createEcsWithMassAndSize()
       .withComponents({
-        deleted: TrueSchema,
+        deleted: True.schema,
       })
       .withArchetypes({
         physical_deleted: ["id", "mass", "size", "deleted"],
@@ -444,16 +444,16 @@ describe("ECS", () => {
   const entityValues = ecs.selectEntityValues(ecs.archetypes.position);
 
   type Components = typeof ecs extends ECS<infer C, any, any> ? C : never;
-  type CheckComponents = True<EquivalentTypes<Components, {
+  type CheckComponents = TrueType<EquivalentTypes<Components, {
     id: number;
     position: string;
     size: number;
   }>>;
   type Resources = typeof ecs extends ECS<any, any, infer R> ? R : never;
-  type CheckResources = True<EquivalentTypes<Resources, { gravity: number; time: number }>>;
+  type CheckResources = TrueType<EquivalentTypes<Resources, { gravity: number; time: number }>>;
 
   type Archetypes = typeof ecs extends ECS<any, infer A, any> ? A : never;
-  type CheckArchetypes = True<EquivalentTypes<Archetypes, {
+  type CheckArchetypes = TrueType<EquivalentTypes<Archetypes, {
     position_size: Archetype<{ size: number; id: number; position: string; }>;
     position: Archetype<{ id: number; position: string; }>;
   }>>;

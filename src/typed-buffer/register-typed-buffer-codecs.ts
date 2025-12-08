@@ -22,7 +22,7 @@ SOFTWARE.*/
 
 import { copyViewBytes } from "../functions/copy-view-bytes.js";
 import { registerCodec } from "../functions/serialization/codec.js";
-import { Schema } from "../schema/schema.js";
+import { Schema } from "../schema/index.js";
 import { createArrayBuffer } from "./create-array-buffer.js";
 import { createConstBuffer } from "./create-const-buffer.js";
 import { createNumberBuffer } from "./create-number-buffer.js";

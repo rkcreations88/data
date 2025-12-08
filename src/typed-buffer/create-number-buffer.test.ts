@@ -21,11 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createNumberBuffer } from "./create-number-buffer.js";
-import { F32Schema } from "../schema/f32.js";
+import { F32 } from "../math/f32/index.js";
 
 describe("createNumberBuffer.copy", () => {
     it("should copy contents and capacity into a new underlying buffer", () => {
-        const buf = createNumberBuffer(F32Schema, 4);
+        const buf = createNumberBuffer(F32.schema, 4);
         buf.set(0, 1);
         buf.set(1, 2);
         buf.set(2, 3);

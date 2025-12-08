@@ -20,8 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Data } from "../index.js";
-import { createObservableState } from "./create-observable-state.js";
-import { Observe } from "./types.js";
+import { createState } from "./create-state.js";
+import { Observe } from "./index.js";
 
 /**
  * Creates a simple state observable that also returns a function to update the value.
@@ -48,7 +48,7 @@ export function createPersistedState<T extends Data>(
   }
 
   // Create observable state with either stored or initial value
-  const [observable, setValue] = createObservableState(storedValue ?? initialValue);
+  const [observable, setValue] = createState(storedValue ?? initialValue);
 
   // Wrap setValue to persist changes to storage
   const setValueAndStore = (value: T) => {

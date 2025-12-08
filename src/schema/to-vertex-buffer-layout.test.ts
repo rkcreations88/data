@@ -20,12 +20,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
-import { schemaToVertexBufferLayout, schemaToVertexBufferLayoutForType } from "./to-vertex-buffer-layout.js";
-import type { Schema } from "./schema.js";
+import { Schema } from "./index.js";
+import type { Schema as SchemaType } from "./schema.js";
 
-describe("schemaToVertexBufferLayout", () => {
+describe("Schema.toVertexBufferLayout", () => {
     describe("position-color-normal vertex schema", () => {
-        const positionColorNormalSchema: Schema = {
+        const positionColorNormalSchema = {
             type: "object",
             properties: {
                 position: {
@@ -48,10 +48,10 @@ describe("schemaToVertexBufferLayout", () => {
                 }
             },
             layout: "packed"
-        };
+        } as const satisfies SchemaType;
 
         it("should generate correct packed layout for position-color-normal", () => {
-            const layout = schemaToVertexBufferLayout(positionColorNormalSchema);
+            const layout = Schema.toVertexBufferLayout(positionColorNormalSchema);
 
             expect(layout.arrayStride).toBe(40); // 3 + 4 + 3 = 10 floats × 4 bytes = 40 bytes
             expect(layout.stepMode).toBe("vertex");
@@ -80,7 +80,7 @@ describe("schemaToVertexBufferLayout", () => {
         });
 
         it("should allow custom shader locations", () => {
-            const layout = schemaToVertexBufferLayout(positionColorNormalSchema, {
+            const layout = Schema.toVertexBufferLayout(positionColorNormalSchema, {
                 shaderLocations: {
                     position: 0,
                     color: 8,
@@ -88,13 +88,13 @@ describe("schemaToVertexBufferLayout", () => {
                 }
             });
 
-            expect(layout.attributes.find(a => a.shaderLocation === 0)?.offset).toBe(0);
-            expect(layout.attributes.find(a => a.shaderLocation === 8)?.offset).toBe(12); 
-            expect(layout.attributes.find(a => a.shaderLocation === 9)?.offset).toBe(28);
+            expect(layout.attributes.find((a: any) => a.shaderLocation === 0)?.offset).toBe(0);
+            expect(layout.attributes.find((a: any) => a.shaderLocation === 8)?.offset).toBe(12); 
+            expect(layout.attributes.find((a: any) => a.shaderLocation === 9)?.offset).toBe(28);
         });
 
         it("should support instance step mode", () => {
-            const layout = schemaToVertexBufferLayout(positionColorNormalSchema, {
+            const layout = Schema.toVertexBufferLayout(positionColorNormalSchema, {
                 stepMode: "instance"
             });
 
@@ -103,7 +103,7 @@ describe("schemaToVertexBufferLayout", () => {
     });
 
     describe("simple position schema", () => {
-        const positionSchema: Schema = {
+        const positionSchema: SchemaType = {
             type: "object",
             properties: {
                 position: {
@@ -117,7 +117,7 @@ describe("schemaToVertexBufferLayout", () => {
         };
 
         it("should generate minimal vertex layout", () => {
-            const layout = schemaToVertexBufferLayout(positionSchema);
+            const layout = Schema.toVertexBufferLayout(positionSchema);
 
             expect(layout.arrayStride).toBe(12); // Vec3 = 12 bytes
             expect(layout.attributes).toHaveLength(1);
@@ -131,7 +131,7 @@ describe("schemaToVertexBufferLayout", () => {
 
     describe("primitive type schemas", () => {
         it("should handle single float", () => {
-            const schema: Schema = {
+            const schema: SchemaType = {
                 type: "object",
                 properties: {
                     weight: { type: "number", precision: 1 }
@@ -139,7 +139,7 @@ describe("schemaToVertexBufferLayout", () => {
                 layout: "packed"
             };
 
-            const layout = schemaToVertexBufferLayout(schema);
+            const layout = Schema.toVertexBufferLayout(schema);
 
             expect(layout.arrayStride).toBe(4);
             expect(layout.attributes[0]).toEqual({
@@ -150,7 +150,7 @@ describe("schemaToVertexBufferLayout", () => {
         });
 
         it("should handle integer types", () => {
-            const schema: Schema = {
+            const schema: SchemaType = {
                 type: "object",
                 properties: {
                     id: { type: "integer", minimum: 0, maximum: 65535 }
@@ -158,7 +158,7 @@ describe("schemaToVertexBufferLayout", () => {
                 layout: "packed"
             };
 
-            const layout = schemaToVertexBufferLayout(schema);
+            const layout = Schema.toVertexBufferLayout(schema);
 
             expect(layout.arrayStride).toBe(4);
             expect(layout.attributes[0]).toEqual({
@@ -171,18 +171,18 @@ describe("schemaToVertexBufferLayout", () => {
 
     describe("error handling", () => {
         it("should throw error for non-struct schemas", () => {
-            const arraySchema: Schema = {
+            const arraySchema: SchemaType = {
                 type: "array",
                 items: { type: "number" }
             };
 
             expect(() => {
-                schemaToVertexBufferLayout(arraySchema);
+                Schema.toVertexBufferLayout(arraySchema);
             }).toThrow(/Array must have fixed length/);
         });
 
         it("should throw error for unsupported field types", () => {
-            const schema: Schema = {
+            const schema: SchemaType = {
                 type: "object",
                 properties: {
                     name: { type: "string" }
@@ -191,12 +191,12 @@ describe("schemaToVertexBufferLayout", () => {
             };
 
             expect(() => {
-                schemaToVertexBufferLayout(schema);
+                Schema.toVertexBufferLayout(schema);
             }).toThrow(/not a valid struct type/);
         });
 
         it("should throw error for oversized vectors", () => {
-            const schema: Schema = {
+            const schema: SchemaType = {
                 type: "object",
                 properties: {
                     values: {
@@ -210,14 +210,14 @@ describe("schemaToVertexBufferLayout", () => {
             };
 
             expect(() => {
-                schemaToVertexBufferLayout(schema);
+                Schema.toVertexBufferLayout(schema);
             }).toThrow(/dimensions must be 1-4 elements/);
         });
     });
 
     describe("layout mode handling", () => {
         it("should use schema layout by default", () => {
-            const schema: Schema = {
+            const schema: SchemaType = {
                 type: "object",
                 properties: {
                     position: {
@@ -230,12 +230,12 @@ describe("schemaToVertexBufferLayout", () => {
                 layout: "packed"
             };
 
-            const layout = schemaToVertexBufferLayout(schema);
+            const layout = Schema.toVertexBufferLayout(schema);
             expect(layout.arrayStride).toBe(12); // Packed: tight packing
         });
 
         it("should override schema layout when specified", () => {
-            const schema: Schema = {
+            const schema: SchemaType = {
                 type: "object",
                 properties: {
                     position: {
@@ -248,7 +248,7 @@ describe("schemaToVertexBufferLayout", () => {
                 layout: "packed"
             };
 
-            const layout = schemaToVertexBufferLayout(schema, {
+            const layout = Schema.toVertexBufferLayout(schema, {
                 layout: "std140"
             });
             expect(layout.arrayStride).toBe(16); // std140: 16-byte alignment
@@ -256,8 +256,8 @@ describe("schemaToVertexBufferLayout", () => {
     });
 
     describe("type-safe helper", () => {
-        it("should work with schemaToVertexBufferLayoutForType", () => {
-            const testSchema: Schema = {
+        it("should work with Schema.toVertexBufferLayoutForType", () => {
+            const testSchema: SchemaType = {
                 type: "object",
                 properties: {
                     position: {
@@ -270,7 +270,7 @@ describe("schemaToVertexBufferLayout", () => {
                 layout: "packed"
             };
 
-            const layout = schemaToVertexBufferLayoutForType(testSchema);
+            const layout = Schema.toVertexBufferLayoutForType(testSchema);
             expect(layout.arrayStride).toBe(8); // Vec2 = 8 bytes
             expect(layout.attributes[0].format).toBe("float32x2");
         });

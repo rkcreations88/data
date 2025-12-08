@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { FromSchema, Layout, Schema } from "./schema.js";
+import { Layout, Schema } from "./schema.js";
 import { StructLayout, StructLayoutField } from "../typed-buffer/structs/struct-layout.js";
 import { getStructLayout } from "../typed-buffer/structs/get-struct-layout.js";
 
@@ -72,7 +72,7 @@ export type GPUVertexFormat =
 /**
  * Converts a struct field layout to equivalent WebGPU vertex format
  */
-function fieldLayoutToVertexFormat(fieldLayout: StructLayout | string): GPUVertexFormat {
+function fieldLayoutToVertexFormat(fieldLayout: StructLayoutField | string): GPUVertexFormat {
     if (typeof fieldLayout === "string") {
         // Handle primitive types
         switch (fieldLayout) {
@@ -82,16 +82,25 @@ function fieldLayoutToVertexFormat(fieldLayout: StructLayout | string): GPUVerte
         }
     }
     
-    if (typeof fieldLayout === "object" && fieldLayout.type === "array") {
-        // Handle array/vector types
-        const size = fieldLayout.size;
-        const elementCount = getVectorElementCount(fieldLayout);
-        
-        switch (elementCount) {
-            case 1: return "float32";        // f32
-            case 2: return "float32x2";       // vec2
-            case 3: return "float32x3";       // vec3  
-            case 4: return "float32x4";       // vec4
+    if (typeof fieldLayout === "object") {
+        const fieldType = fieldLayout.type;
+        if (typeof fieldType === "string") {
+            // Primitive type
+            switch (fieldType) {
+                case "f32": return "float32";
+                case "i32": return "sint32";
+                case "u32": return "uint32";
+            }
+        } else if (typeof fieldType === "object" && fieldType.type === "array") {
+            // Handle array/vector types
+            const elementCount = getVectorElementCount(fieldType);
+            
+            switch (elementCount) {
+                case 1: return "float32";        // f32
+                case 2: return "float32x2";       // vec2
+                case 3: return "float32x3";       // vec3  
+                case 4: return "float32x4";       // vec4
+            }
         }
     }
     
@@ -146,7 +155,7 @@ export interface VertexBufferLayoutOptions {
  * });
  * ```
  */
-export function schemaToVertexBufferLayout<S extends Schema>(
+export function toVertexBufferLayout<S extends Schema>(
     schema: S,
     options: VertexBufferLayoutOptions = {}
 ): GPUVertexBufferLayout {
@@ -168,10 +177,14 @@ export function schemaToVertexBufferLayout<S extends Schema>(
         const shaderLocation = options.shaderLocations?.[fieldName] ?? nextShaderLocation;
         
         try {
-            const format = fieldLayoutToVertexFormat(fieldLayout.type);
+            const fieldLayoutTyped = fieldLayout as StructLayoutField;
+            const fieldType = fieldLayoutTyped.type;
+            const format = typeof fieldType === "string" 
+                ? fieldLayoutToVertexFormat(fieldType)
+                : fieldLayoutToVertexFormat(fieldLayoutTyped);
             attributes.push({
                 format,
-                offset: fieldLayout.offset,
+                offset: fieldLayoutTyped.offset,
                 shaderLocation
             });
         } catch (error) {
@@ -201,9 +214,9 @@ export function schemaToVertexBufferLayout<S extends Schema>(
  * const positionColorLayout = positionColorNormalVertexSchema |> schemaToVertexBufferLayoutForType;
  * ```
  */
-export function schemaToVertexBufferLayoutForType<T extends Schema>(
+export function toVertexBufferLayoutForType<T extends Schema>(
     schema: T,
     options?: VertexBufferLayoutOptions
 ): GPUVertexBufferLayout {
-    return schemaToVertexBufferLayout(schema, options);
+    return toVertexBufferLayout(schema, options);
 }

@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { describe, expect, test } from "vitest";
 import { ECSJSON } from "./core-ecs-types.js";
 import { createCoreECS } from "./core-ecs.js";
-import { U32Schema } from "../../schema/u32.js";
+import { U32 } from "../../math/u32/index.js";
 import { Assert } from "../../types/assert.js";
 import { Equal } from "../../types/equal.js";
 
@@ -67,7 +67,7 @@ describe("ecs-functions", () => {
       ecs: true,
       version: 4,
       components: {
-        id: U32Schema,
+        id: U32.schema,
         mass: { type: "number", minimum: +0, precision: 2 },
         size: { enum: ["small", "medium", "large"] },
         gravity: { default: 9.8 },
@@ -117,7 +117,7 @@ describe("ecs-functions", () => {
       ecs: true,
       version: 4,
       components: {
-        id: U32Schema,
+        id: U32.schema,
         mass: { type: "number", minimum: +0, precision: 1 },
         size: { enum: ["small", "medium", "large"] },
         gravity: { default: 9.8 },

@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Observe, withCache } from "../../observe/index.js";
+import { Observe } from "../../observe/index.js";
 import { getRowPredicateFromFilter } from "../../table/select-rows.js";
 import { StringKeyof } from "../../types/types.js";
 import { RequiredComponents } from "../required-components.js";
@@ -130,7 +130,7 @@ export const observeSelectEntities = <C extends object>(store: ReadonlyStore<C, 
         const key = JSON.stringify({ include, options });
         let observeFunction = cachedSelectObserveFunctions.get(key);
         if (!observeFunction) {
-            observeFunction = withCache(createSelectObserveFunction(include, options));
+            observeFunction = Observe.withCache(createSelectObserveFunction(include, options));
             cachedSelectObserveFunctions.set(key, observeFunction);
         }
         return observeFunction;

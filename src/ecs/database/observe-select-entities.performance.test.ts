@@ -23,19 +23,19 @@ SOFTWARE.*/
 import { describe, expect, it, beforeEach } from "vitest";
 import { createStore } from "../store/create-store.js";
 import { createDatabase } from "./create-database.js";
-import { F32Schema } from "../../schema/f32.js";
-import { BooleanSchema } from "../../schema/boolean.js";
+import { F32 } from "../../math/f32/index.js";
+import { Boolean } from "../../schema/index.js";
 
 describe("observeSelectEntities Performance Tests", () => {
     let database: ReturnType<typeof createTestDatabase>;
 
     function createTestDatabase() {
         const store = createStore({
-            position: F32Schema,
-            health: F32Schema,
+            position: F32.schema,
+            health: F32.schema,
             name: { type: "string" },
-            score: F32Schema,
-            active: BooleanSchema
+            score: F32.schema,
+            active: Boolean.schema
         }, {
         }, {
             Position: ["position"],

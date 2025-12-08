@@ -22,10 +22,10 @@ SOFTWARE.*/
 
 import { Assert } from "./types/assert.js";
 
-type Primitive = string | number | boolean | null;
+export type Primitive = string | number | boolean | null;
 
 /** invariant type-equality check (handles `readonly` correctly) */
-type EqualReadonly<X, Y> =
+export type EqualReadonly<X, Y> =
   (<T>() => T extends X ? 1 : 2) extends
   (<T>() => T extends Y ? 1 : 2)
   ? (<T>() => T extends Y ? 1 : 2) extends
@@ -35,7 +35,7 @@ type EqualReadonly<X, Y> =
   : false;
 
 /** are *all* own props already `readonly`?  */
-type IsFullyReadonly<T> = EqualReadonly<T, Readonly<T>>;
+export type IsFullyReadonly<T> = EqualReadonly<T, Readonly<T>>;
 
 export type IsData<T> =
   // primitives

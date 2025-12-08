@@ -20,9 +20,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { memoizeFactory } from "../../internal/function/memoize-factory.js";
-import { I32Schema } from "../../schema/i32.js";
-import { type Schema } from "../../schema/schema.js";
-import { U32Schema } from "../../schema/u32.js";
+import { I32 } from "../../math/i32/index.js";
+import { type Schema } from "../../schema/index.js";
+import { U32 } from "../../math/u32/index.js";
 import type { StructFieldPrimitiveType, StructLayout, Layout } from "./struct-layout.js";
 
 // Layout rules for different memory layouts
@@ -113,10 +113,10 @@ const roundUpToAlignment = (offset: number, alignment: number): number => {
 const getPrimitiveType = (schema: Schema): StructFieldPrimitiveType | null => {
     if (schema.type === "number" || schema.type === "integer") {
         if (schema.type === "integer") {
-            if (schema.minimum !== undefined && schema.minimum >= 0 && schema.maximum && schema.maximum <= U32Schema.maximum) {
+            if (schema.minimum !== undefined && schema.minimum >= 0 && schema.maximum && schema.maximum <= U32.schema.maximum) {
                 return "u32";
             }
-            if (schema.minimum !== undefined && schema.minimum < 0 && schema.maximum && schema.maximum <= I32Schema.maximum) {
+            if (schema.minimum !== undefined && schema.minimum < 0 && schema.maximum && schema.maximum <= I32.schema.maximum) {
                 return "i32";
             }
         }

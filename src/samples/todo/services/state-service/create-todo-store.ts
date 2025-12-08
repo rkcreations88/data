@@ -20,7 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { createStore } from '../../../../ecs/index.js';
-import { F32Schema, Nullable, TrueSchema } from '../../../../schema/index.js';
+import { F32, True } from '../../../../schema/index.js';
+import { Schema } from '../../../../schema/index.js';
 
 // Increment this value if you change the schema in a non-backwards compatible way
 export const todoStoreSchemaVersion = 1;
@@ -28,11 +29,11 @@ export const createTodoStore = () => {
   return createStore(
     //  components
     {
-      todo: TrueSchema, // a tag that indicates an entity is a todo item.
+      todo: True.schema, // a tag that indicates an entity is a todo item.
       complete: { type: 'boolean' },
       name: { type: 'string' },
-      order: F32Schema,
-      dragPosition: Nullable(F32Schema), // null = not being dragged
+      order: F32.schema,
+      dragPosition: Schema.Nullable(F32.schema), // null = not being dragged
     },
     //  resources
     {

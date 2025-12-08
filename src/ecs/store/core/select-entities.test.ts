@@ -22,8 +22,8 @@ SOFTWARE.*/
 import { describe, expect, it } from "vitest";
 import { selectEntities } from "./select-entities.js";
 import { createCore } from "./create-core.js";
-import { Schema } from "../../../schema/schema.js";
-import { F32Schema } from "../../../schema/f32.js";
+import { Schema } from "../../../schema/index.js";
+import { F32 } from "../../../math/f32/index.js";
 
 const nameSchema = {
     type: "string"
@@ -40,8 +40,8 @@ const activeSchema = {
 describe("selectEntities", () => {
     // Create a core instance with multiple components for testing
     const core = createCore({
-        position: F32Schema,
-        health: F32Schema,
+        position: F32.schema,
+        health: F32.schema,
         name: nameSchema,
         score: scoreSchema,
         active: activeSchema,

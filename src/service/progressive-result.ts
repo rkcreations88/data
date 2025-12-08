@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Schema } from "../schema/schema.js";
+import { Schema } from "../schema/index.js";
 
 export type ErrorResult<Error> = {
   readonly error: Error;
@@ -43,7 +43,7 @@ export type ProgressiveResult<Result, Error, Intermediate = Partial<Result>> = I
 /**
  * Results must be objects as we are going to add error and progress properties to them.
  */
-type ResultSchema = Schema & { properties: {}, required: string[] };
+export type ResultSchema = Schema & { properties: {}, required: string[] };
 
 /**
  * Returns a json schema for an final result with the specified value schema.

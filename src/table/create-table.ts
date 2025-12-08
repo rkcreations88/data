@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { createTypedBuffer, TypedBuffer } from "../typed-buffer/index.js";
-import { FromSchema, Schema } from "../schema/schema.js";
+import { FromSchema, Schema } from "../schema/index.js";
 import { Table } from "./table.js";
 
 export const createTable = <C extends Record<string, Schema>>(schemas: C) : Table<{ [K in keyof C]: FromSchema<C[K]> }> => {

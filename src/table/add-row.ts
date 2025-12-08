@@ -25,8 +25,8 @@ import { Table } from "./table.js";
 
 /**
  * Adds a row to the end of the Table.
- * @param Table 
- * @param rowData 
+ * @param table Table to add a row to.
+ * @param rowData Data for the new row.
  */
 export const addRow = <C>(table: Table<C>, rowData: C): RowIndex => {
     ensureCapacity(table, table.rowCount + 1);

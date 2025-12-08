@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Vec2 } from '../../math/vec2/vec2.js';
+import { Vec2 } from '../../math/vec2/index.js';
 import { useEffect } from './use-effect.js';
 
 function toCssUnitString(value: number): string {
