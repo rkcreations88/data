@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { FromSchema, Schema } from "../../../schema/index.js";
+import { Schema } from "../../../schema/index.js";
 import { createEntityLocationTable } from "../../entity-location-table/index.js";
 import * as ARCHETYPE from "../../archetype/index.js";
 import { Table, getRowData, addRow, updateRow } from "../../../table/index.js";
@@ -33,8 +33,8 @@ import { ComponentSchemas } from "../../component-schemas.js";
 import { OptionalComponents } from "../../optional-components.js";
 import { True } from "../../../schema/true/index.js";
 
-export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC): Core<Simplify<OptionalComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> }>> {
-    type C = RequiredComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
+export function createCore<NC extends ComponentSchemas>(newComponentSchemas: NC): Core<Simplify<OptionalComponents & { [K in StringKeyof<NC>]: Schema.ToType<NC[K]> }>> {
+    type C = RequiredComponents & { [K in StringKeyof<NC>]: Schema.ToType<NC[K]> };
 
     const componentSchemas: { readonly [K in StringKeyof<C & RequiredComponents & OptionalComponents>]: Schema } = {
         id: Entity.schema,

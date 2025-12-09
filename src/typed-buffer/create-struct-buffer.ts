@@ -22,7 +22,7 @@ SOFTWARE.*/
 import { resize } from "../internal/array-buffer-like/resize.js";
 import { DataView32 } from "../internal/data-view-32/data-view-32.js";
 import { createDataView32 } from "../internal/data-view-32/create-data-view-32.js";
-import { FromSchema, Schema } from "../schema/index.js";
+import { Schema } from "../schema/index.js";
 import { createReadStruct } from "./structs/create-read-struct.js";
 import { createWriteStruct } from "./structs/create-write-struct.js";
 import { getStructLayout } from "./structs/get-struct-layout.js";
@@ -32,7 +32,7 @@ import { createSharedArrayBuffer } from "../internal/shared-array-buffer/create-
 
 export const structBufferType = "struct";
 
-class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32"> extends TypedBuffer<FromSchema<S>> {
+class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32"> extends TypedBuffer<Schema.ToType<S>> {
     public readonly type: TypedBufferType = structBufferType;
     public readonly typedArrayElementSizeInBytes: number;
     
@@ -40,8 +40,8 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
     private dataView: DataView32;
     private typedArray: TypedArray;
     private readonly layout: NonNullable<ReturnType<typeof getStructLayout>>;
-    private readonly read: ReturnType<typeof createReadStruct<FromSchema<S>>>;
-    private readonly write: ReturnType<typeof createWriteStruct<FromSchema<S>>>;
+    private readonly read: ReturnType<typeof createReadStruct<Schema.ToType<S>>>;
+    private readonly write: ReturnType<typeof createWriteStruct<Schema.ToType<S>>>;
     private readonly sizeInQuads: number;
     private readonly arrayType: ArrayType;
     private _capacity: number;
@@ -67,8 +67,8 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
         this.typedArray = this.dataView[this.arrayType];
         this._capacity = this.typedArray.length / this.sizeInQuads;
         
-        this.read = createReadStruct<FromSchema<S>>(this.layout);
-        this.write = createWriteStruct<FromSchema<S>>(this.layout);
+        this.read = createReadStruct<Schema.ToType<S>>(this.layout);
+        this.write = createWriteStruct<Schema.ToType<S>>(this.layout);
     }
 
     get capacity(): number {
@@ -88,11 +88,11 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
         return this.typedArray;
     }
 
-    get(index: number): FromSchema<S> {
+    get(index: number): Schema.ToType<S> {
         return this.read(this.dataView, index);
     }
 
-    set(index: number, value: FromSchema<S>): void {
+    set(index: number, value: Schema.ToType<S>): void {
         this.write(this.dataView, index, value);
     }
 
@@ -100,15 +100,15 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
         this.dataView[this.arrayType].copyWithin(target * this.sizeInQuads, start * this.sizeInQuads, end * this.sizeInQuads);
     }
 
-    slice(start = 0, end = this._capacity): ArrayLike<FromSchema<S>> & Iterable<FromSchema<S>> {
-        const result = new Array<FromSchema<S>>(Math.max(0, end - start));
+    slice(start = 0, end = this._capacity): ArrayLike<Schema.ToType<S>> & Iterable<Schema.ToType<S>> {
+        const result = new Array<Schema.ToType<S>>(Math.max(0, end - start));
         for (let i = start; i < end; i++) {
             result[i - start] = this.read(this.dataView, i);
         }
         return result;
     }
 
-    copy(): TypedBuffer<FromSchema<S>> {
+    copy(): TypedBuffer<Schema.ToType<S>> {
         const byteLength = this._capacity * this.layout.size;
         const newArrayBuffer = new ArrayBuffer(byteLength);
         // Copy underlying f32 data (structs are packed as float32 quads)
@@ -122,14 +122,14 @@ class StructTypedBuffer<S extends Schema, ArrayType extends keyof DataView32 = "
 export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     schema: S,
     initialCapacity: number,
-): TypedBuffer<FromSchema<S>>
+): TypedBuffer<Schema.ToType<S>>
 export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     schema: S,
     arrayBuffer: ArrayBuffer,
-): TypedBuffer<FromSchema<S>>
+): TypedBuffer<Schema.ToType<S>>
 export function createStructBuffer<S extends Schema, ArrayType extends keyof DataView32 = "f32">(
     schema: S,
     initialCapacityOrArrayBuffer: number | ArrayBuffer,
-): TypedBuffer<FromSchema<S>> {
+): TypedBuffer<Schema.ToType<S>> {
     return new StructTypedBuffer<S, ArrayType>(schema, initialCapacityOrArrayBuffer);
 }

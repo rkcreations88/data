@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Data } from "../../index.js";
-import { FromSchema, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import {
   Archetype,
   ECS,
@@ -73,7 +73,7 @@ export function createTransactionECS<
   const { components, archetypes, resources, ...rest } = ecs;
   const withComponents = <
     S extends { [K: string]: Schema },
-    T = { [K in keyof S]: FromSchema<S[K]> },
+    T = { [K in keyof S]: Schema.ToType<S[K]> },
   >(
     newComponents: S
   ): any => {

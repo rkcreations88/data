@@ -20,21 +20,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import type { Schema as SchemaType, FromSchema as FromSchemaType, FromSchemas as FromSchemasType, Layout, Conditional, UIProperties, JSONPath, JSONMergePatch, FromSchemaInternal } from "./schema.js";
+import type { Schema as SchemaType, Layout, Conditional, UIProperties, JSONPath, JSONMergePatch } from "./schema.js";
 
 export type Schema = SchemaType;
-export type FromSchema<T, Depth extends number = 5> = FromSchemaType<T, Depth>;
-export type FromSchemas<T> = FromSchemasType<T>;
-export type { Layout, Conditional, UIProperties, JSONPath, JSONMergePatch, FromSchemaInternal };
 export * as Schema from "./public.js";
+
+export type { FromSchemas } from "./from-schemas.js";
+
+export type { Layout, Conditional, UIProperties, JSONPath, JSONMergePatch };
 export type { getDynamicSchema } from "./dynamic/index.js";
+
 export * from "./validation/index.js";
-export * from "../math/f32/index.js";
-export * from "../math/i32/index.js";
-export * from "../math/u32/index.js";
 export * from "./true/index.js";
-export { True } from "./true/index.js";
 export * from "./boolean/index.js";
-export { Boolean } from "./boolean/index.js";
+// these are both math types and basic schema types.
+export { F32, I32, U32, F64 } from "../math/index.js";
 export * from "./time/index.js";
-export { Time } from "./time/index.js";

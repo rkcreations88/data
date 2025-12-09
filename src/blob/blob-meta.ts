@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../schema/index.js";
+import { Schema } from "../schema/index.js";
 
 const BlobMetaSchema = {
     type: 'object',
@@ -33,7 +33,7 @@ const BlobMetaSchema = {
     required: ['type', 'size'],
 } as const satisfies Schema;
 
-export type BlobMeta = FromSchema<typeof BlobMetaSchema>;
+export type BlobMeta = Schema.ToType<typeof BlobMetaSchema>;
 export namespace BlobMeta {
     export const schema = BlobMetaSchema;
     export function is(value: unknown): value is BlobMeta {

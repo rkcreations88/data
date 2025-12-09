@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { type FromSchema, type Schema } from "./schema/index.js";
+import { type Schema } from "./schema/index.js";
 import { type Extends, type False, type True } from "./types/types.js";
 import { describe, it } from "vitest";
 
@@ -35,7 +35,7 @@ describe("Schema", () => {
       },
       additionalProperties: false,
     } as const satisfies Schema;
-    type MyType = FromSchema<typeof mySchema>;
+    type MyType = Schema.ToType<typeof mySchema>;
 
     //  compile time type checking.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- compile time type check

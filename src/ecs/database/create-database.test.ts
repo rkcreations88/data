@@ -24,7 +24,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createDatabase } from "./create-database.js";
 import { createReconcilingDatabase } from "./reconciling/create-reconciling-database.js";
 import { createStore } from "../store/create-store.js";
-import { FromSchema, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import { Entity } from "../entity.js";
 import { F32 } from "../../math/f32/index.js";
 import { toPromise } from "../../observe/to-promise.js";
@@ -43,7 +43,7 @@ const positionSchema = {
     required: ["x", "y", "z"],
     additionalProperties: false,
 } as const satisfies Schema;
-type Position = FromSchema<typeof positionSchema>;
+type Position = Schema.ToType<typeof positionSchema>;
 
 const healthSchema = {
     type: "object",
@@ -54,13 +54,13 @@ const healthSchema = {
     required: ["current", "max"],
     additionalProperties: false,
 } as const satisfies Schema;
-type Health = FromSchema<typeof healthSchema>;
+type Health = Schema.ToType<typeof healthSchema>;
 
 const nameSchema = {
     type: "string",
     maxLength: 50,
 } as const satisfies Schema;
-type Name = FromSchema<typeof nameSchema>;
+type Name = Schema.ToType<typeof nameSchema>;
 
 const createStoreConfig = () => {
     const baseStore = createStore(

@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { MemoryAllocator } from "./memory-allocator.js";
-import { FromSchema, Schema } from "../schema/index.js";
+import { Schema } from "../schema/index.js";
 import { TypedArray, TypedArrayConstructor } from "../internal/typed-array/index.js";
 import { Data } from "../index.js";
 
@@ -199,19 +199,19 @@ function createManagedTypedArray(
 export function createManagedArray<S extends Schema>(
   s: S,
   allocator: MemoryAllocator
-): ManagedArray<FromSchema<S>> {
+): ManagedArray<Schema.ToType<S>> {
   if (s.const !== undefined) {
-    return createManagedConstantArray(s.const) as ManagedArray<FromSchema<S>>;
+    return createManagedConstantArray(s.const) as ManagedArray<Schema.ToType<S>>;
   }
   if (s.type === "number") {
     if (s.precision === 1) {
       return createManagedTypedArray(Float32Array, allocator) as ManagedArray<
-        FromSchema<S>
+        Schema.ToType<S>
       >;
     }
     // default to double precision float
     return createManagedTypedArray(Float64Array, allocator) as ManagedArray<
-      FromSchema<S>
+      Schema.ToType<S>
     >;
   }
   if (
@@ -223,17 +223,17 @@ export function createManagedArray<S extends Schema>(
         // unsigned integers
         if (s.maximum <= 0xff) {
           return createManagedTypedArray(Uint8Array, allocator) as ManagedArray<
-            FromSchema<S>
+            Schema.ToType<S>
           >;
         }
         if (s.maximum <= 0xffff) {
           return createManagedTypedArray(Uint16Array, allocator) as ManagedArray<
-            FromSchema<S>
+            Schema.ToType<S>
           >;
         }
         if (s.maximum <= 0xffffffff) {
           return createManagedTypedArray(Uint32Array, allocator) as ManagedArray<
-            FromSchema<S>
+            Schema.ToType<S>
           >;
         }
       }

@@ -24,7 +24,8 @@ import { ComponentSchemas } from "../component-schemas.js";
 import { StringKeyof } from "../../types/types.js";
 import { RequiredComponents } from "../required-components.js";
 import { Store } from "./store.js";
-import { FromSchema, FromSchemas, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
+import { FromSchemas } from "../../schema/from-schemas.js";
 import { createCore } from "./core/create-core.js";
 import { Entity } from "../entity.js";
 import { Core } from "./core/core.js";
@@ -43,8 +44,8 @@ export function createStore<
     resourceSchemas: NR = {} as NR,
     archetypeComponentNames: A = {} as A,
 ): Store<FromSchemas<NC>, FromSchemas<NR>, A> {
-    type C = RequiredComponents & { [K in StringKeyof<NC>]: FromSchema<NC[K]> };
-    type R = { [K in StringKeyof<NR>]: FromSchema<NR[K]> };
+    type C = RequiredComponents & { [K in StringKeyof<NC>]: Schema.ToType<NC[K]> };
+    type R = { [K in StringKeyof<NR>]: Schema.ToType<NR[K]> };
 
     const resources = {} as R;
 

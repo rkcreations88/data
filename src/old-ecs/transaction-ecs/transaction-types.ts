@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { Data } from "../../index.js";
 import { Observe } from "../../observe/index.js";
-import { FromSchema, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import { Simplify } from "../../types/types.js";
 import {
   EntityCreateValues,
@@ -61,7 +61,7 @@ export interface TransactionECS<
 
   withComponents<
     S extends { [K: string]: Schema },
-    T = { -readonly [K in keyof S]: FromSchema<S[K]> },
+    T = { -readonly [K in keyof S]: Schema.ToType<S[K]> },
   >(
     components: S
   ): TransactionECS<Simplify<C & T>, A, R>;
@@ -77,7 +77,7 @@ export interface TransactionECS<
   ): TransactionECS<
     C,
     A,
-    Simplify<R & { -readonly [K in keyof T]: FromSchema<T[K]>}>
+    Simplify<R & { -readonly [K in keyof T]: Schema.ToType<T[K]>}>
   >;
   withResources<S extends { [K: string]: Data }>(
     resources: S

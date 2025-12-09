@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import { Observe } from "../../observe/index.js";
 import { Expand, Simplify } from "../../types/types.js";
 import {
@@ -66,7 +66,7 @@ export interface ActionECS<
 
   withComponents<
     S extends { [K: string]: Schema },
-    T = { -readonly [K in keyof S]: FromSchema<S[K]> },
+    T = { -readonly [K in keyof S]: Schema.ToType<S[K]> },
   >(
     components: S
   ): ActionECS<Simplify<C & T>, A, R, F>;
@@ -83,7 +83,7 @@ export interface ActionECS<
   ): ActionECS<
     C,
     A,
-    Simplify<R & { -readonly [K in keyof S]: FromSchema<S[K]> }>
+    Simplify<R & { -readonly [K in keyof S]: Schema.ToType<S[K]> }>
   >;
   withResources<S extends { [K: string]: unknown }>(
     resources: S

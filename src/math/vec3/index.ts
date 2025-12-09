@@ -20,9 +20,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { FromSchema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import { schema } from "./schema.js";
 
-export type Vec3 = FromSchema<typeof schema>;
+export type Vec3 = Schema.ToType<typeof schema>;
 
 export * as Vec3 from "./public.js";

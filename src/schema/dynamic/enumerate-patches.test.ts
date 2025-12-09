@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from 'vitest';
 import { enumeratePatches } from './enumerate-patches.js';
-import { FromSchema, Schema } from '../schema.js';
+import { Schema } from '../schema.js';
 
 export const PersonSchema = {
     type: "object",

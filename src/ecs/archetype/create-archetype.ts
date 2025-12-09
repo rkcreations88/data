@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { FromSchema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import * as TABLE from "../../table/index.js";
 import { Archetype } from "./archetype.js";
 import { RequiredComponents } from "../required-components.js";
@@ -32,9 +32,9 @@ export const createArchetype = <C extends { id: typeof Entity.schema }>(
     components: C,
     id: number,
     entityLocationTable: EntityLocationTable,
-): Archetype<RequiredComponents & { [K in keyof C]: FromSchema<C[K]> }> => {
+): Archetype<RequiredComponents & { [K in keyof C]: Schema.ToType<C[K]> }> => {
     const table = TABLE.createTable(components);
-    const createEntity = (rowData: Omit<{ [K in keyof C]: FromSchema<C[K]> }, "id">): Entity => {
+    const createEntity = (rowData: Omit<{ [K in keyof C]: Schema.ToType<C[K]> }, "id">): Entity => {
         // add the row (excluding entity id)
         const row = TABLE.addRow(archetype as any, rowData);
         // create the entity lookup record
@@ -60,6 +60,6 @@ export const createArchetype = <C extends { id: typeof Entity.schema }>(
             Object.assign(archetype, data);
             // component set cannot be changed by this as the archetype components should be the same.
         }
-    } as const satisfies Archetype<{ [K in keyof C]: FromSchema<C[K]> }> as Archetype<RequiredComponents & { [K in keyof C]: FromSchema<C[K]> }>;
+    } as const satisfies Archetype<{ [K in keyof C]: Schema.ToType<C[K]> }> as Archetype<RequiredComponents & { [K in keyof C]: Schema.ToType<C[K]> }>;
     return archetype;
 }

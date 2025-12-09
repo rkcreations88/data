@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../schema/index.js";
+import { Schema } from "../schema/index.js";
 import { createStructBuffer } from "./create-struct-buffer.js";
 import { getStructLayout } from "./structs/get-struct-layout.js";
 import { TypedBuffer } from "./typed-buffer.js";
@@ -30,15 +30,15 @@ import { createConstBuffer } from "./create-const-buffer.js";
 export function createTypedBuffer <S extends Schema>(
     schema: S,
     initialCapacity?: number,
-): TypedBuffer<FromSchema<S>>
+): TypedBuffer<Schema.ToType<S>>
 export function createTypedBuffer <S extends Schema>(
     schema: S,
-    initialValues: FromSchema<S>[]
-): TypedBuffer<FromSchema<S>>
+    initialValues: Schema.ToType<S>[]
+): TypedBuffer<Schema.ToType<S>>
 export function createTypedBuffer <S extends Schema>(
     schema: S,
-    initialCapacityOrValues?: number | FromSchema<S>[],
-): TypedBuffer<FromSchema<S>> {
+    initialCapacityOrValues?: number | Schema.ToType<S>[],
+): TypedBuffer<Schema.ToType<S>> {
     if (Array.isArray(initialCapacityOrValues)) {
         const buffer = createTypedBufferInternal<S>(schema, initialCapacityOrValues.length);
         for (let i = 0; i < initialCapacityOrValues.length; i++) {
@@ -52,14 +52,14 @@ export function createTypedBuffer <S extends Schema>(
 function createTypedBufferInternal <S extends Schema>(
     schema: S,
     initialCapacity: number,
-): TypedBuffer<FromSchema<S>> {
+): TypedBuffer<Schema.ToType<S>> {
     
     if (schema.const !== undefined) {
-        return createConstBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
+        return createConstBuffer(schema, initialCapacity) as TypedBuffer<Schema.ToType<S>>;
     }
 
     if (schema.type === 'number' || schema.type === 'integer') {
-        return createNumberBuffer(schema, initialCapacity) as TypedBuffer<FromSchema<S>>;
+        return createNumberBuffer(schema, initialCapacity) as TypedBuffer<Schema.ToType<S>>;
     }
 
     // If schema has layout property, it should be treated as a struct layout

@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { getManagedPersistentCache } from "./get-persistent-cache.js";
-import { type FromSchema, type Schema } from "../schema/index.js";
+import { type Schema } from "../schema/index.js";
 import { blobToHash } from "./functions/hashing/blob-to-hash.js";
 import { preventParallelExecution } from "./functions/prevent-parallel-execution.js";
 
@@ -38,7 +38,7 @@ const RemoteBlobRefSchema = {
   },
   additionalProperties: false,
 } as const satisfies Schema;
-type RemoteBlobRef = FromSchema<typeof RemoteBlobRefSchema>;
+type RemoteBlobRef = Schema.ToType<typeof RemoteBlobRefSchema>;
 
 const LocalBlobRefSchema = {
   required: ["localBlobRef"],
@@ -47,7 +47,7 @@ const LocalBlobRefSchema = {
   },
   additionalProperties: false,
 } as const satisfies Schema;
-type LocalBlobRef = FromSchema<typeof LocalBlobRefSchema>;
+type LocalBlobRef = Schema.ToType<typeof LocalBlobRefSchema>;
 
 export const BlobRefSchema = {
   oneOf: [RemoteBlobRefSchema, LocalBlobRefSchema],
@@ -58,7 +58,7 @@ export const BlobRefSchema = {
  * Do NOT create this type directly.
  * Use the BlobStore to create and manage blob references.
  */
-export type BlobRef = FromSchema<typeof BlobRefSchema>;
+export type BlobRef = Schema.ToType<typeof BlobRefSchema>;
 
 function isRemoteBlobRef(ref: unknown): ref is RemoteBlobRef {
   const maybe = ref as Partial<RemoteBlobRef> | undefined;

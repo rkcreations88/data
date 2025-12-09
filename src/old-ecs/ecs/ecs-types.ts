@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { Data } from "../../index.js";
-import { FromSchema, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import { Simplify } from "../../types/types.js";
 import { CoreComponents, ECSJSON, Table } from "../core-ecs/core-ecs-types.js";
 import {
@@ -114,7 +114,7 @@ export interface ECS<
 
   withComponents<
     S extends { [K: string]: Schema },
-    T = { [K in keyof S]: FromSchema<S[K]> },
+    T = { [K in keyof S]: Schema.ToType<S[K]> },
   >(
     components: S
   ): ECS<Simplify<C & T>, A, R>;
@@ -130,7 +130,7 @@ export interface ECS<
   ): ECS<
     C,
     A,
-    Simplify<R & { -readonly [K in keyof S]: FromSchema<S[K]>}>
+    Simplify<R & { -readonly [K in keyof S]: Schema.ToType<S[K]>}>
   >;
   withResources<S extends { [K: string]: Data }>(
     resources: S

@@ -19,7 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import { U32 } from "../../math/u32/index.js";
 
 export const EntityLocationSchema = {
@@ -32,4 +32,4 @@ export const EntityLocationSchema = {
     additionalProperties: false,
 } as const satisfies Schema;
 
-export type EntityLocation = FromSchema<typeof EntityLocationSchema>;
+export type EntityLocation = Schema.ToType<typeof EntityLocationSchema>;

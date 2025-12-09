@@ -19,9 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema } from "../schema.js";
+
+import { ToType } from "../to-type.js";
 import { schema } from "./schema.js";
 
-export type Time = FromSchema<typeof schema>;
+export type Time = ToType<typeof schema>;
 
 export * as Time from "./public.js";

@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { FromSchema, Schema } from "../schema/index.js";
+import { Schema } from "../schema/index.js";
 import { BlobMeta } from "./blob-meta.js";
 
 const BlobHandleSchema = {
@@ -35,7 +35,7 @@ const BlobHandleSchema = {
     required: [...BlobMeta.schema.required, 'handle', 'expires'],
 } as const satisfies Schema;
 
-export type BlobHandle = FromSchema<typeof BlobHandleSchema>;
+export type BlobHandle = Schema.ToType<typeof BlobHandleSchema>;
 export type UploadHandle = BlobHandle & { upload: true };
 export type DownloadHandle = BlobHandle & { download: true };
 export namespace BlobHandle {

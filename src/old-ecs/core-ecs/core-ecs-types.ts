@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { Data } from "../../index.js";
-import { FromSchema, Schema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 import { DeepReadonly, Simplify } from "../../types/types.js";
 import { NativeArray } from "../../cache/managed-array.js";
 
@@ -75,13 +75,13 @@ export interface CoreECS<
    */
   withComponents<
     S extends { readonly [K: string]: DeepReadonly<Schema> },
-    T = { -readonly [K in keyof S]: FromSchema<S[K]> },
+    T = { -readonly [K in keyof S]: Schema.ToType<S[K]> },
   >(
     components: S
   ): CoreECS<Simplify<C & T>, R>;
   withResources<T extends { readonly [K: string]: Schema & { default: any } }>(
     resources: T
-  ): CoreECS<C, Simplify<R & { -readonly [K in keyof T]: FromSchema<T[K]> }>>;
+  ): CoreECS<C, Simplify<R & { -readonly [K in keyof T]: Schema.ToType<T[K]> }>>;
   withResources<T extends { readonly [K: string]: Data }>(
     resources: T
   ): CoreECS<C, Simplify<R & T>>;

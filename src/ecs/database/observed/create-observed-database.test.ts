@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createObservedDatabase } from "./create-observed-database.js";
 import { createStore } from "../../store/create-store.js";
-import { Schema, FromSchema } from "../../../schema/index.js";
+import { Schema } from "../../../schema/index.js";
 import { Entity } from "../../entity.js";
 
 const positionSchema = {
@@ -14,7 +14,7 @@ const positionSchema = {
     required: ["x", "y", "z"],
     additionalProperties: false,
 } as const satisfies Schema;
-type Position = FromSchema<typeof positionSchema>;
+type Position = Schema.ToType<typeof positionSchema>;
 
 const healthSchema = {
     type: "object",
@@ -25,13 +25,13 @@ const healthSchema = {
     required: ["current", "max"],
     additionalProperties: false,
 } as const satisfies Schema;
-type Health = FromSchema<typeof healthSchema>;
+type Health = Schema.ToType<typeof healthSchema>;
 
 const nameSchema = {
     type: "string",
     maxLength: 50,
 } as const satisfies Schema;
-type Name = FromSchema<typeof nameSchema>;
+type Name = Schema.ToType<typeof nameSchema>;
 
 type ObservedFixture = ReturnType<typeof createObservedFixture>;
 

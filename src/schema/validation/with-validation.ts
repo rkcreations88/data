@@ -19,15 +19,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { Schema, FromSchema } from '../index.js';
+import { Schema } from '../index.js';
 import { validate } from './validate.js';
 
 /**
  * Creates a function which can wrap another function and validate the input against a JSON Schema.
  */
 export function withValidation<T extends Schema>(schema: T) {
-    return function <F extends (arg: FromSchema<T>) => any>(fn: F): F {
-        return function (this: any, arg: FromSchema<T>) {
+    return function <F extends (arg: Schema.ToType<T>) => any>(fn: F): F {
+        return function (this: any, arg: Schema.ToType<T>) {
             const errors = validate(schema, arg);
 
             if (errors.length > 0) {

@@ -26,7 +26,6 @@ import {
   normalize,
 } from "../../index.js";
 import {
-  FromSchema,
   Schema,
 } from "../../schema/index.js";
 import {
@@ -324,7 +323,7 @@ export function createCoreECS<
 
   const withComponents = <
     S extends { [K: string]: Schema },
-    T = { [K in keyof S]: FromSchema<S[K]> },
+    T = { [K in keyof S]: Schema.ToType<S[K]> },
   >(
     components: S
   ) => {

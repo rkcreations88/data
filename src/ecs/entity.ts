@@ -19,10 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { FromSchema } from "../schema/index.js";
+import { Schema } from "../schema/index.js";
 import { I32 } from "../math/i32/index.js";
 
-export type Entity = FromSchema<typeof Entity.schema>;
+export type Entity = Schema.ToType<typeof Entity.schema>;
 export namespace Entity {
     export const schema = I32.schema;
 }

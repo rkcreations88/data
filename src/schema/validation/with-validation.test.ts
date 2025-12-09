@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from 'vitest';
 import { withValidation } from './with-validation.js';
-import { FromSchema } from '../index.js';
+import { Schema } from '../index.js';
 
 // Define a test schema
 const userSchema = {
@@ -37,7 +37,7 @@ const userSchema = {
 
 describe('withValidation', () => {
     it('should pass validation for valid input', () => {
-        const createUser = withValidation(userSchema)((user: FromSchema<typeof userSchema>) => user);
+        const createUser = withValidation(userSchema)((user: Schema.ToType<typeof userSchema>) => user);
 
         const validUser = {
             name: 'John Doe',
@@ -50,7 +50,7 @@ describe('withValidation', () => {
     });
 
     it('should throw error for invalid input', () => {
-        const createUser = withValidation(userSchema)((user: FromSchema<typeof userSchema>) => user);
+        const createUser = withValidation(userSchema)((user: Schema.ToType<typeof userSchema>) => user);
 
         const invalidUser = {
             name: 'John Doe',
@@ -62,7 +62,7 @@ describe('withValidation', () => {
     });
 
     it('should throw error for missing required fields', () => {
-        const createUser = withValidation(userSchema)((user: FromSchema<typeof userSchema>) => user);
+        const createUser = withValidation(userSchema)((user: Schema.ToType<typeof userSchema>) => user);
 
         const incompleteUser = {
             name: 'John Doe',
@@ -74,7 +74,7 @@ describe('withValidation', () => {
 
     it('should preserve function return type', () => {
         const processUser = withValidation(userSchema)(
-            (user: FromSchema<typeof userSchema>) => ({
+            (user: Schema.ToType<typeof userSchema>) => ({
                 ...user,
                 processed: true
             })
@@ -96,7 +96,7 @@ describe('withValidation', () => {
 
     it("should pass 'this' context to the wrapped function", () => {
         const context = { value: 42 };
-        const fn = function (this: typeof context, user: FromSchema<typeof userSchema>) {
+        const fn = function (this: typeof context, user: Schema.ToType<typeof userSchema>) {
             return this.value;
         };
         const wrapped = withValidation(userSchema)(fn);

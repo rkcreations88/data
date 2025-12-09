@@ -28,7 +28,7 @@ import { Transaction } from "../transaction-ecs/transaction-types.js";
 import { F32 } from "../../math/f32/index.js";
 import { Tuple } from "../../schema/tuple.js";
 import { Archetype } from "../../old-ecs/index.js";
-import { FromSchema } from "../../schema/index.js";
+import { Schema } from "../../schema/index.js";
 
 const user = "test";
 const createECSWithMassAndSize = () => {
@@ -320,8 +320,8 @@ describe("ActionECS", () => {
 // sample ECS creation
 const Vector3Schema = Tuple(F32.schema, 3);
 const Vector4Schema = Tuple(F32.schema, 4);
-type Vector3 = FromSchema<typeof Vector3Schema>;
-type Vector4 = FromSchema<typeof Vector4Schema>;
+type Vector3 = Schema.ToType<typeof Vector3Schema>;
+type Vector4 = Schema.ToType<typeof Vector4Schema>;
 
 //  create an action ecs
 const ecs = createActionECS()

@@ -20,11 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { createTypedBuffer, TypedBuffer } from "../typed-buffer/index.js";
-import { FromSchema, Schema } from "../schema/index.js";
+import { Schema } from "../schema/index.js";
 import { Table } from "./table.js";
 
-export const createTable = <C extends Record<string, Schema>>(schemas: C) : Table<{ [K in keyof C]: FromSchema<C[K]> }> => {
-    const columns = {} as { [K in keyof C]: TypedBuffer<FromSchema<C[K]>> };
+export const createTable = <C extends Record<string, Schema>>(schemas: C) : Table<{ [K in keyof C]: Schema.ToType<C[K]> }> => {
+    const columns = {} as { [K in keyof C]: TypedBuffer<Schema.ToType<C[K]>> };
     const rowCapacity = 16;
     for (const name in schemas) {
         columns[name] = createTypedBuffer(schemas[name], rowCapacity);
