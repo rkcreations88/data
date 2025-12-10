@@ -41,5 +41,3 @@ export type Notify<T> = (value: T) => void;
 export type Unobserve = () => void;
 
 export * as Observe from "./public.js";
-
-export * from "./to-promise.js";
