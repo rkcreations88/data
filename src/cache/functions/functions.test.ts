@@ -80,5 +80,21 @@ describe("Function", () => {
       // with memoize, the count should be 0 because we get a cached result.
       expect(addCallCount).toEqual(0);
     });
+
+    it("should reuse cached result for repeated object references", () => {
+      let callCount = 0;
+      const multiply = memoize(({ value }: { value: number }) => {
+        callCount++;
+        return value * 2;
+      });
+
+      const input = { value: 2 };
+      expect(multiply(input)).toEqual(4);
+      expect(multiply(input)).toEqual(4);
+      expect(callCount).toEqual(1);
+
+      expect(multiply({ value: 2 })).toEqual(4);
+      expect(callCount).toEqual(2);
+    });
   });
 });
