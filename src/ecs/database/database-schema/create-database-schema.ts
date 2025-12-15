@@ -53,7 +53,11 @@ export function createDatabaseFromSchema<
     schema: DatabaseSchema<CS, RS, A, TD>,
 ): DatabaseFromSchema<typeof schema> {
     return createDatabase(
-        createStore<CS, RS, A>(schema.components, schema.resources, schema.archetypes),
+        createStore<CS, RS, A>({
+            components: schema.components,
+            resources: schema.resources,
+            archetypes: schema.archetypes,
+        }),
         schema.transactions as any
     ) as any;
 }

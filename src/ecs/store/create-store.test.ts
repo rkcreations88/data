@@ -29,7 +29,7 @@ import { Time } from "../../schema/index.js";
 describe("createStore", () => {
     // Test that store passes all core functionality tests
     createCoreTestSuite("Store core functionality", (componentSchemas) =>
-        createStore(componentSchemas, {}) as any
+        createStore({ components: componentSchemas, resources: {}, archetypes: {} }) as any
     );
 
     // Select function tests
@@ -44,11 +44,11 @@ describe("createStore", () => {
         } as const satisfies Schema;
 
         it("should select entities from single archetype", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
                 name: nameSchema,
-            }, {});
+            }, resources: {}, archetypes: {} });
 
             // Create entities in a single archetype
             const archetype = store.ensureArchetype(["id", "position", "health"]);
@@ -69,12 +69,12 @@ describe("createStore", () => {
         });
 
         it("should select entities spanning multiple archetypes", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
                 name: nameSchema,
                 velocity: velocitySchema,
-            }, {});
+            }, resources: {}, archetypes: {} });
 
             // Create entities in different archetypes
             const positionOnlyArchetype = store.ensureArchetype(["id", "position"]);
@@ -130,11 +130,11 @@ describe("createStore", () => {
         });
 
         it("should select entities with exclude option", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
                 name: nameSchema,
-            }, {});
+            }, resources: {}, archetypes: {} });
 
             // Create entities in different archetypes
             const positionOnlyArchetype = store.ensureArchetype(["id", "position"]);
@@ -156,10 +156,10 @@ describe("createStore", () => {
         });
 
         it("should return empty array when no entities match", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
-            }, {});
+            }, resources: {}, archetypes: {} });
 
             // Create entity with only position
             const archetype = store.ensureArchetype(["id", "position"]);
@@ -171,12 +171,12 @@ describe("createStore", () => {
         });
 
         it("should handle complex multi-archetype scenarios", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
                 name: nameSchema,
                 velocity: velocitySchema,
-            }, {});
+            }, resources: {}, archetypes: {} });
 
             // Create entities across many different archetypes
             const archetype1 = store.ensureArchetype(["id", "position"]);
@@ -249,10 +249,10 @@ describe("createStore", () => {
         });
 
         it("should maintain entity order across archetypes", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
-            }, {});
+            }, resources: {}, archetypes: {} });
 
             // Create entities in different archetypes
             const archetype1 = store.ensureArchetype(["id", "position"]);
@@ -280,22 +280,22 @@ describe("createStore", () => {
         });
 
         it("should handle empty store", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
-            }, {});
+            }, resources: {}, archetypes: {} });
 
             const entities = store.select(["position"]);
             expect(entities).toHaveLength(0);
         });
 
         it("should work with resources as components", () => {
-            const store = createStore({
+            const store = createStore({ components: {
                 position: positionSchema,
                 health: healthSchema,
-            }, {
+            }, resources: {
                 time: { default: { delta: 0.016, elapsed: 0 } }
-            });
+            }, archetypes: {} });
 
             // Create some entities
             const archetype = store.ensureArchetype(["id", "position"]);
@@ -322,13 +322,10 @@ describe("createStore", () => {
         } as const satisfies Schema;
 
         it("should create store with resources", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
-                }
-            );
+                }, archetypes: {} });
 
             expect(store).toBeDefined();
             expect(store.resources).toBeDefined();
@@ -340,26 +337,20 @@ describe("createStore", () => {
             const defaultTime = { delta: 0.016, elapsed: 0 };
             const defaultConfig = { debug: false, volume: 1.0 };
 
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     time: { default: defaultTime },
                     config: { default: defaultConfig }
-                }
-            );
+                }, archetypes: {} });
 
             expect(store.resources.time).toEqual(defaultTime);
             expect(store.resources.config).toEqual(defaultConfig);
         });
 
         it("should allow reading resource values", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
-                }
-            );
+                }, archetypes: {} });
 
             expect(store.resources.time.delta).toBe(0.016);
             expect(store.resources.time.elapsed).toBe(0);
@@ -368,13 +359,10 @@ describe("createStore", () => {
         });
 
         it("should allow updating resource values", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Update time
             store.resources.time = { delta: 0.033, elapsed: 1.5 };
@@ -388,13 +376,10 @@ describe("createStore", () => {
         });
 
         it("should maintain resource values across updates", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Update multiple times
             store.resources.time = { delta: 0.033, elapsed: 1.5 };
@@ -407,12 +392,9 @@ describe("createStore", () => {
         });
 
         it("should handle nested resource updates", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Update individual properties
             const newTime = { delta: 0.033, elapsed: 1.5 };
@@ -423,24 +405,18 @@ describe("createStore", () => {
         });
 
         it("should work with empty resource object", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {}
-            );
+            const store = createStore({ components: { position: positionSchema }, resources: {}, archetypes: {} });
 
             expect(store.resources).toBeDefined();
             expect(Object.keys(store.resources)).toHaveLength(0);
         });
 
         it("should handle multiple resources independently", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } },
                     score: { default: 0 }
-                }
-            );
+                }, archetypes: {} });
 
             // Update each resource independently
             store.resources.time = { delta: 0.033, elapsed: 1.5 };
@@ -454,15 +430,12 @@ describe("createStore", () => {
         });
 
         it("should allow querying resources as components", () => {
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     position: positionSchema,
                     time: timeSchema
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Resources should be queryable as components
             const timeArchetypes = store.queryArchetypes(["time"]);
@@ -471,15 +444,12 @@ describe("createStore", () => {
         });
 
         it("should maintain resource singleton behavior", () => {
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     position: positionSchema,
                     time: timeSchema
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Resources should be queryable as components
             const timeArchetypes = store.queryArchetypes(["time"]);
@@ -494,14 +464,11 @@ describe("createStore", () => {
         });
 
         it("should handle primitive resource values", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     score: { default: 0 },
                     name: { default: "Player1" },
                     active: { default: true }
-                }
-            );
+                }, archetypes: {} });
 
             expect(store.resources.score).toBe(0);
             expect(store.resources.name).toBe("Player1");
@@ -529,10 +496,7 @@ describe("createStore", () => {
                 count: 0
             };
 
-            const store = createStore(
-                { position: positionSchema },
-                { complex: { default: complexResource } }
-            );
+            const store = createStore({ components: { position: positionSchema }, resources: { complex: { default: complexResource } }, archetypes: {} });
 
             expect(store.resources.complex).toEqual(complexResource);
 
@@ -553,16 +517,13 @@ describe("createStore", () => {
         });
 
         it("should handle array resource schemas", () => {
-            const store = createStore(
-                { position: positionSchema },
-                {
+            const store = createStore({ components: { position: positionSchema }, resources: {
                     tags: {
                         type: "array",
                         items: { type: "string" },
                         default: ["player", "active"]
                     }
-                }
-            );
+                }, archetypes: {} });
 
             expect(store.resources.tags).toEqual(["player", "active"]);
 
@@ -574,17 +535,13 @@ describe("createStore", () => {
 
     describe("Archetype functionality", () => {
         it("should create store with archetypes", () => {
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     name: { type: "string" },
                     health: { type: "number" },
                     enabled: { type: "boolean" },
-                },
-                {},
-                {
+                }, resources: {}, archetypes: {
                     Player: ["name", "health"],
-                }
-            );
+                } });
 
             const entity = store.archetypes.Player.insert({
                 name: "test",
@@ -599,12 +556,9 @@ describe("createStore", () => {
     // TimeSchema round-trip test
     describe("TimeSchema functionality", () => {
         it("should store and retrieve Date.now() value correctly", () => {
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     timestamp: Time.schema,
-                },
-                {}
-            );
+                }, resources: {}, archetypes: {} });
 
             // Create entity with current timestamp
             const now = Date.now();
@@ -626,16 +580,13 @@ describe("createStore", () => {
     // Serialization/Deserialization tests
     describe("toData/fromData functionality", () => {
         it("should serialize and deserialize store with resources correctly", () => {
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     position: positionSchema,
                     health: healthSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Add some entities
             const archetype = store.ensureArchetype(["id", "position", "health"]);
@@ -656,16 +607,13 @@ describe("createStore", () => {
             const serializedData = store.toData();
 
             // Create a new store with the same schemas and restore
-            const newStore = createStore(
-                {
+            const newStore = createStore({ components: {
                     position: positionSchema,
                     health: healthSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } }
-                }
-            );
+                }, archetypes: {} });
             newStore.fromData(serializedData);
 
             // Verify entities are restored
@@ -693,14 +641,11 @@ describe("createStore", () => {
 
         it("should create new resources when restoring to store with additional resources", () => {
             // Create original store with only one resource
-            const originalStore = createStore(
-                {
+            const originalStore = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Add some entities and update resource
             const archetype = originalStore.ensureArchetype(["id", "position"]);
@@ -714,16 +659,13 @@ describe("createStore", () => {
             // Note: This is a limitation - when restoring to a store with different archetype structure,
             // entity locations may not be preserved correctly due to archetype ID shifts.
             // In practice, stores should be restored to compatible configurations.
-            const newStore = createStore(
-                {
+            const newStore = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } },
                     score: { default: 0 }
-                }
-            );
+                }, archetypes: {} });
 
             // Restore from serialized data
             newStore.fromData(serializedData);
@@ -749,16 +691,13 @@ describe("createStore", () => {
 
         it("should handle restoring to store with fewer resources", () => {
             // Create original store with multiple resources
-            const originalStore = createStore(
-                {
+            const originalStore = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } },
                     config: { default: { debug: false, volume: 1.0 } },
                     score: { default: 0 }
-                }
-            );
+                }, archetypes: {} });
 
             // Add entities and update resources
             const archetype = originalStore.ensureArchetype(["id", "position"]);
@@ -771,14 +710,11 @@ describe("createStore", () => {
             const serializedData = originalStore.toData();
 
             // Create new store with only one resource
-            const newStore = createStore(
-                {
+            const newStore = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Restore from serialized data
             newStore.fromData(serializedData);
@@ -802,28 +738,22 @@ describe("createStore", () => {
         });
 
         it("should preserve resource getter/setter functionality after restoration", () => {
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Update resource
             store.resources.time = { delta: 0.033, elapsed: 1.5 };
 
             // Serialize and deserialize
             const serializedData = store.toData();
-            const newStore = createStore(
-                {
+            const newStore = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
             newStore.fromData(serializedData);
 
             // Verify resource is restored
@@ -852,14 +782,11 @@ describe("createStore", () => {
                 count: 0
             };
 
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     complex: { default: complexResource }
-                }
-            );
+                }, archetypes: {} });
 
             // Update complex resource
             const updatedComplex = {
@@ -880,14 +807,11 @@ describe("createStore", () => {
 
             // Serialize and deserialize
             const serializedData = store.toData();
-            const newStore = createStore(
-                {
+            const newStore = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     complex: { default: complexResource }
-                }
-            );
+                }, archetypes: {} });
             newStore.fromData(serializedData);
 
             // Verify complex resource is restored correctly
@@ -901,14 +825,11 @@ describe("createStore", () => {
 
         it("should handle empty resource schemas during restoration", () => {
             // Create store with resources
-            const store = createStore(
-                {
+            const store = createStore({ components: {
                     position: positionSchema,
-                },
-                {
+                }, resources: {
                     time: { default: { delta: 0.016, elapsed: 0 } }
-                }
-            );
+                }, archetypes: {} });
 
             // Add entities and update resource
             const archetype = store.ensureArchetype(["id", "position"]);
@@ -919,12 +840,9 @@ describe("createStore", () => {
             const serializedData = store.toData();
 
             // Create new store with no resources
-            const newStore = createStore(
-                {
+            const newStore = createStore({ components: {
                     position: positionSchema,
-                },
-                {}
-            );
+                }, resources: {}, archetypes: {} });
 
             // Restore - should not crash and should preserve entities
             newStore.fromData(serializedData);

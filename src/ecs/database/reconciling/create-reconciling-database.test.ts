@@ -3,8 +3,8 @@ import { createReconcilingDatabase } from "./create-reconciling-database.js";
 import { createStore } from "../../store/create-store.js";
 
 const createTestReconcilingDatabase = () => {
-    const store = createStore(
-        {
+    const store = createStore({
+        components: {
             position: {
                 type: "object",
                 properties: {
@@ -17,11 +17,11 @@ const createTestReconcilingDatabase = () => {
             },
             name: { type: "string" },
         } as const,
-        {},
-        {
+        resources: {},
+        archetypes: {
             PositionNameEntity: ["position", "name"],
         } as const,
-    );
+    });
 
     type StoreType = typeof store;
 

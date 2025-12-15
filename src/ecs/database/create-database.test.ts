@@ -63,20 +63,20 @@ const nameSchema = {
 type Name = Schema.ToType<typeof nameSchema>;
 
 const createStoreConfig = () => {
-    const baseStore = createStore(
-        { position: positionSchema, health: healthSchema, name: nameSchema },
-        {
+    const baseStore = createStore({
+        components: { position: positionSchema, health: healthSchema, name: nameSchema },
+        resources: {
             time: { default: { delta: 0.016, elapsed: 0 } },
             generating: { type: "boolean", default: false }
         },
-        {
+        archetypes: {
             Position: ["position"],
             Health: ["health"],
             PositionHealth: ["position", "health"],
             PositionName: ["position", "name"],
             Full: ["position", "health", "name"],
         }
-    );
+    });
 
     type TestStore = typeof baseStore;
 

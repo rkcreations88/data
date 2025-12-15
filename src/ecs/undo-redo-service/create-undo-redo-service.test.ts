@@ -47,14 +47,14 @@ const nameSchema = {
 } as const;
 
 function createTestDatabase() {
-    const baseStore = createStore(
-        { position: positionSchema, name: nameSchema },
-        { time: { default: { delta: 0.016, elapsed: 0 } } },
-        {
+    const baseStore = createStore({
+        components: { position: positionSchema, name: nameSchema },
+        resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
+        archetypes: {
             PositionEntity: ["position"],
             PositionNameEntity: ["position", "name"],
         }
-    );
+    });
 
     return createDatabase(baseStore, {
         createPositionEntity(t, args: { position: { x: number, y: number, z: number } }) {

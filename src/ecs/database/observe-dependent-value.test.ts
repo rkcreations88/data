@@ -29,13 +29,7 @@ describe('observeDependentValue', () => {
     it('should compute and observe dependent values from resources', async () => {
         // Create a store with three resources
         const store = createStore(
-            {},
-            {
-                a: { default: 10 },
-                b: { default: 20 },
-                c: { default: 30 }
-            },
-            {}
+            { components: {}, resources: { a: { default: 10 }, b: { default: 20 }, c: { default: 30 } }, archetypes: {} },
         );
         type TestStore = ToReadonlyStore<typeof store>;
 
@@ -115,7 +109,7 @@ describe('observeDependentValue', () => {
     });
 
     it('should handle multiple observers correctly', async () => {
-        const store = createStore({}, { a: { default: 1 }, b: { default: 2 }, c: { default: 3 } });
+        const store = createStore({ components: {}, resources: { a: { default: 1 }, b: { default: 2 }, c: { default: 3 } }, archetypes: {} });
         const database = createDatabase(store, {
             updateA: (t, value: number) => { t.resources.a = value; },
             updateB: (t, value: number) => { t.resources.b = value; }
@@ -158,11 +152,7 @@ describe('observeDependentValue', () => {
     });
 
     it('should handle complex computed values', async () => {
-        const store = createStore({}, {
-            count: { default: 5 },
-            multiplier: { default: 2 },
-            offset: { default: 10 }
-        });
+        const store = createStore({ components: {}, resources: { count: { default: 5 }, multiplier: { default: 2 }, offset: { default: 10 } }, archetypes: {} });
         const database = createDatabase(store, {
             updateCount: (t, value: number) => { t.resources.count = value; },
             updateMultiplier: (t, value: number) => { t.resources.multiplier = value; }

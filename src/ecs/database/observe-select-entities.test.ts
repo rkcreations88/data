@@ -31,22 +31,24 @@ describe("observeSelectEntities", () => {
 
     function createTestDatabase() {
         const store = createStore({
-            position: F32.schema,
-            health: F32.schema,
-            name: { type: "string" },
-            score: F32.schema,
-            active: Boolean.schema
-        }, {
-        }, {
-            Position: ["position"],
-            Health: ["health"],
-            Name: ["name"],
-            PositionHealth: ["position", "health"],
-            PositionName: ["position", "name"],
-            HealthName: ["health", "name"],
-            Full: ["position", "health", "name", "score", "active"]
-        }
-        );
+            components: {
+                position: F32.schema,
+                health: F32.schema,
+                name: { type: "string" },
+                score: F32.schema,
+                active: Boolean.schema
+            },
+            resources: {},
+            archetypes: {
+                Position: ["position"],
+                Health: ["health"],
+                Name: ["name"],
+                PositionHealth: ["position", "health"],
+                PositionName: ["position", "name"],
+                HealthName: ["health", "name"],
+                Full: ["position", "health", "name", "score", "active"]
+            }
+        });
 
         return createDatabase(store, {
             createPositionEntity(store, args: { position: number }) {

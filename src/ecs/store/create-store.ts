@@ -36,39 +36,48 @@ import { selectEntities } from "./core/select-entities.js";
 import { OptionalComponents } from "../optional-components.js";
 
 export function createStore<
-    NC extends ComponentSchemas,
-    NR extends ResourceSchemas,
-    A extends ArchetypeComponents<StringKeyof<NC & OptionalComponents>> = {}
+    CS extends ComponentSchemas = {},
+    RS extends ResourceSchemas = {},
+    A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents>> = {}
 >(
-    newComponentSchemas: NC,
-    resourceSchemas: NR = {} as NR,
-    archetypeComponentNames: A = {} as A,
-): Store<FromSchemas<NC>, FromSchemas<NR>, A> {
-    type C = RequiredComponents & { [K in StringKeyof<NC>]: Schema.ToType<NC[K]> };
-    type R = { [K in StringKeyof<NR>]: Schema.ToType<NR[K]> };
+    schema?: Store.Schema<CS, RS, A>,
+): Store<FromSchemas<CS>, FromSchemas<RS>, A> {
+    const schemaArg = schema as any;
+    const hasSchemaShape =
+        schemaArg &&
+        typeof schemaArg === "object" &&
+        "components" in schemaArg &&
+        "resources" in schemaArg &&
+        "archetypes" in schemaArg;
+
+    const normalizedSchema = (hasSchemaShape
+        ? schemaArg
+        : {
+            components: (schemaArg ?? {}) as CS,
+            resources: (arguments.length > 1 ? arguments[1] : {}) as RS,
+            archetypes: (arguments.length > 2 ? arguments[2] : {}) as A,
+        }) as Store.Schema<CS, RS, A>;
+
+    type C = RequiredComponents & { [K in StringKeyof<CS>]: Schema.ToType<CS[K]> };
+    type R = { [K in StringKeyof<RS>]: Schema.ToType<RS[K]> };
 
     const resources = {} as R;
-
-    const componentAndResourceSchemas: { [K in StringKeyof<C | R>]: Schema } = {
-        ...newComponentSchemas,
-    };
-    // Resources are stored in the core as components, so we need to add them to the componentSchemas
-    for (const name of Object.keys(resourceSchemas)) {
-        const resourceId = name as StringKeyof<C | R>;
-        componentAndResourceSchemas[resourceId] = resourceSchemas[name];
-    }
+    const componentSchemas = {} as CS;
+    const resourceSchemas = {} as RS;
+    const archetypeComponentNames = {} as A;
+    const componentAndResourceSchemas: { [K in StringKeyof<C | R>]: Schema } = {} as any;
 
     const core = createCore(componentAndResourceSchemas) as unknown as Core<C>;
 
     // Each resource will be stored as the only entity in an archetype of [id, <resourceName>]
     // The resource component we added above will contain the resource value
-    const ensureDefaultResourcesAndPropertiesExist = () => {
-        for (const [name, resourceSchema] of Object.entries(resourceSchemas)) {
-            const resourceId = name as StringKeyof<C>;
-            const archetype = core.ensureArchetype(["id", resourceId]);
-            if (archetype.rowCount === 0) {
-                archetype.insert({ [resourceId]: resourceSchema.default } as any);
-            }
+    const ensureResourceInitialized = (name: string, resourceSchema: Schema & { default: unknown }) => {
+        const resourceId = name as StringKeyof<C>;
+        const archetype = core.ensureArchetype(["id", resourceId]);
+        if (archetype.rowCount === 0) {
+            archetype.insert({ [resourceId]: resourceSchema.default } as any);
+        }
+        if (!Object.prototype.hasOwnProperty.call(resources, name)) {
             const row = 0;
             Object.defineProperty(resources, name, {
                 get: () => archetype.columns[resourceId]!.get(row),
@@ -79,8 +88,7 @@ export function createStore<
                 configurable: true,
             });
         }
-    }
-    ensureDefaultResourcesAndPropertiesExist();
+    };
 
     const select = <
         Include extends StringKeyof<C & OptionalComponents>
@@ -91,24 +99,68 @@ export function createStore<
         return selectEntities<C, Include>(core, include, options);
     }
 
-    const archetypes = Object.fromEntries(
-        Object.entries(archetypeComponentNames).map(([name, componentNames]) => {
-            const archetype = core.ensureArchetype(["id", ...componentNames as any]);
-            return [name, archetype] as const;
-        })
-    ) as any;
+    const archetypes = {} as any;
+
+    const extend = (schema: Store.Schema<any, any, any>) => {
+        // components: existing must be identical if present
+        for (const [name, newComponentSchema] of Object.entries(schema.components)) {
+            if (name in componentAndResourceSchemas) {
+                if (componentAndResourceSchemas[name as keyof typeof componentAndResourceSchemas] !== newComponentSchema) {
+                    throw new Error(`Component schema for "${name}" must be identical when extending.`);
+                }
+                continue;
+            }
+            componentAndResourceSchemas[name as keyof typeof componentAndResourceSchemas] = newComponentSchema as Schema;
+            (core.componentSchemas as any)[name] = newComponentSchema as Schema;
+            (componentSchemas as any)[name] = newComponentSchema;
+        }
+
+        // resources: existing must be identical if present
+        const newResourceNames: string[] = [];
+        for (const [name, newResourceSchema] of Object.entries(schema.resources)) {
+            if (name in resourceSchemas) {
+                if (resourceSchemas[name as keyof typeof resourceSchemas] !== newResourceSchema) {
+                    throw new Error(`Resource schema for "${name}" must be identical when extending.`);
+                }
+                continue;
+            }
+            resourceSchemas[name as keyof typeof resourceSchemas] = newResourceSchema as any;
+            componentAndResourceSchemas[name as keyof typeof componentAndResourceSchemas] = newResourceSchema as Schema;
+            (core.componentSchemas as any)[name] = newResourceSchema as Schema;
+            newResourceNames.push(name);
+            ensureResourceInitialized(name, newResourceSchema as any);
+        }
+
+        // archetypes: existing must be identical if present
+        for (const [name, newComponents] of Object.entries(schema.archetypes)) {
+            if (name in archetypeComponentNames) {
+                if (archetypeComponentNames[name as keyof typeof archetypeComponentNames] !== newComponents) {
+                    throw new Error(`Archetype definition for "${name}" must be identical when extending.`);
+                }
+                continue;
+            }
+            archetypeComponentNames[name as keyof typeof archetypeComponentNames] = newComponents as any;
+            const archetype = core.ensureArchetype(["id", ...(newComponents as any)]);
+            (archetypes as any)[name] = archetype;
+        }
+
+        return store as any;
+    }
 
     const store: Store<C, R> = {
         ...core,
         resources,
         select,
         archetypes,
+        extend,
         toData: () => core.toData(),
         fromData: (data: unknown) => {
             core.fromData(data);
-            ensureDefaultResourcesAndPropertiesExist();
-        }
+            for (const [name, resourceSchema] of Object.entries(resourceSchemas)) {
+                ensureResourceInitialized(name, resourceSchema as any);
+            }
+        },
     };
 
-    return store as any;
+    return store.extend(normalizedSchema) as any;
 }
