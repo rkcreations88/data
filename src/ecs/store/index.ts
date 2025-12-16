@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 export * from "./store.js";
-export * from "./create-store.js";
 export * from "./archetype-components.js";
 export type { EntityReadValues, EntityUpdateValues, ArchetypeQueryOptions } from "./core/core.js";
 export type { EntitySelectOptions } from "./entity-select-options.js";

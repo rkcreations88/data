@@ -24,7 +24,6 @@ import { Components } from "../../store/components.js";
 import { ResourceComponents } from "../../store/resource-components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { TransactionResult } from "../transactional-store/index.js";
-import { TransactionWriteOperation } from "../transactional-store/transactional-store.js";
 import { Store } from "../../store/index.js";
 import { Entity } from "../../entity.js";
 
@@ -42,13 +41,7 @@ export type ReconcilingEntry<
 };
 
 export const ReconcilingEntryOps = {
-    isTransient<
-        C extends Components,
-        R extends ResourceComponents,
-        A extends ArchetypeComponents<StringKeyof<C>>
-    >(entry: ReconcilingEntry<C, R, A>): boolean {
-        return entry.time < 0;
-    },
+
     compare<
         C extends Components,
         R extends ResourceComponents,
@@ -87,60 +80,5 @@ export const ReconcilingEntryOps = {
         }
         return low;
     },
-};
-
-export type SerializedReconcilingEntry = {
-    readonly id: number;
-    readonly name: string;
-    readonly args: unknown;
-    readonly time: number;
-    readonly undo?: TransactionWriteOperation<any>[];
-};
-
-export const serializeReconcilingEntry = <
-    C extends Components,
-    R extends ResourceComponents,
-    A extends ArchetypeComponents<StringKeyof<C>>
->(
-    entry: ReconcilingEntry<C, R, A>,
-): SerializedReconcilingEntry => ({
-    id: entry.id,
-    name: entry.name,
-    args: entry.args,
-    time: entry.time,
-    undo: entry.result?.undo as TransactionWriteOperation<any>[] | undefined,
-});
-
-export const deserializeReconcilingEntry = <
-    C extends Components,
-    R extends ResourceComponents,
-    A extends ArchetypeComponents<StringKeyof<C>>
->(
-    serialized: SerializedReconcilingEntry,
-    transaction: (store: Store<C, R, A>, args: unknown) => void | Entity,
-): ReconcilingEntry<C, R, A> => {
-    const undoOperations = Array.isArray(serialized.undo)
-        ? (serialized.undo as TransactionWriteOperation<C>[])
-        : undefined;
-
-    return {
-        id: Number(serialized.id),
-        name: serialized.name,
-        transaction,
-        args: serialized.args,
-        time: serialized.time,
-        result: undoOperations
-            ? {
-                value: undefined,
-                transient: serialized.time < 0,
-                undoable: null,
-                redo: [],
-                undo: undoOperations,
-                changedEntities: new Map(),
-                changedComponents: new Set(),
-                changedArchetypes: new Set(),
-            }
-            : undefined,
-    };
 };
 

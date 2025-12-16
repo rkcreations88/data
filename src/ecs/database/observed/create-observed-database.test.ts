@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { createObservedDatabase } from "./create-observed-database.js";
-import { createStore } from "../../store/create-store.js";
+import { Store } from "../../store/index.js";
 import { Schema } from "../../../schema/index.js";
 import { Entity } from "../../entity.js";
 
@@ -36,20 +36,20 @@ type Name = Schema.ToType<typeof nameSchema>;
 type ObservedFixture = ReturnType<typeof createObservedFixture>;
 
 const createObservedFixture = () => {
-    const store = createStore(
-        { position: positionSchema, health: healthSchema, name: nameSchema },
-        {
+    const store = Store.create({
+        components: { position: positionSchema, health: healthSchema, name: nameSchema },
+        resources: {
             time: { default: { delta: 0.016, elapsed: 0 } },
             generating: { type: "boolean", default: false },
         },
-        {
+        archetypes: {
             Position: ["position"],
             Health: ["health"],
             PositionHealth: ["position", "health"],
             PositionName: ["position", "name"],
             Full: ["position", "health", "name"],
         } as const,
-    );
+    });
 
     type TestStore = typeof store;
 

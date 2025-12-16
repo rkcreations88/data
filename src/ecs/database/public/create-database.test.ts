@@ -21,16 +21,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { describe, it, expect, vi } from "vitest";
-import { createDatabase } from "./create-database.js";
-import { createReconcilingDatabase } from "./reconciling/create-reconciling-database.js";
-import { createStore } from "../store/create-store.js";
-import { Schema } from "../../schema/index.js";
-import { Entity } from "../entity.js";
-import { F32 } from "../../math/f32/index.js";
-import { toPromise } from "../../observe/to-promise.js";
-import { createUndoRedoService } from "../undo-redo-service/create-undo-redo-service.js";
-import { applyOperations } from "./transactional-store/apply-operations.js";
-import { TransactionWriteOperation } from "./transactional-store/transactional-store.js";
+import { Database } from "../database.js";
+import { createReconcilingDatabase } from "../reconciling/create-reconciling-database.js";
+import { Store } from "../../store/index.js";
+import { Schema } from "../../../schema/index.js";
+import { Entity } from "../../entity.js";
+import { F32 } from "../../../math/f32/index.js";
+import { toPromise } from "../../../observe/to-promise.js";
+import { createUndoRedoService } from "../../undo-redo-service/create-undo-redo-service.js";
+import { applyOperations } from "../transactional-store/apply-operations.js";
+import { TransactionWriteOperation } from "../transactional-store/transactional-store.js";
 
 // Test schemas
 const positionSchema = {
@@ -63,20 +63,20 @@ const nameSchema = {
 type Name = Schema.ToType<typeof nameSchema>;
 
 const createStoreConfig = () => {
-    const baseStore = createStore(
-        { position: positionSchema, health: healthSchema, name: nameSchema },
-        {
+    const baseStore = Store.create({
+        components: { position: positionSchema, health: healthSchema, name: nameSchema },
+        resources: {
             time: { default: { delta: 0.016, elapsed: 0 } },
             generating: { type: "boolean", default: false }
         },
-        {
+        archetypes: {
             Position: ["position"],
             Health: ["health"],
             PositionHealth: ["position", "health"],
             PositionName: ["position", "name"],
             Full: ["position", "health", "name"],
         }
-    );
+    });
 
     type TestStore = typeof baseStore;
 
@@ -132,27 +132,13 @@ const createStoreConfig = () => {
     return { baseStore, transactions };
 };
 
-const createSequentialClock = (sequence: readonly number[], startFallback = 1) => {
-    let index = 0;
-    let current = Math.max(startFallback, 1);
-    return () => {
-        if (index < sequence.length) {
-            const value = sequence[index++];
-            current = Math.max(value, current);
-            return value;
-        }
-        current += 1;
-        return current;
-    };
-};
-
-function createTestDatabase(now: () => number = Date.now) {
+function createTestDatabase() {
     const { baseStore, transactions } = createStoreConfig();
-    return createDatabase(baseStore, transactions, now);
+    return Database.create(baseStore, transactions);
 }
 
 describe("createDatabase", () => {
-    it("should replay out-of-order commits by absolute time in reconciling database", () => {
+    it("should apply committed entries in arrival order, ignoring commit time", () => {
         const { baseStore, transactions } = createStoreConfig();
         const reconciling = createReconcilingDatabase(baseStore, transactions);
 
@@ -176,7 +162,7 @@ describe("createDatabase", () => {
             .filter((name): name is string => !!name);
 
         expect(namesById).toHaveLength(2);
-        expect(namesById).toEqual(["EarlyCommit", "LateCommit"]);
+        expect(namesById).toEqual(["LateCommit", "EarlyCommit"]);
     });
 
     it("should support deleting entities", () => {
@@ -477,14 +463,10 @@ describe("createDatabase", () => {
             // Wait a bit to let some yields process
             await new Promise(resolve => setTimeout(resolve, 5));
 
-            // Verify transient entry exists during processing
-            const serializedDuring = store.toData() as { appliedEntries?: Array<{ id: number; args: unknown }> };
-            const transientEntries = serializedDuring.appliedEntries?.filter(e => e !== null && e !== undefined);
-            expect(transientEntries).toBeDefined();
-            if (transientEntries && transientEntries.length > 0) {
-                // If we caught it during processing, verify it's a transient entry
-                expect((transientEntries[0].args as any)?.name).toMatch(/Yield[123]/);
-            }
+            // Take a snapshot during processing; persistence should not expose
+            // internal reconciling metadata, but this must not throw.
+            const serializedDuring = store.toData();
+            expect(serializedDuring).toBeTruthy();
 
             // Wait for the error
             let error: any;
@@ -500,9 +482,9 @@ describe("createDatabase", () => {
             // Wait for cleanup to complete
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            // Verify the transient entry is removed from the reconciling queue
-            const serializedAfter = store.toData() as { appliedEntries?: Array<unknown> };
-            expect(serializedAfter.appliedEntries ?? []).toHaveLength(0);
+            // Verify no persisted metadata is exposed and no error is thrown
+            const serializedAfter = store.toData();
+            expect(serializedAfter).toBeTruthy();
 
             // Verify all entities are rolled back
             const entities = store.select(["position", "name"]);
@@ -858,7 +840,7 @@ describe("createDatabase", () => {
         });
 
         it("should restore applied entry ordering after serialization", () => {
-            const store = createTestDatabase(createSequentialClock([2, 1], 2));
+            const store = createTestDatabase();
 
             store.transactions.createPositionNameEntity({
                 position: { x: 10, y: 20, z: 30 },
@@ -871,9 +853,8 @@ describe("createDatabase", () => {
             });
 
             const serializedData = store.toData();
-            expect(Array.isArray((serializedData as any).appliedEntries)).toBe(true);
 
-            const newStore = createTestDatabase(createSequentialClock([0.5], 1));
+            const newStore = createTestDatabase();
 
             newStore.fromData(serializedData);
 
@@ -888,39 +869,6 @@ describe("createDatabase", () => {
                 .filter((name): name is string => Boolean(name));
 
             expect(new Set(names)).toEqual(new Set(["EarliestCommit", "LateCommit", "EarlyCommit"]));
-        });
-
-        it("should remove cancelled applied entries", async () => {
-            const store = createTestDatabase();
-
-            let rejectGenerator: (error: Error) => void = () => { };
-
-            const generator = async function* () {
-                yield { position: { x: 1, y: 1, z: 1 }, name: "Transient" };
-                await new Promise<never>((_, reject) => {
-                    rejectGenerator = reject;
-                });
-            };
-
-            const promise = store.transactions.createPositionNameEntity(generator);
-
-            // Allow the first yield to be processed
-            await new Promise(resolve => setTimeout(resolve, 0));
-
-            const serializedBefore = store.toData() as { appliedEntries?: Array<{ id?: number }> };
-            expect(serializedBefore.appliedEntries).toHaveLength(1);
-
-            const transientId = serializedBefore.appliedEntries![0]!.id!;
-            store.cancelTransaction(transientId);
-
-            rejectGenerator(new Error("cancelled"));
-            await expect(promise).rejects.toThrow("cancelled");
-
-            const serializedAfter = store.toData() as { appliedEntries?: Array<{ id?: number }> };
-            expect(serializedAfter.appliedEntries ?? []).toHaveLength(0);
-
-            const entities = store.select(["position"]);
-            expect(entities).toHaveLength(0);
         });
 
         it("should preserve transaction functionality after restoration", () => {
@@ -987,7 +935,7 @@ describe("createDatabase", () => {
             
             // Create a no-op transaction (doesn't modify anything)
             const { baseStore, transactions } = createStoreConfig();
-            const database = createDatabase(baseStore, {
+            const database = Database.create(baseStore, {
                 ...transactions,
                 noOpTransaction(t, _args: {}) {
                     // This transaction does nothing
@@ -1012,7 +960,7 @@ describe("createDatabase", () => {
             
             // Create database with undo-redo service
             const { baseStore, transactions } = createStoreConfig();
-            const database = createDatabase(baseStore, {
+            const database = Database.create(baseStore, {
                 ...transactions,
                 noOpTransaction(t, _args: {}) {
                     t.undoable = { coalesce: false };
@@ -1051,7 +999,7 @@ describe("createDatabase", () => {
 
         it("should detect true no-op when transaction reads but doesn't modify", async () => {
             const { baseStore, transactions } = createStoreConfig();
-            const database = createDatabase(baseStore, {
+            const database = Database.create(baseStore, {
                 ...transactions,
                 readOnlyTransaction(t, args: { entity: number }) {
                     t.undoable = { coalesce: false };
@@ -1076,6 +1024,59 @@ describe("createDatabase", () => {
             // Verify no new undo entry was added
             const finalStackLength = (await toPromise(undoRedo.undoStack)).length;
             expect(finalStackLength).toBe(initialStackLength);
+        });
+    });
+
+    describe("extend", () => {
+        it("extends schema and exposes new archetypes and resources", () => {
+            const baseStore = Store.create(
+                {
+                    components: { position: { type: "number" } },
+                    resources: { gravity: { type: "number", default: 9.8 } },
+                    archetypes: { Position: ["position"] },
+                },
+            );
+
+            const database = Database.create(baseStore, {
+                setPosition(t, args: { entity: Entity, position: number }) {
+                    t.update(args.entity, { position: args.position });
+                },
+            });
+
+            const original = baseStore.archetypes.Position.insert({ position: 1 });
+            database.transactions.setPosition({ entity: original, position: 2 });
+            expect(database.read(original)?.position).toBe(2);
+
+            const extendedDatabase = database.extend({
+                components: { velocity: { type: "number" } },
+                resources: { drag: { type: "number", default: 1 } },
+                archetypes: { Dynamic: ["position", "velocity"] },
+            });
+
+            const dynamic = (baseStore as any).archetypes.Dynamic.insert({ position: 0, velocity: 5 });
+            expect(extendedDatabase.read(dynamic)?.velocity).toBe(5);
+            expect((extendedDatabase as any).resources.drag).toBe(1);
+
+            (baseStore as any).resources.drag = 2;
+            expect((extendedDatabase as any).resources.drag).toBe(2);
+        });
+
+        it("throws when extending with conflicting schema", () => {
+            const baseStore = Store.create(
+                {
+                    components: { position: { type: "number" } },
+                    resources: {},
+                    archetypes: { Position: ["position"] },
+                },
+            );
+
+            const database = Database.create(baseStore, {});
+
+            expect(() => database.extend({
+                components: { position: { type: "string" } },
+                resources: {},
+                archetypes: {},
+            })).toThrow("Component schema for \"position\" must be identical when extending.");
         });
     });
 });

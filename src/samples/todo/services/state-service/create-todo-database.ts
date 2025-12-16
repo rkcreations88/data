@@ -20,13 +20,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { createTodoStore } from './create-todo-store.js';
-import { createDatabase } from '../../../../ecs/index.js';
+import { Database } from '../../../../ecs/index.js';
 
 import * as transactions from './transactions/index.js';
 
 export const createTodoDatabase = () => {
   const store = createTodoStore();
-  const database = createDatabase(store, transactions);
+  const database = Database.create(store, transactions);
   return database;
 };
 

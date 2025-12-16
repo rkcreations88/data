@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { describe, expect, it, beforeEach } from "vitest";
-import { createStore } from "../store/create-store.js";
-import { createDatabase } from "./create-database.js";
+import { Store } from "../store/index.js";
+import { Database } from "./database.js";
 import { F32 } from "../../math/f32/index.js";
 import { Boolean } from "../../schema/index.js";
 
@@ -30,25 +30,27 @@ describe("observeSelectEntities Performance Tests", () => {
     let database: ReturnType<typeof createTestDatabase>;
 
     function createTestDatabase() {
-        const store = createStore({
-            position: F32.schema,
-            health: F32.schema,
-            name: { type: "string" },
-            score: F32.schema,
-            active: Boolean.schema
-        }, {
-        }, {
-            Position: ["position"],
-            Health: ["health"],
-            Name: ["name"],
-            PositionHealth: ["position", "health"],
-            PositionName: ["position", "name"],
-            HealthName: ["health", "name"],
-            Full: ["position", "health", "name", "score", "active"]
-        }
-        );
+        const store = Store.create({
+            components: {
+                position: F32.schema,
+                health: F32.schema,
+                name: { type: "string" },
+                score: F32.schema,
+                active: Boolean.schema
+            },
+            resources: {},
+            archetypes: {
+                Position: ["position"],
+                Health: ["health"],
+                Name: ["name"],
+                PositionHealth: ["position", "health"],
+                PositionName: ["position", "name"],
+                HealthName: ["health", "name"],
+                Full: ["position", "health", "name", "score", "active"]
+            }
+        });
 
-        return createDatabase(store, {
+        return Database.create(store, {
             createPositionEntity(store, args: { position: number }) {
                 return store.archetypes.Position.insert(args);
             },

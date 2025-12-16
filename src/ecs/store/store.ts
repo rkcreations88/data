@@ -34,7 +34,7 @@ import { Equal } from "../../types/equal.js";
 import { FromSchemas } from "../../schema/from-schemas.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { ResourceSchemas } from "../resource-schemas.js";
-import { createStore } from "./create-store.js";
+import { createStore } from "./public/create-store.js";
 import { OptionalComponents } from "../optional-components.js";
 
 interface BaseStore<C extends object = never> {
@@ -74,11 +74,12 @@ export interface Store<
     readonly resources: { -readonly [K in StringKeyof<R>]: R[K] };
     readonly archetypes: { -readonly [K in StringKeyof<A>]: Archetype<RequiredComponents & { [P in A[K][number]]: (C & RequiredComponents & OptionalComponents)[P] }> }
     fromData(data: unknown): void
+    extend<S extends Store.Schema<any, any, any>>(schema: S): S extends Store.Schema<infer XC, infer XR, infer XA> ? Store<C & XC, R & XR, A & XA> : never;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Store {
-    export type Components<S extends Store<any, any, any>> = S extends Store<infer C, infer R, infer A> ? C & R & A : never;
+    export type Components<S extends Store<any, any, any>> = S extends Store<infer C, infer R, infer A> ? C & R : never;
     export type Resources<S extends Store<any, any, any>> = S extends Store<any, infer R, any> ? R : never;
     export type Archetypes<S extends Store<any, any, any>> = S extends Store<any, any, infer A> ? A : never;
     export type EntityValues<S extends Store<any, any, any>, K extends S extends Store<any, any, infer A> ? StringKeyof<A> : never> = Simplify<Parameters<S["archetypes"][K]["insert"]>[0] & RequiredComponents>;
@@ -96,7 +97,6 @@ export namespace Store {
 
     export type FromSchema<T> = T extends Store.Schema<infer CS, infer RS, infer A> ? Store<FromSchemas<CS>, FromSchemas<RS>, A> : never;
 
-    // eslint-disable-next-line @typescript-eslint/no-namespace
     export namespace Schema {
         export function create<
             const CS extends ComponentSchemas,
@@ -109,18 +109,9 @@ export namespace Store {
         ) {
             return { components, resources, archetypes } as const satisfies Store.Schema<CS, RS, A>;
         }
-
     }
 
-    export function createFromSchema<
-        const CS extends ComponentSchemas,
-        const RS extends ResourceSchemas,
-        const A extends ArchetypeComponents<StringKeyof<CS>>,
-    >(
-        schema: Store.Schema<CS, RS, A>,
-    ) {
-        return createStore(schema.components, schema.resources, schema.archetypes);
-    }
+    export const create = createStore;
 }
 
 type Foo = Store<{ a: number, b: string }, {}, { one: ["a", "b"] }>

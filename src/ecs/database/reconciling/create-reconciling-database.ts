@@ -28,20 +28,9 @@ import { Store } from "../../store/index.js";
 import { Components } from "../../store/components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { ReconcilingDatabase, TransactionEnvelope } from "./reconciling-database.js";
-import {
-    ReconcilingEntry,
-    ReconcilingEntryOps,
-    SerializedReconcilingEntry,
-    serializeReconcilingEntry,
-    deserializeReconcilingEntry,
-} from "./reconciling-entry.js";
+import { ReconcilingEntry, ReconcilingEntryOps } from "./reconciling-entry.js";
 import { createObservedDatabase } from "../observed/create-observed-database.js";
 import { Entity } from "../../entity.js";
-
-type SerializedReconcilingDatabaseState = {
-    readonly store: unknown;
-    readonly appliedEntries?: SerializedReconcilingEntry[];
-};
 
 export function createReconcilingDatabase<
     const C extends Components,
@@ -51,17 +40,12 @@ export function createReconcilingDatabase<
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
-    options: {
-        /**
-         * Maximum time in milliseconds to keep committed entries for reordering.
-         * Entries older than the most recent entry by this amount will be pruned.
-         * Default: 5000ms
-         */
-        maxSynchronizeDurationMs?: number;
-    } = {},
 ): ReconcilingDatabase<C, R, A, TD> {
-    const { maxSynchronizeDurationMs = 5000 } = options;
     type TransactionName = Extract<keyof TD, string>;
+
+    const transactionDeclarationsRef: TransactionDeclarations<C, R, A> = {
+        ...transactionDeclarations,
+    };
 
     const observedDatabase = createObservedDatabase(store);
     const {
@@ -75,120 +59,103 @@ export function createReconcilingDatabase<
 
     const reconcilingEntries: ReconcilingEntry<C, R, A>[] = [];
 
-    const rollbackRange = (startIndex: number) => {
-        for (let i = reconcilingEntries.length - 1; i >= startIndex; i--) {
-            const entry = reconcilingEntries[i];
-            if (entry.result) {
-                execute(t => applyOperations(t, entry.result!.undo), { transient: true });
-                entry.result = undefined;
-            }
+    const rollbackEntryResult = (entry: ReconcilingEntry<C, R, A>) => {
+        if (entry.result) {
+            execute(t => applyOperations(t, entry.result!.undo), { transient: true });
+            entry.result = undefined;
         }
     };
 
-    const replayRange = (startIndex: number) => {
+    const rollbackAllTransients = () => {
+        for (let i = reconcilingEntries.length - 1; i >= 0; i--) {
+            rollbackEntryResult(reconcilingEntries[i]);
+        }
+    };
+
+    const removeTransientEntry = (id: number): boolean => {
+        const index = reconcilingEntries.findIndex(entry => entry.id === id);
+        if (index === -1) {
+            return false;
+        }
+        rollbackEntryResult(reconcilingEntries[index]);
+        reconcilingEntries.splice(index, 1);
+        return true;
+    };
+
+    const executeEntry = (entry: ReconcilingEntry<C, R, A>) => {
+        const result = execute(
+            t => entry.transaction(t, entry.args),
+            { transient: true },
+        );
+
+        // Only store result if it actually made changes (not a no-op).
+        // A no-op transaction has empty redo/undo operations.
+        const isNoOp = result.redo.length === 0 && result.undo.length === 0;
+        entry.result = isNoOp ? undefined : result;
+
+        return result;
+    };
+
+    const replayAllTransients = () => {
         let lastResult: TransactionResult<C> | undefined;
-        for (let i = startIndex; i < reconcilingEntries.length; i++) {
-            const entry = reconcilingEntries[i];
-            const result = execute(t => entry.transaction(t, entry.args), { transient: ReconcilingEntryOps.isTransient(entry) });
-            
-            // Only store result if it actually made changes (not a no-op)
-            // A no-op transaction has empty redo/undo operations
-            const isNoOp = result.redo.length === 0 && result.undo.length === 0;
-            if (!isNoOp) {
-                entry.result = result;
-            } else {
-                // For no-ops, don't store a result - this prevents it from being rolled back
-                entry.result = undefined;
-            }
-            
-            // Always track the last result (even if no-op) for return value
-            lastResult = result;
+        for (const entry of reconcilingEntries) {
+            lastResult = executeEntry(entry);
         }
         return lastResult;
     };
 
-    const pruneCommittedEntries = (mostRecentEntryTime: number) => {
-        // Only prune committed entries that are too old to be reordered.
-        // We keep entries within the synchronization window relative to the most recent entry.
-        // This matches action-ecs behavior where pruning is based on the newest action time.
-        const pruneThreshold = Math.abs(mostRecentEntryTime) - maxSynchronizeDurationMs;
-        
-        while (reconcilingEntries.length > 0) {
-            const entry = reconcilingEntries[0];
-            // Only prune committed entries (positive time) that are older than the threshold
-            if (entry.time > 0 && Math.abs(entry.time) < pruneThreshold) {
-                reconcilingEntries.shift();
-            } else {
-                break;
-            }
-        }
-    };
-
     const applyEnvelope = (envelope: TransactionEnvelope<TransactionName>): TransactionResult<C> | undefined => {
-        const transaction = transactionDeclarations[envelope.name];
+        const transaction = transactionDeclarationsRef[envelope.name];
         if (!transaction) {
             throw new Error(`Unknown transaction: ${envelope.name as string}`);
         }
 
-        const isCancellation = envelope.time === 0;
+        const { id, time, args } = envelope;
+        const transactionFn = transaction as (store: Store<C, R, A>, args: unknown) => void | Entity;
 
-        let startIndex = reconcilingEntries.length;
-
-        const existingIndex = reconcilingEntries.findIndex(entry => entry.id === envelope.id);
-        if (existingIndex >= 0) {
-            startIndex = existingIndex;
-            const existingEntry = reconcilingEntries[existingIndex];
-            if (existingEntry.result) {
-                execute(t => applyOperations(t, existingEntry.result!.undo), { transient: true });
-                existingEntry.result = undefined;
+        // Handle cancellation: remove any transient entry for this id.
+        if (time === 0) {
+            const index = reconcilingEntries.findIndex(entry => entry.id === id);
+            if (index === -1) {
+                return undefined;
             }
-            reconcilingEntries.splice(existingIndex, 1);
-        }
-
-        if (isCancellation) {
-            if (startIndex < reconcilingEntries.length) {
-                rollbackRange(startIndex);
-                replayRange(startIndex);
-                // Use the most recent entry time for pruning (or 0 if no entries)
-                const mostRecentTime = reconcilingEntries.length > 0 
-                    ? Math.abs(reconcilingEntries[reconcilingEntries.length - 1].time)
-                    : 0;
-                pruneCommittedEntries(mostRecentTime);
-            }
+            rollbackAllTransients();
+            reconcilingEntries.splice(index, 1);
+            replayAllTransients();
             return undefined;
         }
 
-        const entry: ReconcilingEntry<C, R, A> = {
-            id: envelope.id,
-            name: envelope.name,
-            transaction: transaction as (store: Store<C, R, A>, args: unknown) => void | Entity,
-            args: envelope.args,
-            time: envelope.time,
-            result: undefined,
-        };
+        // Handle transient application (negative time).
+        if (time < 0) {
+            // Replace any existing transient entry for this id.
+            removeTransientEntry(id);
 
-        const insertIndex = ReconcilingEntryOps.findInsertIndex(reconcilingEntries, entry);
-        // Calculate the rebuild index before inserting
-        // For replacements: use min of old and new position to ensure we rebuild from earliest affected point
-        // For new entries: startIndex is length, so rebuildIndex will be insertIndex
-        const rebuildIndex = Math.min(startIndex, insertIndex);
+            // Create and insert the new transient entry.
+            const entry: ReconcilingEntry<C, R, A> = {
+                id,
+                name: envelope.name,
+                transaction: transactionFn,
+                args,
+                time,
+                result: undefined,
+            };
 
-        // Rollback everything from the rebuild point BEFORE inserting the new entry
-        // This is clearer than rolling back after insert (which would iterate over the new entry unnecessarily)
-        rollbackRange(rebuildIndex);
-        
-        // Now insert the new entry at the calculated position
-        reconcilingEntries.splice(insertIndex, 0, entry);
-        
-        // Replay from the rebuild point, which now includes the newly inserted entry
-        // This returns the result of the last replayed entry (which includes the newly inserted one)
-        const latestResult = replayRange(rebuildIndex);
-        
-        // Prune old entries based on the newly applied entry's time
-        pruneCommittedEntries(Math.abs(entry.time));
+            const insertIndex = ReconcilingEntryOps.findInsertIndex(reconcilingEntries, entry);
+            reconcilingEntries.splice(insertIndex, 0, entry);
 
-        // Return the result from replay (which may be a no-op with a value but no stored entry.result)
-        return latestResult;
+            // Rebuild transient state from scratch to respect time ordering.
+            rollbackAllTransients();
+            return replayAllTransients();
+        }
+
+        // Handle committed application (positive time): just execute once, do not
+        // retain in memory. Clear any existing transient for this id first.
+        removeTransientEntry(id);
+
+        return execute(
+            t => transactionFn(t, args),
+            { transient: false },
+        );
     };
     
     const cancelEntry = (id: number) => {
@@ -196,56 +163,41 @@ export function createReconcilingDatabase<
         if (index === -1) {
             return;
         }
-        rollbackRange(index);
+        rollbackAllTransients();
         reconcilingEntries.splice(index, 1);
-        replayRange(index);
+        replayAllTransients();
     };
-
-    const serializeReconcilingEntries = () =>
-        reconcilingEntries
-            .filter(entry => ReconcilingEntryOps.isTransient(entry))
-            .map(entry => serializeReconcilingEntry(entry));
 
     const reconcilingDatabase: ReconcilingDatabase<C, R, A, TD> = {
         ...storeMethods,
         resources,
         execute,
         observe,
-        toData: () => ({
-            store: observedToData(),
-            appliedEntries: serializeReconcilingEntries(),
-        }),
+        toData: () => {
+            rollbackAllTransients();
+            const data = observedToData();
+            replayAllTransients();
+            return data;
+        },
         fromData: (data: unknown) => {
-            let storeData: unknown = data;
-            let serializedEntries: SerializedReconcilingEntry[] | undefined;
-
-            if (typeof data === "object" && data !== null && "store" in (data as Record<string, unknown>)) {
-                const payload = data as SerializedReconcilingDatabaseState;
-                storeData = payload.store;
-                serializedEntries = Array.isArray(payload.appliedEntries) ? payload.appliedEntries : undefined;
-            }
-
-            observedFromData(storeData);
-
-            reconcilingEntries.length = 0;
-
-            if (serializedEntries) {
-                for (const serializedEntry of serializedEntries) {
-                    const transaction = transactionDeclarations[serializedEntry.name as keyof TD];
-                    if (!transaction) {
-                        continue;
-                    }
-                    const entry = deserializeReconcilingEntry(
-                        serializedEntry,
-                        transaction as (store: Store<C, R, A>, args: unknown) => void | Entity,
-                    );
-                    reconcilingEntries.push(entry);
-                }
-                reconcilingEntries.sort(ReconcilingEntryOps.compare);
-            }
+            observedFromData(data);
+            replayAllTransients();
         },
         apply: applyEnvelope,
         cancel: cancelEntry,
+        extend: <
+            NTD extends TransactionDeclarations<C, R, A>
+        >(
+            transactions: NTD,
+        ) => {
+            Object.assign(transactionDeclarationsRef, transactions);
+            return reconcilingDatabase as unknown as ReconcilingDatabase<
+                C,
+                R,
+                A,
+                TD & NTD
+            >;
+        },
     };
 
     return reconcilingDatabase;

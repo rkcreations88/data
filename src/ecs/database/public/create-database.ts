@@ -19,18 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { ResourceComponents } from "../store/resource-components.js";
-import { Store } from "../store/index.js";
-import { Database, ToTransactionFunctions, TransactionDeclarations } from "./database.js";
-import { StringKeyof } from "../../types/types.js";
-import { isPromise } from "../../internal/promise/is-promise.js";
-import { isAsyncGenerator } from "../../internal/async-generator/is-async-generator.js";
-import { Components } from "../store/components.js";
-import { ArchetypeComponents } from "../store/archetype-components.js";
-import { Service } from "../../service/service.js";
-import { createReconcilingDatabase } from "./reconciling/create-reconciling-database.js";
-import { TransactionEnvelope } from "./reconciling/reconciling-database.js";
-import { SerializedReconcilingEntry } from "./reconciling/reconciling-entry.js";
+import { ResourceComponents } from "../../store/resource-components.js";
+import { Store } from "../../store/index.js";
+import type { Database, ToTransactionFunctions, TransactionDeclarations } from "../database.js";
+import { StringKeyof } from "../../../types/types.js";
+import { isPromise } from "../../../internal/promise/is-promise.js";
+import { isAsyncGenerator } from "../../../internal/async-generator/is-async-generator.js";
+import { Components } from "../../store/components.js";
+import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { Service } from "../../../service/service.js";
+import { createReconcilingDatabase } from "../reconciling/create-reconciling-database.js";
+import { TransactionEnvelope } from "../reconciling/reconciling-database.js";
 
 export function createDatabase<
     const C extends Components,
@@ -40,18 +39,15 @@ export function createDatabase<
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
-    now: () => number = Date.now,
 ): Database<C, R, A, ToTransactionFunctions<TD>> {
     type T = ToTransactionFunctions<TD> & Service;
     type TransactionName = Extract<keyof TD, string>;
 
     const reconcilingDatabase = createReconcilingDatabase(store, transactionDeclarations);
 
-    const applyCore = reconcilingDatabase.apply;
-
     let nextTransactionId = 1;
 
-    const applyEnvelope = (envelope: TransactionEnvelope<TransactionName>) => applyCore(envelope);
+    const applyEnvelope = (envelope: TransactionEnvelope<TransactionName>) => reconcilingDatabase.apply(envelope);
 
     const transactions = {
         serviceName: "ecs-database-transactions-service",
@@ -66,7 +62,7 @@ export function createDatabase<
 
             const applyTransient = (payload: unknown) => {
                 hasTransient = true;
-                const timestamp = now();
+                const timestamp = Date.now();
                 applyEnvelope({
                     id: transactionId,
                     name,
@@ -76,7 +72,7 @@ export function createDatabase<
             };
 
             const applyCommit = (payload: unknown) => {
-                const timestamp = now();
+                const timestamp = Date.now();
                 const result = applyEnvelope({
                     id: transactionId,
                     name,
@@ -156,55 +152,27 @@ export function createDatabase<
         };
     }
 
-    const {
-        apply,
-        cancel,
-        observe,
-        resources,
-        toData: reconcilingToData,
-        fromData: reconcilingFromData,
-        ...storeMethods
-    } = reconcilingDatabase;
-    void apply;
 
-    const toData = () => reconcilingToData();
-
-    const fromData = (data: unknown) => {
-        reconcilingFromData(data);
-
-        let maxId = 0;
-        if (typeof data === "object" && data !== null && "appliedEntries" in (data as Record<string, unknown>)) {
-            const appliedEntriesData = (data as { appliedEntries?: SerializedReconcilingEntry[] }).appliedEntries;
-            if (Array.isArray(appliedEntriesData)) {
-                for (const entry of appliedEntriesData) {
-                    const rawId = entry?.id;
-                    if (rawId !== undefined) {
-                        const idNumber = Number(rawId);
-                        if (!Number.isNaN(idNumber)) {
-                            maxId = Math.max(maxId, idNumber);
-                        }
-                    }
-                }
-            }
-        }
-
-        nextTransactionId = Math.max(nextTransactionId, maxId + 1);
-    };
-
-    const cancelReconcilingEntry = (id: number) => {
-        cancel(id);
+    const extend = <
+        S extends Store.Schema<any, any, any>
+    >(
+        schema: S,
+    ) => {
+        store.extend(schema as Store.Schema<any, any, any>);
+        return database as unknown as Database<
+            C & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XC : never),
+            R & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XR : never),
+            A & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XA : never),
+            ToTransactionFunctions<TD>
+        >;
     };
 
     const database = {
         serviceName: "ecs-database-service",
-        ...storeMethods,
-        resources,
+        ...reconcilingDatabase,
         transactions,
-        observe,
-        toData,
-        fromData,
-        cancelTransaction: cancelReconcilingEntry,
-    } as Database<C, R, A, T>;
+        extend,
+    } as Database<C, R, A, T> & { extend: typeof extend };
 
     return database;
 }
