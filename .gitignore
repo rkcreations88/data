@@ -26,7 +26,6 @@ custom-elements.json
 *.sln
 *.sw?
 
-public
 .npmrc
 
 *.tsbuildinfo
