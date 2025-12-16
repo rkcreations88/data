@@ -89,7 +89,6 @@ export interface Database<
   }
   toData(): unknown
   fromData(data: unknown): void
-  cancelTransaction(id: number): void
   extend<S extends Store.Schema<any, any, any>>(schema: S): Database<
     C & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XC : never),
     R & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XR : never),

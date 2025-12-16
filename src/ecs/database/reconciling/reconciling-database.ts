@@ -46,5 +46,15 @@ export interface ReconcilingDatabase<
 > extends ObservedDatabase<C, R, A> {
     readonly apply: (envelope: TransactionEnvelope<Extract<keyof TD, string>>) => TransactionResult<C> | undefined;
     readonly cancel: (id: number) => void;
+    readonly extend: <
+        NTD extends TransactionDeclarations<C, R, A>
+    >(
+        transactions: NTD,
+    ) => ReconcilingDatabase<
+        C,
+        R,
+        A,
+        TD & NTD
+    >;
 }
 
