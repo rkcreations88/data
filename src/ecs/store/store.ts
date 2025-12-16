@@ -97,7 +97,6 @@ export namespace Store {
 
     export type FromSchema<T> = T extends Store.Schema<infer CS, infer RS, infer A> ? Store<FromSchemas<CS>, FromSchemas<RS>, A> : never;
 
-    // eslint-disable-next-line @typescript-eslint/no-namespace
     export namespace Schema {
         export function create<
             const CS extends ComponentSchemas,
@@ -110,7 +109,6 @@ export namespace Store {
         ) {
             return { components, resources, archetypes } as const satisfies Store.Schema<CS, RS, A>;
         }
-
     }
 
     export const create = createStore;
