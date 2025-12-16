@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { createObservedDatabase } from "./create-observed-database.js";
-import { createStore } from "../../store/create-store.js";
+import { Store } from "../../store/index.js";
 import { Schema } from "../../../schema/index.js";
 import { Entity } from "../../entity.js";
 
@@ -36,7 +36,7 @@ type Name = Schema.ToType<typeof nameSchema>;
 type ObservedFixture = ReturnType<typeof createObservedFixture>;
 
 const createObservedFixture = () => {
-    const store = createStore({
+    const store = Store.create({
         components: { position: positionSchema, health: healthSchema, name: nameSchema },
         resources: {
             time: { default: { delta: 0.016, elapsed: 0 } },

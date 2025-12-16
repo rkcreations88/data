@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { createReconcilingDatabase } from "./create-reconciling-database.js";
-import { createStore } from "../../store/create-store.js";
+import { Store } from "../../store/index.js";
 
 const createTestReconcilingDatabase = () => {
-    const store = createStore({
+    const store = Store.create({
         components: {
             position: {
                 type: "object",

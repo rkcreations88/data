@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect } from "vitest";
 import { createTransactionalStore } from "./create-transactional-store.js";
-import { createStore } from "../../store/create-store.js";
+import { Store } from "../../store/index.js";
 import { F32 } from "../../../math/f32/index.js";
 import { Schema } from "../../../schema/index.js";
 
@@ -49,7 +49,7 @@ const healthSchema = {
 
 describe("createTransactionalStore", () => {
     it("should create transactional store with basic components", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
             archetypes: {}
@@ -65,7 +65,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should execute transactions successfully", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
             archetypes: {}
@@ -95,7 +95,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should rollback on error", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
             archetypes: {}
@@ -131,7 +131,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should combine multiple updates to the same entity", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
             archetypes: {}
@@ -165,7 +165,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track changed entities, components, and archetypes", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
             archetypes: {}
@@ -191,7 +191,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should preserve base store functionality", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
             archetypes: {}
@@ -219,7 +219,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should support transient transactions", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
             archetypes: {}
@@ -245,7 +245,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track specific components and archetypes when creating entities", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: { PositionHealth: ["position", "health"] }
@@ -264,7 +264,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track changedEntities as Map with combined values for multiple updates", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -297,7 +297,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track changedEntities as Map with null for deleted entities", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -324,7 +324,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track changedEntities with combined values when entity is updated then deleted", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -353,7 +353,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track deleted components in changedComponents when entity is deleted", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -383,7 +383,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track deleted components when entity is updated then deleted", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -415,7 +415,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should flag removed components with undefined in changedEntities", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -443,7 +443,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track changedEntities with final combined values for complex update sequences", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -475,7 +475,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should track multiple entities with different operations in changedEntities", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}
@@ -520,7 +520,7 @@ describe("createTransactionalStore", () => {
     });
 
     it("should increment .rows property after each insert operation within a transaction", () => {
-        const baseStore = createStore({
+        const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: {},
             archetypes: {}

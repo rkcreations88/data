@@ -23,10 +23,10 @@ SOFTWARE.*/
 import { FromSchemas } from "../../../schema/from-schemas.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ComponentSchemas } from "../../component-schemas.js";
-import { createStore } from "../../index.js";
+import { Store } from "../../index.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
-import { createDatabase } from "../create-database.js";
+import { Database } from "../database.js";
 import { TransactionDeclarations } from "../database.js";
 import { DatabaseFromSchema, DatabaseSchema } from "./database-schema.js";
 
@@ -52,8 +52,8 @@ export function createDatabaseFromSchema<
 >(
     schema: DatabaseSchema<CS, RS, A, TD>,
 ): DatabaseFromSchema<typeof schema> {
-    return createDatabase(
-        createStore<CS, RS, A>({
+    return Database.create(
+        Store.create<CS, RS, A>({
             components: schema.components,
             resources: schema.resources,
             archetypes: schema.archetypes,

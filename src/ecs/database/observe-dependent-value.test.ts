@@ -21,20 +21,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, it, expect, vi } from 'vitest';
 import { observeDependentValue } from './observe-dependent-value.js';
-import { createStore } from '../store/create-store.js';
-import { createDatabase } from './create-database.js';
+import { Store } from '../store/index.js';
+import { Database } from './database.js';
 import { ToReadonlyStore } from '../store/index.js';
 
 describe('observeDependentValue', () => {
     it('should compute and observe dependent values from resources', async () => {
         // Create a store with three resources
-        const store = createStore(
+        const store = Store.create(
             { components: {}, resources: { a: { default: 10 }, b: { default: 20 }, c: { default: 30 } }, archetypes: {} },
         );
         type TestStore = ToReadonlyStore<typeof store>;
 
         // Create the database
-        const database = createDatabase(store, {
+        const database = Database.create(store, {
             updateA: (t, value: number) => {
                 t.resources.a = value;
             },
@@ -109,8 +109,8 @@ describe('observeDependentValue', () => {
     });
 
     it('should handle multiple observers correctly', async () => {
-        const store = createStore({ components: {}, resources: { a: { default: 1 }, b: { default: 2 }, c: { default: 3 } }, archetypes: {} });
-        const database = createDatabase(store, {
+        const store = Store.create({ components: {}, resources: { a: { default: 1 }, b: { default: 2 }, c: { default: 3 } }, archetypes: {} });
+        const database = Database.create(store, {
             updateA: (t, value: number) => { t.resources.a = value; },
             updateB: (t, value: number) => { t.resources.b = value; }
         });
@@ -152,8 +152,8 @@ describe('observeDependentValue', () => {
     });
 
     it('should handle complex computed values', async () => {
-        const store = createStore({ components: {}, resources: { count: { default: 5 }, multiplier: { default: 2 }, offset: { default: 10 } }, archetypes: {} });
-        const database = createDatabase(store, {
+        const store = Store.create({ components: {}, resources: { count: { default: 5 }, multiplier: { default: 2 }, offset: { default: 10 } }, archetypes: {} });
+        const database = Database.create(store, {
             updateCount: (t, value: number) => { t.resources.count = value; },
             updateMultiplier: (t, value: number) => { t.resources.multiplier = value; }
         });

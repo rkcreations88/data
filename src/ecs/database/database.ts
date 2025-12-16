@@ -33,6 +33,7 @@ import { RequiredComponents } from "../required-components.js";
 import { EntitySelectOptions } from "../store/entity-select-options.js";
 import { Service } from "../../service/service.js";
 import { OptionalComponents } from "../optional-components.js";
+import { createDatabase } from "./public/create-database.js";
 
 export type TransactionDeclaration<
   C extends Components,
@@ -89,6 +90,16 @@ export interface Database<
   toData(): unknown
   fromData(data: unknown): void
   cancelTransaction(id: number): void
+  extend<S extends Store.Schema<any, any, any>>(schema: S): Database<
+    C & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XC : never),
+    R & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XR : never),
+    A & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XA : never),
+    T
+  >
+}
+
+export namespace Database {
+  export const create = createDatabase;
 }
 
 type TestTransactionFunctions = ToTransactionFunctions<{

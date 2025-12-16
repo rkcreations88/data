@@ -20,8 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createStore } from "../store/create-store.js";
-import { createDatabase } from "./create-database.js";
+import { Store } from "../store/index.js";
+import { Database } from "./database.js";
 import { F32 } from "../../math/f32/index.js";
 import { Boolean } from "../../schema/index.js";
 
@@ -30,7 +30,7 @@ describe("observeSelectEntities", () => {
     let entities: Record<string, number>;
 
     function createTestDatabase() {
-        const store = createStore({
+        const store = Store.create({
             components: {
                 position: F32.schema,
                 health: F32.schema,
@@ -50,7 +50,7 @@ describe("observeSelectEntities", () => {
             }
         });
 
-        return createDatabase(store, {
+        return Database.create(store, {
             createPositionEntity(store, args: { position: number }) {
                 return store.archetypes.Position.insert(args);
             },

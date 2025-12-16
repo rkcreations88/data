@@ -19,14 +19,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
-import { createStore } from '../../../../ecs/index.js';
+import { Store } from '../../../../ecs/store/index.js';
 import { F32, True } from '../../../../schema/index.js';
 import { Schema } from '../../../../schema/index.js';
 
 // Increment this value if you change the schema in a non-backwards compatible way
 export const todoStoreSchemaVersion = 1;
 export const createTodoStore = () => {
-  return createStore({
+  return Store.create({
     components: {
       todo: True.schema, // a tag that indicates an entity is a todo item.
       complete: { type: 'boolean' },

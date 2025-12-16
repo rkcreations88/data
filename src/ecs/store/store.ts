@@ -34,7 +34,7 @@ import { Equal } from "../../types/equal.js";
 import { FromSchemas } from "../../schema/from-schemas.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { ResourceSchemas } from "../resource-schemas.js";
-import { createStore } from "./create-store.js";
+import { createStore } from "./public/create-store.js";
 import { OptionalComponents } from "../optional-components.js";
 
 interface BaseStore<C extends object = never> {
@@ -113,15 +113,7 @@ export namespace Store {
 
     }
 
-    export function createFromSchema<
-        const CS extends ComponentSchemas,
-        const RS extends ResourceSchemas,
-        const A extends ArchetypeComponents<StringKeyof<CS>>,
-    >(
-        schema: Store.Schema<CS, RS, A>,
-    ) {
-        return createStore({ components: schema, resources: {}, archetypes: {} });
-    }
+    export const create = createStore;
 }
 
 type Foo = Store<{ a: number, b: string }, {}, { one: ["a", "b"] }>

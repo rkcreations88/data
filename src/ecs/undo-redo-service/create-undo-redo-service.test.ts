@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { createDatabase } from "../database/create-database.js";
-import { createStore } from "../store/create-store.js";
+import { Database } from "../database/database.js";
+import { Store } from "../store/index.js";
 import { F32 } from "../../math/f32/index.js";
 import { createUndoRedoService } from "./create-undo-redo-service.js";
 import { applyOperations } from "../database/transactional-store/apply-operations.js";
@@ -47,7 +47,7 @@ const nameSchema = {
 } as const;
 
 function createTestDatabase() {
-    const baseStore = createStore({
+    const baseStore = Store.create({
         components: { position: positionSchema, name: nameSchema },
         resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
         archetypes: {
@@ -56,7 +56,7 @@ function createTestDatabase() {
         }
     });
 
-    return createDatabase(baseStore, {
+    return Database.create(baseStore, {
         createPositionEntity(t, args: { position: { x: number, y: number, z: number } }) {
             t.undoable = { coalesce: false };
             return t.archetypes.PositionEntity.insert(args);
