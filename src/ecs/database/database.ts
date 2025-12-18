@@ -34,6 +34,9 @@ import { EntitySelectOptions } from "../store/entity-select-options.js";
 import { Service } from "../../service/service.js";
 import { OptionalComponents } from "../optional-components.js";
 import { createDatabase } from "./public/create-database.js";
+import { ResourceSchemas } from "../resource-schemas.js";
+import { ComponentSchemas } from "../component-schemas.js";
+import { FromSchemas } from "../../schema/index.js";
 
 export type TransactionDeclaration<
   C extends Components,
@@ -99,6 +102,33 @@ export interface Database<
 
 export namespace Database {
   export const create = createDatabase;
+
+  export type Schema<
+    CS extends ComponentSchemas,
+    RS extends ResourceSchemas,
+    A extends ArchetypeComponents<StringKeyof<CS>>,
+    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+  > = {
+    readonly components: CS;
+    readonly resources: RS;
+    readonly archetypes: A;
+    readonly transactions: TD;
+  };
+
+  export namespace Schema {
+    export function create<
+      const CS extends ComponentSchemas,
+      const RS extends ResourceSchemas,
+      const A extends ArchetypeComponents<StringKeyof<CS>>,
+      const TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+    >(
+      storeSchema: Store.Schema<CS, RS, A>,
+      transactions: TD,
+    ) {
+      return { ...storeSchema, transactions } as const satisfies Database.Schema<CS, RS, A, TD>;
+    }
+  }
+
 }
 
 type TestTransactionFunctions = ToTransactionFunctions<{

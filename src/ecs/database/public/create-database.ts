@@ -30,8 +30,46 @@ import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { Service } from "../../../service/service.js";
 import { createReconcilingDatabase } from "../reconciling/create-reconciling-database.js";
 import { TransactionEnvelope } from "../reconciling/reconciling-database.js";
+import { ComponentSchemas } from "../../component-schemas.js";
+import { ResourceSchemas } from "../../resource-schemas.js";
+import { FromSchemas } from "../../../schema/from-schemas.js";
 
 export function createDatabase<
+    CS extends ComponentSchemas,
+    RS extends ResourceSchemas,
+    A extends ArchetypeComponents<StringKeyof<CS>>,
+    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+>(schema: Database.Schema<CS, RS, A, TD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>>
+export function createDatabase<
+    const C extends Components,
+    const R extends ResourceComponents,
+    const A extends ArchetypeComponents<StringKeyof<C>>,
+    const TD extends TransactionDeclarations<C, R, A>
+>(
+    store: Store<C, R, A>,
+    transactionDeclarations: TD,
+): Database<C, R, A, ToTransactionFunctions<TD>>
+export function createDatabase(
+    storeOrSchema: Store<any, any, any> | Database.Schema<any, any, any, any>,
+    transactionDeclarations?: any,
+): any {
+    if (transactionDeclarations) {
+        return createDatabaseFromStoreAndTransactions(storeOrSchema as any, transactionDeclarations);
+    } else {
+        return createDatabaseFromSchema(storeOrSchema as any);
+    }
+}
+
+function createDatabaseFromSchema<
+    CS extends ComponentSchemas,
+    RS extends ResourceSchemas,
+    A extends ArchetypeComponents<StringKeyof<CS>>,
+    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+>(schema: Database.Schema<CS, RS, A, TD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>> {
+    return createDatabase(Store.create(schema), schema.transactions);
+}
+
+function createDatabaseFromStoreAndTransactions<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
