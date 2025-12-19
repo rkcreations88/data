@@ -22,7 +22,7 @@ SOFTWARE.*/
 import { StringKeyof } from "../../../types/types.js";
 import { TransactionResult } from "../transactional-store/index.js";
 import { applyOperations } from "../transactional-store/apply-operations.js";
-import { TransactionDeclarations } from "../database.js";
+import type { ActionDeclarations } from "../../store/action-functions.js";
 import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
 import { Components } from "../../store/components.js";
@@ -36,14 +36,14 @@ export function createReconcilingDatabase<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
-    const TD extends TransactionDeclarations<C, R, A>
+    const TD extends ActionDeclarations<C, R, A>
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
 ): ReconcilingDatabase<C, R, A, TD> {
     type TransactionName = Extract<keyof TD, string>;
 
-    const transactionDeclarationsRef: TransactionDeclarations<C, R, A> = {
+    const transactionDeclarationsRef: ActionDeclarations<C, R, A> = {
         ...transactionDeclarations,
     };
 
@@ -157,7 +157,7 @@ export function createReconcilingDatabase<
             { transient: false },
         );
     };
-    
+
     const cancelEntry = (id: number) => {
         const index = reconcilingEntries.findIndex(entry => entry.id === id);
         if (index === -1) {
@@ -185,18 +185,12 @@ export function createReconcilingDatabase<
         },
         apply: applyEnvelope,
         cancel: cancelEntry,
-        extend: <
-            NTD extends TransactionDeclarations<C, R, A>
-        >(
-            transactions: NTD,
-        ) => {
-            Object.assign(transactionDeclarationsRef, transactions);
-            return reconcilingDatabase as unknown as ReconcilingDatabase<
-                C,
-                R,
-                A,
-                TD & NTD
-            >;
+        extend: (schema: any) => {
+            // Extend the underlying observed database (which extends transactionalStore -> store)
+            observedDatabase.extend(schema);
+            // Extend our transaction declarations
+            Object.assign(transactionDeclarationsRef, schema.transactions);
+            return reconcilingDatabase as any;
         },
     };
 

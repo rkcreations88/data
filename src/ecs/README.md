@@ -13,7 +13,7 @@ ECS Transactional Database
 - [x] .resources
 - [x] .archetypes
 - [ ] selectEntityValues with optional filter
-- [x] observations and transactions on updates
+- [x] observations and actions on updates
 
 ECS Action Database
 - [-] applied actions are stored directly within the database.

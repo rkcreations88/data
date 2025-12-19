@@ -22,11 +22,11 @@ SOFTWARE.*/
 import { createTodoStore } from './create-todo-store.js';
 import { Database } from '../../../../ecs/index.js';
 
-import * as transactions from './transactions/index.js';
+import * as actions from './transactions/index.js';
 
 export const createTodoDatabase = () => {
   const store = createTodoStore();
-  const database = Database.create(store, transactions);
+  const database = Database.create(store, actions);
   return database;
 };
 

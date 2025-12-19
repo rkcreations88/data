@@ -25,7 +25,7 @@ const createTestReconcilingDatabase = () => {
 
     type StoreType = typeof store;
 
-    const transactions = {
+    const actions = {
         createPositionNameEntity(
             t: StoreType,
             args: { position: { x: number; y: number; z: number }; name: string },
@@ -40,7 +40,7 @@ const createTestReconcilingDatabase = () => {
         },
     };
 
-    return createReconcilingDatabase(store, transactions);
+    return createReconcilingDatabase(store, actions);
 };
 
 const readEntityNames = (reconciling: ReturnType<typeof createTestReconcilingDatabase>) =>
@@ -171,7 +171,7 @@ describe("createReconcilingDatabase", () => {
         });
 
         expect(readEntityNames(reconciling)).toEqual(["Committed", "Transient"]);
-        
+
         // Snapshot should not include transient metadata, and calling toData
         // must not disturb the live transient state.
         const snapshot = reconciling.toData();
@@ -360,27 +360,36 @@ describe("createReconcilingDatabase", () => {
 
         const createdId = created?.value as number;
 
-        const extended = reconciling.extend({
-            renamePositionNameEntity(t: StoreType, args: { entity: number; name: string }) {
-                t.update(args.entity, { name: args.name });
+        const extendedReconciling = reconciling.extend({
+            components: {},
+            resources: {},
+            archetypes: {},
+            transactions: {
+                renamePositionNameEntity(t: StoreType, args: { entity: number; name: string }) {
+                    t.update(args.entity, { name: args.name });
+                },
             },
         });
 
-        expect(extended).toBe(reconciling);
-
-        extended.apply({
+        extendedReconciling.apply({
             id: 201,
             name: "renamePositionNameEntity",
             args: { entity: createdId, name: "Renamed" },
             time: 20,
         });
 
-        const names = extended
+        const names = extendedReconciling
             .select(["name"])
-            .map(entity => extended.read(entity)?.name)
-            .filter((name): name is string => Boolean(name));
+            .map(entity => extendedReconciling.read(entity)?.name)
+            .filter((name): name is NonNullable<typeof name> => Boolean(name));
 
         expect(names).toEqual(["Renamed"]);
+    });
+
+    it("should return the same instance when extended", () => {
+        const reconciling = createTestReconcilingDatabase();
+        const extended = reconciling.extend({ components: {}, resources: {}, archetypes: {}, transactions: {} });
+        expect(extended).toBe(reconciling);
     });
 });
 

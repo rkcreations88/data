@@ -403,7 +403,7 @@ describe("observeSelectEntities", () => {
             unsubscribe2();
         });
 
-        it("should batch multiple synchronous transactions into single notification", async () => {
+        it("should batch multiple synchronous actions into single notification", async () => {
             const observer = vi.fn();
             const unsubscribe = database.observe.select(["position"])(observer);
 
@@ -411,7 +411,7 @@ describe("observeSelectEntities", () => {
             expect(observer).toHaveBeenCalledTimes(1);
             const initialCount = observer.mock.calls[0][0].length;
 
-            // Execute multiple transactions synchronously
+            // Execute multiple actions synchronously
             const entity1 = database.transactions.createPositionEntity({ position: 100 });
             const entity2 = database.transactions.createPositionEntity({ position: 200 });
             const entity3 = database.transactions.createPositionEntity({ position: 300 });
@@ -430,7 +430,7 @@ describe("observeSelectEntities", () => {
             unsubscribe();
         });
 
-        it("should handle mixed synchronous and asynchronous transactions", async () => {
+        it("should handle mixed synchronous and asynchronous actions", async () => {
             const observer = vi.fn();
             const unsubscribe = database.observe.select(["position"])(observer);
 

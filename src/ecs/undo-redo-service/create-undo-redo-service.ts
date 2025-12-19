@@ -23,7 +23,7 @@ SOFTWARE.*/
 import { Observe } from "../../observe/index.js";
 import { TransactionResult, TransactionWriteOperation } from "../database/transactional-store/transactional-store.js";
 import { Database } from "../index.js";
-import { shouldCoalesceTransactions, coalesceTransactions } from "../database/transactional-store/coalesce-transactions.js";
+import { shouldCoalesceTransactions, coalesceTransactions } from "../database/transactional-store/coalesce-actions.js";
 import { UndoRedoService } from "./undo-redo-service.js";
 
 export const createUndoRedoService = (database: Database<any, any, any, { applyOperations: (operations: TransactionWriteOperation<any>[]) => void }>): UndoRedoService => {

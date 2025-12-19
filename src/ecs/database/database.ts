@@ -19,6 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+
 import { Archetype, ArchetypeId, ReadonlyArchetype } from "../archetype/index.js";
 import { ResourceComponents } from "../store/resource-components.js";
 import { ReadonlyStore, Store } from "../store/index.js";
@@ -37,44 +38,29 @@ import { createDatabase } from "./public/create-database.js";
 import { ResourceSchemas } from "../resource-schemas.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { FromSchemas } from "../../schema/index.js";
-
-export type TransactionDeclaration<
-  C extends Components,
-  R extends ResourceComponents,
-  A extends ArchetypeComponents<StringKeyof<C>>,
-  Input extends any | void = any> = (t: Store<C, R, A>, input: Input) => void | Entity
-export type AsyncArgsProvider<T> = () => Promise<T> | AsyncGenerator<T>;
-
-export type TransactionDeclarations<
-  C extends Components,
-  R extends ResourceComponents,
-  A extends ArchetypeComponents<StringKeyof<C>>> = { readonly [K: string]: TransactionDeclaration<C, R, A> }
-
-/**
- * Converts from TransactionDeclarations to TransactionFunctions by removing the initial store argument.
- */
-export type ToTransactionFunctions<T> = {
-  [K in keyof T]:
-  T[K] extends (t: infer S) => infer R
-  ? R extends void | Entity
-  ? () => R
-  : never
-  : T[K] extends (t: infer S, input: infer Input) => infer R
-  ? R extends void | Entity
-  ? (arg: Input | AsyncArgsProvider<Input>) => R
-  : never
-  : never;
-};
-
-export type TransactionFunctions = { readonly [K: string]: (args?: any) => void | Entity };
+import type {
+  ActionDeclarations,
+  ActionFunctions,
+  ToActionFunctions,
+} from "../store/action-functions.js";
 
 export interface Database<
   C extends Components = never,
   R extends ResourceComponents = never,
   A extends ArchetypeComponents<StringKeyof<C & OptionalComponents>> = never,
-  T extends TransactionFunctions = never,
+  F extends ActionFunctions = never,
 > extends ReadonlyStore<C, R, A>, Service {
-  readonly transactions: T & Service;
+  readonly transactions: F & Service;
+  /**
+   * Provides direct mutable access to the underlying store.
+   */
+  readonly store: Store<C, R, A> & {
+    /**
+     * Provides fast access to the action functions without a transaction wrapper.
+     * This means any calls to them will NOT be observable or undoable.
+     */
+    readonly actions: F;
+  }
   readonly observe: {
     readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
     readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
@@ -92,12 +78,12 @@ export interface Database<
   }
   toData(): unknown
   fromData(data: unknown): void
-  extend<S extends Store.Schema<any, any, any>>(schema: S): Database<
-    C & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XC : never),
-    R & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XR : never),
-    A & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XA : never),
-    T
-  >
+  extend<S extends Database.Schema<any, any, any, any>>(schema: S): Database<
+    C & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XC> : never),
+    R & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XR> : never),
+    A & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? XA : never),
+    F & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? ToActionFunctions<XTD> : never)
+  >;
 }
 
 export namespace Database {
@@ -107,7 +93,7 @@ export namespace Database {
     CS extends ComponentSchemas,
     RS extends ResourceSchemas,
     A extends ArchetypeComponents<StringKeyof<CS>>,
-    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
   > = {
     readonly components: CS;
     readonly resources: RS;
@@ -120,7 +106,7 @@ export namespace Database {
       const CS extends ComponentSchemas,
       const RS extends ResourceSchemas,
       const A extends ArchetypeComponents<StringKeyof<CS>>,
-      const TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+      const TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
     >(
       storeSchema: Store.Schema<CS, RS, A>,
       transactions: TD,
@@ -131,7 +117,7 @@ export namespace Database {
 
 }
 
-type TestTransactionFunctions = ToTransactionFunctions<{
+type TestTransactionFunctions = ToActionFunctions<{
   test1: (db: Store<any, any>, arg: number) => void;
   test2: (db: Store<any, any>) => void;
 }>

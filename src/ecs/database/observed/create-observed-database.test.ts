@@ -59,7 +59,7 @@ const createObservedFixture = () => {
         options?: { transient?: boolean },
     ) => observed.execute(handler, options);
 
-    const transactions = {
+    const actions = {
         createPositionEntity: (args: { position: Position }) => {
             const result = run(db => db.archetypes.Position.insert(args));
             return result.value as Entity;
@@ -97,19 +97,19 @@ const createObservedFixture = () => {
         },
     };
 
-    return { observed, transactions };
+    return { observed, transactions: actions };
 };
 
 describe("createObservedDatabase", () => {
     it("should notify component observers when components change", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
         const positionObserver = vi.fn();
         const nameObserver = vi.fn();
 
         const unsubscribePosition = observed.observe.components.position(positionObserver);
         const unsubscribeName = observed.observe.components.name(nameObserver);
 
-        const entity = transactions.createFullEntity({
+        const entity = actions.createFullEntity({
             position: { x: 1, y: 2, z: 3 },
             name: "Test",
             health: { current: 100, max: 100 },
@@ -118,7 +118,7 @@ describe("createObservedDatabase", () => {
         expect(positionObserver).toHaveBeenCalledTimes(1);
         expect(nameObserver).toHaveBeenCalledTimes(1);
 
-        transactions.updateEntity({
+        actions.updateEntity({
             entity,
             values: { position: { x: 4, y: 5, z: 6 } },
         });
@@ -129,7 +129,7 @@ describe("createObservedDatabase", () => {
         unsubscribePosition();
         unsubscribeName();
 
-        transactions.updateEntity({
+        actions.updateEntity({
             entity,
             values: { position: { x: 7, y: 8, z: 9 }, name: "Updated" },
         });
@@ -139,9 +139,9 @@ describe("createObservedDatabase", () => {
     });
 
     it("should notify entity observers with correct values", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
 
-        const entity = transactions.createFullEntity({
+        const entity = actions.createFullEntity({
             position: { x: 1, y: 2, z: 3 },
             name: "Test",
             health: { current: 100, max: 100 },
@@ -156,7 +156,7 @@ describe("createObservedDatabase", () => {
             health: { current: 100, max: 100 },
         }));
 
-        transactions.updateEntity({
+        actions.updateEntity({
             entity,
             values: { name: "Updated", health: { current: 50, max: 100 } },
         });
@@ -167,18 +167,18 @@ describe("createObservedDatabase", () => {
             health: { current: 50, max: 100 },
         }));
 
-        transactions.deleteEntity({ entity });
+        actions.deleteEntity({ entity });
         expect(observer).toHaveBeenCalledWith(null);
 
         unsubscribe();
     });
 
     it("should notify transaction observers with full transaction results", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
         const transactionObserver = vi.fn();
         const unsubscribe = observed.observe.transactions(transactionObserver);
 
-        transactions.createFullEntity({
+        actions.createFullEntity({
             position: { x: 1, y: 2, z: 3 },
             name: "Test",
             health: { current: 100, max: 100 },
@@ -194,9 +194,9 @@ describe("createObservedDatabase", () => {
     });
 
     it("should notify archetype observers when entities change archetypes", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
 
-        const entity = transactions.createPositionEntity({
+        const entity = actions.createPositionEntity({
             position: { x: 1, y: 2, z: 3 },
         });
 
@@ -208,7 +208,7 @@ describe("createObservedDatabase", () => {
 
         expect(archetypeObserver).toHaveBeenCalledTimes(0);
 
-        transactions.updateEntity({
+        actions.updateEntity({
             entity,
             values: { name: "Test" },
         });
@@ -218,20 +218,20 @@ describe("createObservedDatabase", () => {
     });
 
     it("should notify resource observers with immediate and update notifications", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
         const timeObserver = vi.fn();
         const unsubscribe = observed.observe.resources.time(timeObserver);
 
         expect(timeObserver).toHaveBeenCalledWith({ delta: 0.016, elapsed: 0 });
 
-        transactions.updateTime({ delta: 0.032, elapsed: 1 });
+        actions.updateTime({ delta: 0.032, elapsed: 1 });
         expect(timeObserver).toHaveBeenCalledWith({ delta: 0.032, elapsed: 1 });
 
         unsubscribe();
     });
 
     it("should support multiple observers for the same target", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
 
         const observer1 = vi.fn();
         const observer2 = vi.fn();
@@ -241,7 +241,7 @@ describe("createObservedDatabase", () => {
         const unsubscribe2 = observed.observe.components.position(observer2);
         const unsubscribe3 = observed.observe.components.position(observer3);
 
-        const entity = transactions.createPositionEntity({
+        const entity = actions.createPositionEntity({
             position: { x: 1, y: 2, z: 3 },
         });
 
@@ -251,7 +251,7 @@ describe("createObservedDatabase", () => {
 
         unsubscribe2();
 
-        transactions.updateEntity({
+        actions.updateEntity({
             entity,
             values: { position: { x: 4, y: 5, z: 6 } },
         });
@@ -265,19 +265,19 @@ describe("createObservedDatabase", () => {
     });
 
     it("should handle observer cleanup correctly", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
 
         const observer = vi.fn();
         const unsubscribe = observed.observe.components.position(observer);
 
-        const entity = transactions.createPositionEntity({
+        const entity = actions.createPositionEntity({
             position: { x: 1, y: 2, z: 3 },
         });
         expect(observer).toHaveBeenCalledTimes(1);
 
         unsubscribe();
 
-        transactions.updateEntity({
+        actions.updateEntity({
             entity,
             values: { position: { x: 4, y: 5, z: 6 } },
         });
@@ -295,7 +295,7 @@ describe("createObservedDatabase", () => {
     });
 
     it("should handle complex transaction scenarios with multiple observers", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
 
         const positionObserver = vi.fn();
         const healthObserver = vi.fn();
@@ -306,7 +306,7 @@ describe("createObservedDatabase", () => {
         const unsubscribeHealth = observed.observe.components.health(healthObserver);
         const unsubscribeTransaction = observed.observe.transactions(transactionObserver);
 
-        const entity = transactions.createPositionHealthEntity({
+        const entity = actions.createPositionHealthEntity({
             position: { x: 1, y: 2, z: 3 },
             health: { current: 100, max: 100 },
         });
@@ -318,7 +318,7 @@ describe("createObservedDatabase", () => {
         expect(transactionObserver).toHaveBeenCalledTimes(1);
         expect(entityObserver).toHaveBeenCalledTimes(1);
 
-        transactions.updateEntity({
+        actions.updateEntity({
             entity,
             values: {
                 position: { x: 4, y: 5, z: 6 },
@@ -342,16 +342,16 @@ describe("createObservedDatabase", () => {
     });
 
     it("should handle rapid successive changes efficiently", () => {
-        const { observed, transactions } = createObservedFixture();
+        const { observed, transactions: actions } = createObservedFixture();
         const observer = vi.fn();
         const unsubscribe = observed.observe.components.position(observer);
 
-        const entity = transactions.createPositionEntity({
+        const entity = actions.createPositionEntity({
             position: { x: 1, y: 2, z: 3 },
         });
 
         for (let i = 0; i < 5; i++) {
-            transactions.updateEntity({
+            actions.updateEntity({
                 entity,
                 values: { position: { x: i, y: i, z: i } },
             });
@@ -363,9 +363,9 @@ describe("createObservedDatabase", () => {
 
     describe("entity observation with minArchetype filtering", () => {
         it("should observe entity when it matches minArchetype exactly", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionEntity({
+            const entity = actions.createPositionEntity({
                 position: { x: 1, y: 2, z: 3 },
             });
 
@@ -381,9 +381,9 @@ describe("createObservedDatabase", () => {
         });
 
         it("should observe entity when it has more components than minArchetype", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionHealthEntity({
+            const entity = actions.createPositionHealthEntity({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 },
             });
@@ -400,9 +400,9 @@ describe("createObservedDatabase", () => {
         });
 
         it("should return null when entity has fewer components than minArchetype", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionEntity({
+            const entity = actions.createPositionEntity({
                 position: { x: 1, y: 2, z: 3 },
             });
 
@@ -414,9 +414,9 @@ describe("createObservedDatabase", () => {
         });
 
         it("should return null when entity has different components than minArchetype", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionNameEntity({
+            const entity = actions.createPositionNameEntity({
                 position: { x: 1, y: 2, z: 3 },
                 name: "Test",
             });
@@ -429,9 +429,9 @@ describe("createObservedDatabase", () => {
         });
 
         it("should update observation when entity gains required components", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionEntity({
+            const entity = actions.createPositionEntity({
                 position: { x: 1, y: 2, z: 3 },
             });
 
@@ -440,7 +440,7 @@ describe("createObservedDatabase", () => {
 
             expect(observer).toHaveBeenCalledWith(null);
 
-            transactions.updateEntity({
+            actions.updateEntity({
                 entity,
                 values: { health: { current: 100, max: 100 } },
             });
@@ -455,9 +455,9 @@ describe("createObservedDatabase", () => {
         });
 
         it("should update observation when entity loses required components", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionHealthEntity({
+            const entity = actions.createPositionHealthEntity({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 },
             });
@@ -471,7 +471,7 @@ describe("createObservedDatabase", () => {
                 health: { current: 100, max: 100 },
             }));
 
-            transactions.updateEntity({
+            actions.updateEntity({
                 entity,
                 values: { health: undefined },
             });
@@ -482,9 +482,9 @@ describe("createObservedDatabase", () => {
         });
 
         it("should handle entity deletion correctly with minArchetype", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionHealthEntity({
+            const entity = actions.createPositionHealthEntity({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 },
             });
@@ -497,7 +497,7 @@ describe("createObservedDatabase", () => {
                 position: { x: 1, y: 2, z: 3 },
             }));
 
-            transactions.deleteEntity({ entity });
+            actions.deleteEntity({ entity });
             expect(observer).toHaveBeenCalledWith(null);
 
             unsubscribe();
@@ -524,9 +524,9 @@ describe("createObservedDatabase", () => {
         });
 
         it("should maintain separate observations for different minArchetypes", () => {
-            const { observed, transactions } = createObservedFixture();
+            const { observed, transactions: actions } = createObservedFixture();
 
-            const entity = transactions.createPositionHealthEntity({
+            const entity = actions.createPositionHealthEntity({
                 position: { x: 1, y: 2, z: 3 },
                 health: { current: 100, max: 100 },
             });
@@ -553,7 +553,7 @@ describe("createObservedDatabase", () => {
                 health: { current: 100, max: 100 },
             }));
 
-            transactions.updateEntity({
+            actions.updateEntity({
                 entity,
                 values: { health: undefined },
             });
@@ -725,5 +725,73 @@ describe("createObservedDatabase", () => {
 
         unsubscribe();
         newUnsubscribe();
+    });
+
+    it("should extend with new components, resources, and archetypes", () => {
+        const { observed, transactions: actions } = createObservedFixture();
+
+        const velocitySchema = {
+            type: "object",
+            properties: {
+                vx: { type: "number" },
+                vy: { type: "number" },
+                vz: { type: "number" },
+            },
+            required: ["vx", "vy", "vz"],
+            additionalProperties: false,
+        } as const satisfies Schema;
+
+        // Create an entity and observe position before extending
+        const entity = actions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        const positionObserver = vi.fn();
+        const unsubscribePosition = observed.observe.components.position(positionObserver);
+        positionObserver.mockClear();
+
+        const extended = observed.extend({
+            components: { velocity: velocitySchema },
+            resources: {},
+            archetypes: {
+                MovingEntity: ["position", "velocity"],
+            },
+            transactions: {},
+        });
+
+        expect(extended).toBe(observed);
+        // Verify that extending triggers reload notification for observed components
+        expect(positionObserver).toHaveBeenCalledTimes(1);
+
+        // Verify that new components can be added to entities
+        actions.updateEntity({
+            entity,
+            values: { velocity: { vx: 0.1, vy: 0.2, vz: 0.3 } },
+        });
+
+        // Verify that new components can be read back
+        const entityData = observed.read(entity);
+        expect(entityData).toEqual({
+            id: entity,
+            position: { x: 1, y: 2, z: 3 },
+            velocity: { vx: 0.1, vy: 0.2, vz: 0.3 },
+        });
+
+        // Verify that new archetypes are available
+        const movingEntity = (observed as any).archetypes.MovingEntity.insert({
+            position: { x: 10, y: 20, z: 30 },
+            velocity: { vx: 1, vy: 2, vz: 3 },
+        });
+
+        expect(movingEntity).toBeDefined();
+
+        const movingEntityData = observed.read(movingEntity);
+        expect(movingEntityData).toEqual({
+            id: movingEntity,
+            position: { x: 10, y: 20, z: 30 },
+            velocity: { vx: 1, vy: 2, vz: 3 },
+        });
+
+        unsubscribePosition();
     });
 });

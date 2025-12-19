@@ -28,6 +28,7 @@ import { EntityUpdateValues } from "../../store/core/index.js";
 import { Components } from "../../store/components.js";
 import { StringKeyof } from "../../../types/types.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
+import { FromSchemas } from "../../../schema/from-schemas.js";
 import { Undoable } from "../undoable.js";
 
 export interface TransactionalStore<
@@ -48,6 +49,14 @@ export interface TransactionalStore<
             transient?: boolean;
         }
     ): TransactionResult<C>;
+
+    extend<S extends Store.Schema<any, any, any>>(
+        schema: S,
+    ): TransactionalStore<
+        C & (S extends Store.Schema<infer XC, any, any> ? FromSchemas<XC> : never),
+        R & (S extends Store.Schema<any, infer XR, any> ? FromSchemas<XR> : never),
+        A & (S extends Store.Schema<any, any, infer XA> ? XA : never)
+    >;
 
     transactionStore: Store<C, R, A>;
 }

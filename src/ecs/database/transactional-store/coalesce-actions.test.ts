@@ -21,11 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { describe, it, expect } from "vitest";
-import { shouldCoalesceTransactions, coalesceTransactions } from "./coalesce-transactions.js";
+import { shouldCoalesceTransactions, coalesceTransactions } from "./coalesce-actions.js";
 import { TransactionResult } from "./transactional-store.js";
 
 describe("shouldCoalesceTransactions", () => {
-    it("should return true for transactions with same coalesce values", () => {
+    it("should return true for actions with same coalesce values", () => {
         const previous: TransactionResult<any> = {
             value: 1,
             transient: false,
@@ -51,7 +51,7 @@ describe("shouldCoalesceTransactions", () => {
         expect(shouldCoalesceTransactions(previous, current)).toBe(true);
     });
 
-    it("should return false for transactions with different coalesce values", () => {
+    it("should return false for actions with different coalesce values", () => {
         const previous: TransactionResult<any> = {
             value: 1,
             transient: false,

@@ -21,7 +21,8 @@ SOFTWARE.*/
 
 import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
-import type { Database, ToTransactionFunctions, TransactionDeclarations } from "../database.js";
+import type { Database } from "../database.js";
+import type { ToActionFunctions, ActionDeclarations } from "../../store/action-functions.js";
 import { StringKeyof } from "../../../types/types.js";
 import { isPromise } from "../../../internal/promise/is-promise.js";
 import { isAsyncGenerator } from "../../../internal/async-generator/is-async-generator.js";
@@ -38,17 +39,17 @@ export function createDatabase<
     CS extends ComponentSchemas,
     RS extends ResourceSchemas,
     A extends ArchetypeComponents<StringKeyof<CS>>,
-    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
->(schema: Database.Schema<CS, RS, A, TD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>>
+    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+>(schema: Database.Schema<CS, RS, A, TD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>>
 export function createDatabase<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
-    const TD extends TransactionDeclarations<C, R, A>
+    const TD extends ActionDeclarations<C, R, A>
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
-): Database<C, R, A, ToTransactionFunctions<TD>>
+): Database<C, R, A, ToActionFunctions<TD>>
 export function createDatabase(
     storeOrSchema: Store<any, any, any> | Database.Schema<any, any, any, any>,
     transactionDeclarations?: any,
@@ -64,8 +65,8 @@ function createDatabaseFromSchema<
     CS extends ComponentSchemas,
     RS extends ResourceSchemas,
     A extends ArchetypeComponents<StringKeyof<CS>>,
-    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
->(schema: Database.Schema<CS, RS, A, TD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>> {
+    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+>(schema: Database.Schema<CS, RS, A, TD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>> {
     return createDatabase(Store.create(schema), schema.transactions);
 }
 
@@ -73,12 +74,12 @@ function createDatabaseFromStoreAndTransactions<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
-    const TD extends TransactionDeclarations<C, R, A>
+    const TD extends ActionDeclarations<C, R, A>
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
-): Database<C, R, A, ToTransactionFunctions<TD>> {
-    type T = ToTransactionFunctions<TD> & Service;
+): Database<C, R, A, ToActionFunctions<TD>> {
+    type T = ToActionFunctions<TD> & Service;
     type TransactionName = Extract<keyof TD, string>;
 
     const reconcilingDatabase = createReconcilingDatabase(store, transactionDeclarations);
@@ -87,127 +88,151 @@ function createDatabaseFromStoreAndTransactions<
 
     const applyEnvelope = (envelope: TransactionEnvelope<TransactionName>) => reconcilingDatabase.apply(envelope);
 
+    const createTransactionWrapper = (name: TransactionName) => (args: unknown) => {
+        const transactionId = nextTransactionId;
+        nextTransactionId += 1;
+
+        let hasTransient = false;
+
+        const applyTransient = (payload: unknown) => {
+            hasTransient = true;
+            const timestamp = Date.now();
+            applyEnvelope({
+                id: transactionId,
+                name,
+                args: payload,
+                time: -timestamp,
+            });
+        };
+
+        const applyCommit = (payload: unknown) => {
+            const timestamp = Date.now();
+            const result = applyEnvelope({
+                id: transactionId,
+                name,
+                args: payload,
+                time: timestamp,
+            });
+            hasTransient = false;
+            return result;
+        };
+
+        const cancelPending = () => {
+            if (!hasTransient) {
+                return;
+            }
+            applyEnvelope({
+                id: transactionId,
+                name,
+                args: undefined,
+                time: 0,
+            });
+            hasTransient = false;
+        };
+
+        if (typeof args === "function") {
+            const asyncArgsProvider = args as () => Promise<unknown> | AsyncGenerator<unknown>;
+            const providerResult = asyncArgsProvider();
+
+            if (isAsyncGenerator(providerResult)) {
+                return new Promise((resolve, reject) => {
+                    (async () => {
+                        let lastArgs: unknown;
+                        try {
+                            let iteration = await providerResult.next();
+
+                            while (!iteration.done) {
+                                lastArgs = iteration.value;
+                                applyTransient(iteration.value);
+                                iteration = await providerResult.next();
+                            }
+
+                            const finalArgs = iteration.value !== undefined ? iteration.value : lastArgs;
+
+                            if (finalArgs !== undefined) {
+                                const commitResult = applyCommit(finalArgs);
+                                resolve(commitResult?.value);
+                            } else {
+                                cancelPending();
+                                resolve(undefined);
+                            }
+                        } catch (error) {
+                            cancelPending();
+                            reject(error);
+                        }
+                    })();
+                });
+            }
+
+            if (isPromise(providerResult)) {
+                return (async () => {
+                    try {
+                        const resolved = await providerResult;
+                        const commitResult = applyCommit(resolved);
+                        return commitResult?.value;
+                    } catch (error) {
+                        cancelPending();
+                        throw error;
+                    }
+                })();
+            }
+
+            const syncResult = applyCommit(providerResult);
+            return syncResult?.value;
+        }
+
+        const result = applyCommit(args);
+        return result?.value;
+    };
+
     const transactions = {
         serviceName: "ecs-database-transactions-service",
     } satisfies Service as T;
 
-    for (const name of Object.keys(transactionDeclarations) as TransactionName[]) {
-        (transactions as any)[name as keyof T] = (args: unknown) => {
-            const transactionId = nextTransactionId;
-            nextTransactionId += 1;
-
-            let hasTransient = false;
-
-            const applyTransient = (payload: unknown) => {
-                hasTransient = true;
-                const timestamp = Date.now();
-                applyEnvelope({
-                    id: transactionId,
-                    name,
-                    args: payload,
-                    time: -timestamp,
-                });
-            };
-
-            const applyCommit = (payload: unknown) => {
-                const timestamp = Date.now();
-                const result = applyEnvelope({
-                    id: transactionId,
-                    name,
-                    args: payload,
-                    time: timestamp,
-                });
-                hasTransient = false;
-                return result;
-            };
-
-            const cancelPending = () => {
-                if (!hasTransient) {
-                    return;
-                }
-                applyEnvelope({
-                    id: transactionId,
-                    name,
-                    args: undefined,
-                    time: 0,
-                });
-                hasTransient = false;
-            };
-
-            if (typeof args === "function") {
-                const asyncArgsProvider = args as () => Promise<unknown> | AsyncGenerator<unknown>;
-                const providerResult = asyncArgsProvider();
-
-                if (isAsyncGenerator(providerResult)) {
-                    return new Promise((resolve, reject) => {
-                        (async () => {
-                            let lastArgs: unknown;
-                            try {
-                                let iteration = await providerResult.next();
-
-                                while (!iteration.done) {
-                                    lastArgs = iteration.value;
-                                    applyTransient(iteration.value);
-                                    iteration = await providerResult.next();
-                                }
-
-                                const finalArgs = iteration.value !== undefined ? iteration.value : lastArgs;
-
-                                if (finalArgs !== undefined) {
-                                    const commitResult = applyCommit(finalArgs);
-                                    resolve(commitResult?.value);
-                                } else {
-                                    cancelPending();
-                                    resolve(undefined);
-                                }
-                            } catch (error) {
-                                cancelPending();
-                                reject(error);
-                            }
-                        })();
-                    });
-                }
-
-                if (isPromise(providerResult)) {
-                    return (async () => {
-                        try {
-                            const resolved = await providerResult;
-                            const commitResult = applyCommit(resolved);
-                            return commitResult?.value;
-                        } catch (error) {
-                            cancelPending();
-                            throw error;
-                        }
-                    })();
-                }
-
-                const syncResult = applyCommit(providerResult);
-                return syncResult?.value;
-            }
-
-            const result = applyCommit(args);
-            return result?.value;
-        };
+    // Create unwrapped actions that execute directly on the store
+    const actions = {} as T;
+    for (const name of Object.keys(transactionDeclarations)) {
+        (actions as any)[name] = transactionDeclarations[name].bind(null, store);
     }
 
+    // Assign unwrapped actions to store
+    (store as any).actions = actions;
+
+    const addTransactionWrappers = (transactionDecls: Record<string, any>) => {
+        for (const name of Object.keys(transactionDecls)) {
+            (transactions as any)[name] = createTransactionWrapper(name as any);
+        }
+    };
+
+    addTransactionWrappers(transactionDeclarations);
 
     const extend = <
-        S extends Store.Schema<any, any, any>
+        S extends Database.Schema<any, any, any, any>
     >(
         schema: S,
     ) => {
-        store.extend(schema as Store.Schema<any, any, any>);
+        // Delegate to reconcilingDatabase which handles store/transactionalStore extension
+        reconcilingDatabase.extend(schema);
+        // Add transaction wrappers for the new transactions
+        addTransactionWrappers(schema.transactions);
+
+        // Add unwrapped actions to store.actions
+        for (const name of Object.keys(schema.transactions)) {
+            ((store as any).actions as any)[name] = schema.transactions[name].bind(null, store);
+        }
+
         return database as unknown as Database<
-            C & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XC : never),
-            R & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XR : never),
-            A & (S extends Store.Schema<infer XC, infer XR, infer XA> ? XA : never),
-            ToTransactionFunctions<TD>
+            C & (S extends Database.Schema<infer XC, any, any, any> ? FromSchemas<XC> : never),
+            R & (S extends Database.Schema<any, infer XR, any, any> ? FromSchemas<XR> : never),
+            A & (S extends Database.Schema<any, any, infer XA, any> ? XA : never),
+            T & (S extends Database.Schema<any, any, any, infer XTD> ? ToActionFunctions<XTD> : never)
         >;
     };
 
     const database = {
         serviceName: "ecs-database-service",
         ...reconcilingDatabase,
+        store: store as Store<C, R, A> & { readonly actions: T },
         transactions,
         extend,
     } as Database<C, R, A, T> & { extend: typeof extend };

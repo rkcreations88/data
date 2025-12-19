@@ -64,7 +64,7 @@ describe("createTransactionalStore", () => {
         expect(store.resources).toHaveProperty("time");
     });
 
-    it("should execute transactions successfully", () => {
+    it("should execute actions successfully", () => {
         const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
@@ -210,7 +210,7 @@ describe("createTransactionalStore", () => {
         const archetypes = store.queryArchetypes(["id"]);
         expect(archetypes.length).toBeGreaterThan(0);
 
-        // Verify we can create entities through transactions
+        // Verify we can create entities through actions
         store.execute((transactionStore) => {
             const archetype = transactionStore.ensureArchetype(["id", "position"]);
             const entity = archetype.insert({ position: { x: 1, y: 2, z: 3 } });
@@ -218,7 +218,7 @@ describe("createTransactionalStore", () => {
         });
     });
 
-    it("should support transient transactions", () => {
+    it("should support transient actions", () => {
         const baseStore = Store.create({
             components: { position: positionSchema, health: healthSchema },
             resources: { time: { default: { delta: 0.016, elapsed: 0 } } },
@@ -555,5 +555,16 @@ describe("createTransactionalStore", () => {
 
         // After transaction, the base store should also reflect the changes
         expect(archetype.rowCount).toBe(initialRows + 3);
+    });
+
+    it("should return the same instance when extended", () => {
+        const baseStore = Store.create({
+            components: { position: positionSchema },
+            resources: {},
+            archetypes: {}
+        });
+        const transactionalStore = createTransactionalStore(baseStore);
+        const extended = transactionalStore.extend({ components: {}, resources: {}, archetypes: {} });
+        expect(extended).toBe(transactionalStore);
     });
 }); 

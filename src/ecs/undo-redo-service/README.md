@@ -17,8 +17,8 @@ t.undoable = { coalesce: { entity: entityId } };
 ### Parameters
 
 - **`coalesce`** (boolean | unknown): 
-  - `false`: Never coalesce with other transactions
-  - Any other value: Coalesce with transactions having the same coalesce value (using deep equality)
+  - `false`: Never coalesce with other actions
+  - Any other value: Coalesce with actions having the same coalesce value (using deep equality)
 
 ### Coalesce Examples
 
@@ -41,12 +41,12 @@ t.undoable = { coalesce: false };
 
 ## Coalescing Logic
 
-The system automatically coalesces adjacent undoable transactions to optimize performance:
+The system automatically coalesces adjacent undoable actions to optimize performance:
 
 ### When Coalescing Occurs
 
 Transactions are coalesced when:
-1. Both transactions have the same `coalesce` value (using deep equality)
+1. Both actions have the same `coalesce` value (using deep equality)
 2. Neither transaction has `coalesce: false`
 
 ### Operation Optimization

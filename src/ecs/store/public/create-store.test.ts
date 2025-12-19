@@ -861,4 +861,10 @@ describe("createStore", () => {
         });
     });
 
+    it("should return the same instance when extended", () => {
+        const store = createStore({ components: { position: positionSchema }, resources: {}, archetypes: {} });
+        const extended = store.extend({ components: {}, resources: {}, archetypes: {} });
+        expect(extended).toBe(store);
+    });
+
 }); 

@@ -35,6 +35,6 @@ export interface TodoMainService extends Service {
 export type TodoCoreService = Omit<TodoMainService, 'dependentState'>;
 
 /**
- * The main service as used by the UI. We only allow access to the observe and transactions properties.
+ * The main service as used by the UI. We only allow access to the observe and actions properties.
  */
 export type TodoUIMainService = Omit<TodoMainService, 'state'> & { state: Omit<TodoStateService, 'resources'> };

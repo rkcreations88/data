@@ -27,7 +27,8 @@ import { TransactionResult } from "../transactional-store/index.js";
 import { RequiredComponents } from "../../required-components.js";
 import { Entity } from "../../entity.js";
 import { EntityReadValues } from "../../store/core/index.js";
-import { OptionalComponents } from "../../optional-components.js";
+import { Database } from "../database.js";
+import { FromSchemas } from "../../../schema/from-schemas.js";
 export interface ObservedDatabase<
     C extends Components,
     R extends ResourceComponents,
@@ -52,6 +53,15 @@ export interface ObservedDatabase<
     readonly execute: (handler: (db: Store<C, R, A>) => Entity | void, options?: { transient?: boolean }) => TransactionResult<C>;
     readonly toData: () => unknown;
     readonly fromData: (data: unknown) => void;
+    readonly extend: <
+        S extends Database.Schema<any, any, any, any>
+    >(
+        schema: S,
+    ) => ObservedDatabase<
+        C & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XC> : never),
+        R & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XR> : never),
+        A & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? XA : never)
+    >;
 }
 
 

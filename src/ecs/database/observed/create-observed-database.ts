@@ -60,16 +60,16 @@ export function createObservedDatabase<
     const transactionObservers = new Set<(transaction: TransactionResult<C>) => void>();
 
     const notifyObservers = (result: TransactionResult<C>) => {
-        // Don't notify for no-op transactions (no actual changes made)
+        // Don't notify for no-op actions (no actual changes made)
         // Check if there are any changed entities, components, or archetypes
-        const hasChanges = result.changedEntities.size > 0 || 
-                          result.changedComponents.size > 0 || 
-                          result.changedArchetypes.size > 0;
-        
+        const hasChanges = result.changedEntities.size > 0 ||
+            result.changedComponents.size > 0 ||
+            result.changedArchetypes.size > 0;
+
         if (!hasChanges) {
             return;
         }
-        
+
         for (const observer of transactionObservers) {
             observer(result);
         }
@@ -191,6 +191,11 @@ export function createObservedDatabase<
         fromData: (data: unknown) => {
             store.fromData(data);
             notifyAllObserversStoreReloaded();
+        },
+        extend: (schema: any) => {
+            transactionalStore.extend(schema);
+            notifyAllObserversStoreReloaded();
+            return observedDatabase as any;
         },
     };
 

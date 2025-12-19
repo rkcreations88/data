@@ -29,7 +29,7 @@ import { StringKeyof } from "../../../types/types.js";
 import { Components } from "../../store/components.js";
 import { ArchetypeComponents } from "../../store/archetype-components.js";
 import { patchEntityValues } from "./patch-entity-values.js";
-import { coalesceWriteOperations } from "./coalesce-transactions.js";
+import { coalesceWriteOperations } from "./coalesce-actions.js";
 
 // Sentinel value used to indicate a component should be deleted
 const DELETE: unknown = "_$_DELETE_$_";
@@ -176,9 +176,15 @@ export function createTransactionalStore<
 
 
     // Create transaction-aware store
+    // Initialize wrapped archetypes once
+    const wrappedArchetypesObject = {} as any;
+    for (const name in store.archetypes) {
+        wrappedArchetypesObject[name] = getWrappedArchetype(store.archetypes[name]);
+    }
+
     const transactionStore = {
         ...store,
-        archetypes: Object.fromEntries(Object.entries(store.archetypes).map(([key, value]) => [key, getWrappedArchetype(value)])) as any,
+        archetypes: wrappedArchetypesObject,
         resources,
         ensureArchetype: (componentNames) => {
             const archetype = store.ensureArchetype(componentNames);
@@ -242,11 +248,22 @@ export function createTransactionalStore<
     };
 
     // Create the transactional store interface
-    const transactionalStore: TransactionalStore<C, R, A> = {
+    const transactionalStore = {
         ...store,
         execute,
         transactionStore,
-    };
+        // Override extend to sync wrapped archetypes after extending base store
+        extend: (schema: any) => {
+            store.extend(schema);
+            // Sync wrapped archetypes after extension
+            for (const name in store.archetypes) {
+                if (!(name in wrappedArchetypesObject)) {
+                    wrappedArchetypesObject[name] = getWrappedArchetype(store.archetypes[name]);
+                }
+            }
+            return transactionalStore as any;
+        },
+    } as unknown as TransactionalStore<C, R, A>;
 
     return transactionalStore as any;
 }
