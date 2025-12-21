@@ -45,10 +45,10 @@ import type {
 } from "../store/action-functions.js";
 
 export interface Database<
-  C extends Components = never,
-  R extends ResourceComponents = never,
-  A extends ArchetypeComponents<StringKeyof<C & OptionalComponents>> = never,
-  F extends ActionFunctions = never,
+  C extends Components,
+  R extends ResourceComponents,
+  A extends ArchetypeComponents<StringKeyof<C & OptionalComponents>>,
+  F extends ActionFunctions,
 > extends ReadonlyStore<C, R, A>, Service {
   readonly transactions: F & Service;
   /**
@@ -102,16 +102,16 @@ export namespace Database {
   };
 
   export namespace Schema {
+
     export function create<
       const CS extends ComponentSchemas,
       const RS extends ResourceSchemas,
       const A extends ArchetypeComponents<StringKeyof<CS>>,
       const TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
     >(
-      storeSchema: Store.Schema<CS, RS, A>,
-      transactions: TD,
-    ) {
-      return { ...storeSchema, transactions } as const satisfies Database.Schema<CS, RS, A, TD>;
+      schema: Database.Schema<CS, RS, A, TD>,
+    ): Database.Schema<CS, RS, A, TD> {
+      return schema satisfies Database.Schema<CS, RS, A, TD>;
     }
   }
 

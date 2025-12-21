@@ -27,28 +27,26 @@ import { F32 } from "../../../math/f32/index.js";
 
 describe("Database.create from schema", () => {
     it("should create and use database from Database.Schema", () => {
-        const databaseSchema = Database.Schema.create(
-            Store.Schema.create(
-                {
-                    position: {
-                        type: "object",
-                        properties: {
-                            x: F32.schema,
-                            y: F32.schema,
-                            z: F32.schema,
-                        },
-                        required: ["x", "y", "z"],
-                        additionalProperties: false,
-                    } as const,
-                },
-                {
-                    time: { default: { delta: 0.016, elapsed: 0 } as { delta: number; elapsed: number } },
-                },
-                {
-                    PositionEntity: ["position"],
-                }
-            ),
-            {
+        const databaseSchema = Database.Schema.create({
+            components: {
+                position: {
+                    type: "object",
+                    properties: {
+                        x: F32.schema,
+                        y: F32.schema,
+                        z: F32.schema,
+                    },
+                    required: ["x", "y", "z"],
+                    additionalProperties: false,
+                } as const,
+            },
+            resources: {
+                time: { default: { delta: 0.016, elapsed: 0 } as { delta: number; elapsed: number } },
+            },
+            archetypes: {
+                PositionEntity: ["position"],
+            },
+            transactions: {
                 createPositionEntity(t, args: { position: { x: number; y: number; z: number } }) {
                     return t.archetypes.PositionEntity.insert(args);
                 },
@@ -56,7 +54,7 @@ describe("Database.create from schema", () => {
                     t.resources.time = args;
                 },
             }
-        );
+        });
 
         const database = Database.create(databaseSchema);
 
@@ -82,31 +80,31 @@ describe("Database.create from schema", () => {
     });
 
     it("should extend database with new actions", () => {
-        const databaseSchema = Database.Schema.create(
-            Store.Schema.create(
-                {
-                    position: {
-                        type: "object",
-                        properties: {
-                            x: F32.schema,
-                            y: F32.schema,
-                            z: F32.schema,
-                        },
-                        required: ["x", "y", "z"],
-                        additionalProperties: false,
-                    } as const,
-                },
-                {},
-                {
-                    PositionEntity: ["position"],
-                }
-            ),
-            {
+        const databaseSchema = Database.Schema.create({
+            components: {
+                position: {
+                    type: "object",
+                    properties: {
+                        x: F32.schema,
+                        y: F32.schema,
+                        z: F32.schema,
+                    },
+                    required: ["x", "y", "z"],
+                    additionalProperties: false,
+                } as const,
+            },
+            resources: {
+                foo: { default: 0 as number }
+            },
+            archetypes: {
+                PositionEntity: ["position"],
+            },
+            transactions: {
                 createPositionEntity(t, args: { position: { x: number; y: number; z: number } }) {
                     return t.archetypes.PositionEntity.insert(args);
                 },
             }
-        );
+        });
 
         const database = Database.create(databaseSchema);
 
