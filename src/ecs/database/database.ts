@@ -27,7 +27,7 @@ import { Entity } from "../entity.js";
 import { EntityReadValues } from "../store/core/index.js";
 import { Observe } from "../../observe/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
-import { StringKeyof } from "../../types/types.js";
+import { IntersectTuple, StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { RequiredComponents } from "../required-components.js";
@@ -38,6 +38,8 @@ import { createDatabase } from "./public/create-database.js";
 import { ResourceSchemas } from "../resource-schemas.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { FromSchemas } from "../../schema/index.js";
+import { Assert } from "../../types/assert.js";
+import { Equal } from "../../types/equal.js";
 import type {
   ActionDeclarations,
   ActionFunctions,
@@ -90,10 +92,10 @@ export namespace Database {
   export const create = createDatabase;
 
   export type Schema<
-    CS extends ComponentSchemas,
-    RS extends ResourceSchemas,
-    A extends ArchetypeComponents<StringKeyof<CS>>,
-    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+    CS extends ComponentSchemas = any,
+    RS extends ResourceSchemas = any,
+    A extends ArchetypeComponents<string> = any,
+    TD extends ActionDeclarations<any, any, any> = any
   > = {
     readonly components: CS;
     readonly resources: RS;
@@ -103,19 +105,97 @@ export namespace Database {
 
   export namespace Schema {
 
+    export type Intersect<T extends readonly Schema<any, any, any, any>[]> =
+      Database.Schema<
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Schema<infer C, infer R, infer A, infer TD> ? C : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Schema<any, infer R, any, any> ? R : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Schema<any, any, infer A, any> ? A : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Schema<any, any, any, infer TD> ? TD : never }>
+      >
+
     export function create<
       const CS extends ComponentSchemas,
       const RS extends ResourceSchemas,
-      const A extends ArchetypeComponents<StringKeyof<CS>>,
-      const TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+      const A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents & Intersect<D>["components"]>>,
+      const TD extends ActionDeclarations<any, any, any>,
+      const D extends readonly Database.Schema<any, any, any, any>[],
     >(
-      schema: Database.Schema<CS, RS, A, TD>,
-    ): Database.Schema<CS, RS, A, TD> {
-      return schema satisfies Database.Schema<CS, RS, A, TD>;
+      schema: {
+        components: CS;
+        resources: RS;
+        archetypes: A;
+        transactions: TD;
+      },
+      dependencies?: D
+    ): Intersect<[Database.Schema<CS & Intersect<D>["components"], RS & Intersect<D>["resources"], A, TD>, ...D]> {
+      return (dependencies ?? []).reduce((acc, curr) => {
+        return {
+          components: { ...acc.components, ...curr.components },
+          resources: { ...acc.resources, ...curr.resources },
+          archetypes: { ...acc.archetypes, ...curr.archetypes },
+          transactions: { ...acc.transactions, ...curr.transactions },
+        }
+      },
+        schema
+      );
     }
   }
 
 }
+
+// Type tests for Database.Schema.Intersect
+type TestSchema1 = Database.Schema<
+  { position: { type: "number" } },
+  { mousePos: { default: 0 } },
+  {},
+  {}
+>;
+type TestSchema2 = Database.Schema<
+  { velocity: { type: "number" } },
+  { delta: { default: 0 } },
+  {},
+  {}
+>;
+type TestSchema3 = Database.Schema<
+  { mass: { type: "number" } },
+  { gravity: { default: 0 } },
+  {},
+  {}
+>;
+
+type TestIntersect = Database.Schema.Intersect<[TestSchema1, TestSchema2, TestSchema3]>;
+type CheckIntersectComponents = Assert<Equal<TestIntersect["components"], {
+  position: { type: "number" };
+  velocity: { type: "number" };
+  mass: { type: "number" };
+}>>;
+type CheckIntersectResources = Assert<Equal<TestIntersect["resources"], {
+  mousePos: { default: 0 };
+  delta: { default: 0 };
+  gravity: { default: 0 };
+}>>;
+
+// Test that archetypes can reference components from dependencies
+type BaseSchema = Database.Schema<
+  { position: { type: "number" }, health: { type: "number" } },
+  {},
+  {},
+  {}
+>;
+
+type ExtendedSchemaResult = ReturnType<typeof Database.Schema.create<
+  { velocity: { type: "number" } },
+  {},
+  { DynamicEntity: ["position", "velocity"], LivingEntity: ["position", "health"] },
+  {},
+  [BaseSchema]
+>>;
+
+type CheckExtendedHasAllComponents = Assert<Equal<ExtendedSchemaResult["components"], {
+  position: { type: "number" };
+  health: { type: "number" };
+  velocity: { type: "number" };
+}>>;
 
 type TestTransactionFunctions = ToActionFunctions<{
   test1: (db: Store<any, any>, arg: number) => void;
