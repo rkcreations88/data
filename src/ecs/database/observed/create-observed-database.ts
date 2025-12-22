@@ -192,8 +192,8 @@ export function createObservedDatabase<
             store.fromData(data);
             notifyAllObserversStoreReloaded();
         },
-        extend: (schema: any) => {
-            transactionalStore.extend(schema);
+        extend: (plugin: any) => {
+            transactionalStore.extend(plugin);
             notifyAllObserversStoreReloaded();
             return observedDatabase as any;
         },

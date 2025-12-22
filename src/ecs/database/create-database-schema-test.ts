@@ -24,7 +24,7 @@ import { Assert } from "../../types/assert.js";
 import { Equal } from "../../types/equal.js";
 import { Database } from "./database.js";
 
-const databaseSchema = Database.Schema.create({
+const databaseSchema = Database.Plugin.create({
     components: {
         velocity: { type: "number" },
         particle: { type: "boolean" },
@@ -40,7 +40,7 @@ const databaseSchema = Database.Schema.create({
 });
 
 // Test database schema dependencies and merging
-const aSchema = Database.Schema.create({
+const aSchema = Database.Plugin.create({
     components: {
         a: { type: "number" },
         b: { type: "string" }
@@ -53,7 +53,7 @@ const aSchema = Database.Schema.create({
     }
 });
 
-const bSchema = Database.Schema.create({
+const bSchema = Database.Plugin.create({
     components: {
         x: { type: "number" },
         y: { type: "string" }
@@ -66,7 +66,7 @@ const bSchema = Database.Schema.create({
     }
 });
 
-const cSchema = Database.Schema.create({
+const cSchema = Database.Plugin.create({
     components: {
         m: { type: "number" },
         n: { type: "string" }
@@ -129,7 +129,7 @@ if (!hasAllArchetypes) {
 }
 
 // Test with transactions in dependencies
-const baseSchemaWithTransactions = Database.Schema.create({
+const baseSchemaWithTransactions = Database.Plugin.create({
     components: {
         position: { type: "number" },
         health: { type: "number" }
@@ -142,7 +142,7 @@ const baseSchemaWithTransactions = Database.Schema.create({
     }
 });
 
-const extendedSchemaWithTransactions = Database.Schema.create({
+const extendedSchemaWithTransactions = Database.Plugin.create({
     components: {
         velocity: { type: "number" }
     },

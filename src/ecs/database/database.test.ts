@@ -26,18 +26,18 @@ import { Database } from "./database.js";
 describe("Database.create", () => {
     it("should create an empty database without errors when called with no arguments", () => {
         const db = Database.create();
-        
+
         expect(db).toBeDefined();
         expect(db.store).toBeDefined();
         expect(db.transactions).toBeDefined();
     });
 });
 
-describe("Database.Schema.create", () => {
+describe("Database.Plugin.create", () => {
     describe("partial schema creation", () => {
         it("should create a schema with all properties defaulting to empty objects when given empty schema", () => {
-            const schema = Database.Schema.create({});
-            
+            const schema = Database.Plugin.create({});
+
             expect(schema.components).toEqual({});
             expect(schema.resources).toEqual({});
             expect(schema.archetypes).toEqual({});
@@ -45,13 +45,13 @@ describe("Database.Schema.create", () => {
         });
 
         it("should create a schema with components and default empty objects for other properties when given only components", () => {
-            const schema = Database.Schema.create({
+            const schema = Database.Plugin.create({
                 components: {
                     position: { type: "number" },
                     velocity: { type: "number" }
                 }
             });
-            
+
             expect(schema.components).toHaveProperty("position");
             expect(schema.components).toHaveProperty("velocity");
             expect(Object.keys(schema.resources)).toHaveLength(0);
@@ -61,12 +61,12 @@ describe("Database.Schema.create", () => {
 
         it("should create a schema with transactions and default empty objects for other properties when given only transactions", () => {
             const testTransaction = () => { };
-            const schema = Database.Schema.create({
+            const schema = Database.Plugin.create({
                 transactions: {
                     updateEntity: testTransaction
                 }
             });
-            
+
             expect(schema.transactions).toHaveProperty("updateEntity");
             expect(schema.transactions.updateEntity).toBe(testTransaction);
             expect(Object.keys(schema.components)).toHaveLength(0);
@@ -75,7 +75,7 @@ describe("Database.Schema.create", () => {
         });
 
         it("should create a schema with specified properties and defaults for omitted ones when given multiple partial properties", () => {
-            const schema = Database.Schema.create({
+            const schema = Database.Plugin.create({
                 components: {
                     health: { type: "number" }
                 },
@@ -86,7 +86,7 @@ describe("Database.Schema.create", () => {
                     updateHealth: () => { }
                 }
             });
-            
+
             expect(schema.components).toHaveProperty("health");
             expect(schema.resources).toHaveProperty("time");
             expect(schema.transactions).toHaveProperty("updateHealth");
@@ -96,7 +96,7 @@ describe("Database.Schema.create", () => {
 
     describe("schema merging with dependencies", () => {
         it("should merge both schemas with all properties preserved when given partial schema with dependencies", () => {
-            const baseSchema = Database.Schema.create({
+            const baseSchema = Database.Plugin.create({
                 components: {
                     position: { type: "number" }
                 },
@@ -105,12 +105,12 @@ describe("Database.Schema.create", () => {
                 }
             });
 
-            const extendedSchema = Database.Schema.create({
+            const extendedSchema = Database.Plugin.create({
                 components: {
                     velocity: { type: "number" }
                 }
             }, [baseSchema]);
-            
+
             expect(extendedSchema.components).toHaveProperty("position");
             expect(extendedSchema.components).toHaveProperty("velocity");
             expect(extendedSchema.resources).toHaveProperty("time");
@@ -119,7 +119,7 @@ describe("Database.Schema.create", () => {
         });
 
         it("should create a schema containing only the dependency properties when given empty schema with dependencies", () => {
-            const baseSchema = Database.Schema.create({
+            const baseSchema = Database.Plugin.create({
                 components: {
                     transform: { type: "number" }
                 },
@@ -128,31 +128,31 @@ describe("Database.Schema.create", () => {
                 }
             });
 
-            const emptyExtension = Database.Schema.create({}, [baseSchema]);
-            
+            const emptyExtension = Database.Plugin.create({}, [baseSchema]);
+
             expect(emptyExtension.components).toHaveProperty("transform");
             expect(emptyExtension.transactions).toHaveProperty("updateTransform");
             expect(Object.keys(emptyExtension.components)).toHaveLength(1);
             expect(Object.keys(emptyExtension.transactions)).toHaveLength(1);
         });
 
-        it("should merge all schemas together with properties from all dependencies when given multiple dependencies", () => {
-            const schemaA = Database.Schema.create({
+        it("should merge all plugins together with properties from all dependencies when given multiple dependencies", () => {
+            const pluginA = Database.Plugin.create({
                 components: { a: { type: "number" } }
             });
 
-            const schemaB = Database.Schema.create({
+            const pluginB = Database.Plugin.create({
                 components: { b: { type: "number" } }
             });
 
-            const schemaC = Database.Schema.create({
+            const pluginC = Database.Plugin.create({
                 components: { c: { type: "number" } }
             });
 
-            const merged = Database.Schema.create({
+            const merged = Database.Plugin.create({
                 components: { d: { type: "number" } }
-            }, [schemaA, schemaB, schemaC]);
-            
+            }, [pluginA, pluginB, pluginC]);
+
             expect(merged.components).toHaveProperty("a");
             expect(merged.components).toHaveProperty("b");
             expect(merged.components).toHaveProperty("c");
@@ -161,18 +161,18 @@ describe("Database.Schema.create", () => {
         });
 
         it("should merge transactions from dependencies", () => {
-            const baseSchema = Database.Schema.create({
+            const baseSchema = Database.Plugin.create({
                 transactions: {
                     baseAction: () => { }
                 }
             });
 
-            const extendedSchema = Database.Schema.create({
+            const extendedSchema = Database.Plugin.create({
                 transactions: {
                     extendedAction: () => { }
                 }
             }, [baseSchema]);
-            
+
             expect(extendedSchema.transactions).toHaveProperty("baseAction");
             expect(extendedSchema.transactions).toHaveProperty("extendedAction");
             expect(Object.keys(extendedSchema.transactions)).toHaveLength(2);
@@ -181,20 +181,20 @@ describe("Database.Schema.create", () => {
 
     describe("edge cases", () => {
         it("should merge schemas with dependencies taking precedence for overlapping properties", () => {
-            const baseSchema = Database.Schema.create({
+            const baseSchema = Database.Plugin.create({
                 components: {
                     position: { type: "number" },
                     velocity: { type: "number" }
                 }
             });
 
-            const extendedSchema = Database.Schema.create({
+            const extendedSchema = Database.Plugin.create({
                 components: {
                     position: { type: "number" },
                     mass: { type: "number" }
                 }
             }, [baseSchema]);
-            
+
             // All components should be present
             expect(extendedSchema.components).toHaveProperty("position");
             expect(extendedSchema.components).toHaveProperty("velocity");
@@ -203,14 +203,14 @@ describe("Database.Schema.create", () => {
         });
 
         it("should handle archetypes that reference components from dependencies", () => {
-            const baseSchema = Database.Schema.create({
+            const baseSchema = Database.Plugin.create({
                 components: {
                     position: { type: "number" },
                     health: { type: "number" }
                 }
             });
 
-            const extendedSchema = Database.Schema.create({
+            const extendedSchema = Database.Plugin.create({
                 components: {
                     velocity: { type: "number" }
                 },
@@ -219,7 +219,7 @@ describe("Database.Schema.create", () => {
                     LivingEntity: ["position", "health"]
                 }
             }, [baseSchema]);
-            
+
             expect(extendedSchema.archetypes).toHaveProperty("DynamicEntity");
             expect(extendedSchema.archetypes).toHaveProperty("LivingEntity");
             expect(extendedSchema.archetypes.DynamicEntity).toEqual(["position", "velocity"]);

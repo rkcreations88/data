@@ -25,9 +25,9 @@ import { Database } from "../database.js";
 import { Store } from "../../store/index.js";
 import { F32 } from "../../../math/f32/index.js";
 
-describe("Database.create from schema", () => {
-    it("should create and use database from Database.Schema", () => {
-        const databaseSchema = Database.Schema.create({
+describe("Database.create from plugin", () => {
+    it("should create and use database from Database.Plugin", () => {
+        const databasePlugin = Database.Plugin.create({
             components: {
                 position: {
                     type: "object",
@@ -56,7 +56,7 @@ describe("Database.create from schema", () => {
             }
         });
 
-        const database = Database.create(databaseSchema);
+        const database = Database.create(databasePlugin);
 
         const entity = database.transactions.createPositionEntity({
             position: { x: 1, y: 2, z: 3 },
@@ -80,7 +80,7 @@ describe("Database.create from schema", () => {
     });
 
     it("should extend database with new actions", () => {
-        const databaseSchema = Database.Schema.create({
+        const databasePlugin = Database.Plugin.create({
             components: {
                 position: {
                     type: "object",
@@ -106,9 +106,9 @@ describe("Database.create from schema", () => {
             }
         });
 
-        const database = Database.create(databaseSchema);
+        const database = Database.create(databasePlugin);
 
-        const extensionSchema = Database.Schema.create({
+        const extensionPlugin = Database.Plugin.create({
             components: {
                 velocity: {
                     type: "object",
@@ -134,7 +134,7 @@ describe("Database.create from schema", () => {
             }
         });
 
-        const extendedDatabase = database.extend(extensionSchema) as unknown as typeof database & {
+        const extendedDatabase = database.extend(extensionPlugin) as unknown as typeof database & {
             transactions: typeof database.transactions & {
                 createMovingEntity: (args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) => number;
                 updatePosition: (args: { entity: number; position: { x: number; y: number; z: number } }) => void;
