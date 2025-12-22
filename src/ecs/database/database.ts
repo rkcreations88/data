@@ -94,8 +94,8 @@ export namespace Database {
   export type Schema<
     CS extends ComponentSchemas = any,
     RS extends ResourceSchemas = any,
-    A extends ArchetypeComponents<string> = any,
-    TD extends ActionDeclarations<any, any, any> = any
+    A extends ArchetypeComponents<StringKeyof<CS>> = any,
+    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A> = any
   > = {
     readonly components: CS;
     readonly resources: RS;
@@ -116,8 +116,8 @@ export namespace Database {
     export function create<
       const CS extends ComponentSchemas,
       const RS extends ResourceSchemas,
-      const A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents & Intersect<D>["components"]>>,
-      const TD extends ActionDeclarations<any, any, any>,
+      const A extends ArchetypeComponents<StringKeyof<CS & Intersect<D>["components"]>>,
+      const TD extends ActionDeclarations<FromSchemas<CS & Intersect<D>["components"]>, FromSchemas<RS & Intersect<D>["resources"]>, A>,
       const D extends readonly Database.Schema<any, any, any, any>[],
     >(
       schema: {
@@ -127,7 +127,7 @@ export namespace Database {
         transactions: TD;
       },
       dependencies?: D
-    ): Intersect<[Database.Schema<CS & Intersect<D>["components"], RS & Intersect<D>["resources"], A, TD>, ...D]> {
+    ): Intersect<[Database.Schema<CS, RS, A, TD>, ...D]> {
       return (dependencies ?? []).reduce((acc, curr) => {
         return {
           components: { ...acc.components, ...curr.components },

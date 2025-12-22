@@ -177,6 +177,8 @@ export type Exact<T, U extends T> =
   : never
   : never;
 
+export type NoInfer<T> = [T][T extends any ? 0 : never];
+
 export type IntersectTuple<T extends readonly unknown[]> =
   T extends readonly [infer H, ...infer R] ? Simplify<H & IntersectTuple<R>> : unknown;
 
