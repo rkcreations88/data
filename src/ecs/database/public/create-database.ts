@@ -21,7 +21,7 @@ SOFTWARE.*/
 
 import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
-import type { Database } from "../database.js";
+import { Database } from "../database.js";
 import type { ToActionFunctions, ActionDeclarations } from "../../store/action-functions.js";
 import { StringKeyof } from "../../../types/types.js";
 import { isPromise } from "../../../internal/promise/is-promise.js";
@@ -35,6 +35,7 @@ import { ComponentSchemas } from "../../component-schemas.js";
 import { ResourceSchemas } from "../../resource-schemas.js";
 import { FromSchemas } from "../../../schema/from-schemas.js";
 
+export function createDatabase(): Database<{}, {}, {}, {}>
 export function createDatabase<
     CS extends ComponentSchemas,
     RS extends ResourceSchemas,
@@ -51,9 +52,12 @@ export function createDatabase<
     transactionDeclarations: TD,
 ): Database<C, R, A, ToActionFunctions<TD>>
 export function createDatabase(
-    storeOrSchema: Store<any, any, any> | Database.Schema<any, any, any, any>,
+    storeOrSchema?: Store<any, any, any> | Database.Schema<any, any, any, any>,
     transactionDeclarations?: any,
 ): any {
+    if (!storeOrSchema) {
+        return createDatabaseFromSchema(Database.Schema.create({}));
+    }
     if (transactionDeclarations) {
         return createDatabaseFromStoreAndTransactions(storeOrSchema as any, transactionDeclarations);
     } else {

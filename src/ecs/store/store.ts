@@ -133,19 +133,46 @@ export namespace Store {
             readonly archetypes: {};
         }>>;
 
+        /**
+         * Creates a Store schema with optional properties. All schema properties
+         * (components, resources, archetypes) are optional and default to empty
+         * objects when not provided.
+         * 
+         * @param schema - Partial store schema. Omit any properties you don't need.
+         * @param dependencies - Optional array of schemas to merge with. Properties from
+         *                       dependencies are merged with the schema, with dependencies
+         *                       taking precedence for overlapping properties.
+         * @returns The merged schema with all properties from the schema and dependencies
+         * 
+         * @example
+         * ```typescript
+         * // Minimal schema with only components
+         * const schema = Store.Schema.create({
+         *   components: {
+         *     position: { type: "number" }
+         *   }
+         * });
+         * 
+         * // Schema with dependencies
+         * const extended = Store.Schema.create({
+         *   components: { velocity: { type: "number" } }
+         * }, [baseSchema]);
+         * ```
+         */
         export function create<
-            const CS extends ComponentSchemas,
-            const RS extends ResourceSchemas,
-            const A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents & Intersect<D>["components"]>>,
-            const D extends readonly Store.Schema<any, any, any>[],
+            const CS extends ComponentSchemas = {},
+            const RS extends ResourceSchemas = {},
+            const A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents & Intersect<D>["components"]>> = {},
+            const D extends readonly Store.Schema<any, any, any>[] = [],
         >(
-            schema: {
+            schema: Partial<{
                 components: CS;
                 resources: RS;
                 archetypes: A;
-            },
+            }>,
             dependencies?: D
         ): Intersect<[Store.Schema<CS & Intersect<D>["components"], RS, A>, ...D]> {
+            const { components = {}, resources = {}, archetypes = {} } = schema;
             return (dependencies ?? []).reduce((acc, curr) => {
                 return {
                     components: { ...acc.components, ...curr.components },
@@ -153,7 +180,7 @@ export namespace Store {
                     archetypes: { ...acc.archetypes, ...curr.archetypes },
                 }
             },
-                schema
+                { components, resources, archetypes } as any
             );
         }
 

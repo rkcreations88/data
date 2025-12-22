@@ -113,21 +113,48 @@ export namespace Database {
         {} & IntersectTuple<{ [K in keyof T]: T[K] extends Schema<any, any, any, infer TD> ? TD : never }>
       >
 
+    /**
+     * Creates a Database schema with optional properties. All schema properties
+     * (components, resources, archetypes, transactions) are optional and default
+     * to empty objects when not provided.
+     * 
+     * @param schema - Partial database schema. Omit any properties you don't need.
+     * @param dependencies - Optional array of schemas to merge with. Properties from
+     *                       dependencies are merged with the schema, with dependencies
+     *                       taking precedence for overlapping properties.
+     * @returns The merged schema with all properties from the schema and dependencies
+     * 
+     * @example
+     * ```typescript
+     * // Minimal schema with only components
+     * const schema = Database.Schema.create({
+     *   components: {
+     *     position: { type: "number" }
+     *   }
+     * });
+     * 
+     * // Schema with dependencies
+     * const extended = Database.Schema.create({
+     *   components: { velocity: { type: "number" } }
+     * }, [baseSchema]);
+     * ```
+     */
     export function create<
-      const CS extends ComponentSchemas,
-      const RS extends ResourceSchemas,
-      const A extends ArchetypeComponents<StringKeyof<CS & Intersect<D>["components"]>>,
-      const TD extends ActionDeclarations<FromSchemas<CS & Intersect<D>["components"]>, FromSchemas<RS & Intersect<D>["resources"]>, A>,
-      const D extends readonly Database.Schema<any, any, any, any>[],
+      const CS extends ComponentSchemas = {},
+      const RS extends ResourceSchemas = {},
+      const A extends ArchetypeComponents<StringKeyof<CS & Intersect<D>["components"]>> = {},
+      const TD extends ActionDeclarations<FromSchemas<CS & Intersect<D>["components"]>, FromSchemas<RS & Intersect<D>["resources"]>, A> = {},
+      const D extends readonly Database.Schema<any, any, any, any>[] = [],
     >(
-      schema: {
+      schema: Partial<{
         components: CS;
         resources: RS;
         archetypes: A;
         transactions: TD;
-      },
+      }>,
       dependencies?: D
     ): Intersect<[Database.Schema<CS, RS, A, TD>, ...D]> {
+      const { components = {}, resources = {}, archetypes = {}, transactions = {} } = schema;
       return (dependencies ?? []).reduce((acc, curr) => {
         return {
           components: { ...acc.components, ...curr.components },
@@ -136,7 +163,7 @@ export namespace Database {
           transactions: { ...acc.transactions, ...curr.transactions },
         }
       },
-        schema
+        { components, resources, archetypes, transactions } as any
       );
     }
   }
@@ -190,6 +217,7 @@ type ExtendedSchemaResult = ReturnType<typeof Database.Schema.create<
   {},
   [BaseSchema]
 >>;
+type Ignore = ExtendedSchemaResult["components"]
 
 type CheckExtendedHasAllComponents = Assert<Equal<ExtendedSchemaResult["components"], {
   position: { type: "number" };

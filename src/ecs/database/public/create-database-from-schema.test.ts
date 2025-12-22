@@ -47,12 +47,12 @@ describe("Database.create from schema", () => {
                 PositionEntity: ["position"],
             },
             transactions: {
-                createPositionEntity(t, args: { position: { x: number; y: number; z: number } }) {
+                createPositionEntity(t: Store<any, any, any>, args: { position: { x: number; y: number; z: number } }) {
                     return t.archetypes.PositionEntity.insert(args);
                 },
-                updateTime(t, args: { delta: number; elapsed: number }) {
+                updateTime(t: Store<any, any, any>, args: { delta: number; elapsed: number }) {
                     t.resources.time = args;
-                },
+                }
             }
         });
 
@@ -97,18 +97,18 @@ describe("Database.create from schema", () => {
                 foo: { default: 0 as number }
             },
             archetypes: {
-                PositionEntity: ["position"],
+                PositionEntity: ["position"]
             },
             transactions: {
-                createPositionEntity(t, args: { position: { x: number; y: number; z: number } }) {
+                createPositionEntity(t: Store<any, any, any>, args: { position: { x: number; y: number; z: number } }) {
                     return t.archetypes.PositionEntity.insert(args);
-                },
+                }
             }
         });
 
         const database = Database.create(databaseSchema);
 
-        const extensionSchema = {
+        const extensionSchema = Database.Schema.create({
             components: {
                 velocity: {
                     type: "object",
@@ -119,11 +119,10 @@ describe("Database.create from schema", () => {
                     },
                     required: ["x", "y", "z"],
                     additionalProperties: false,
-                } as const,
+                } as const
             },
-            resources: {},
             archetypes: {
-                MovingEntity: ["position", "velocity"],
+                MovingEntity: ["position", "velocity"] as any
             },
             transactions: {
                 createMovingEntity(t: Store<any, any, any>, args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) {
@@ -131,9 +130,9 @@ describe("Database.create from schema", () => {
                 },
                 updatePosition(t: Store<any, any, any>, args: { entity: number; position: { x: number; y: number; z: number } }) {
                     t.update(args.entity, { position: args.position });
-                },
-            },
-        } as const;
+                }
+            }
+        });
 
         const extendedDatabase = database.extend(extensionSchema) as unknown as typeof database & {
             transactions: typeof database.transactions & {

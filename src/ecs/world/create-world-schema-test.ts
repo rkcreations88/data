@@ -37,13 +37,12 @@ const worldSchema = World.Schema.create({
         Particle: ["particle"],
         DynamicParticle: ["particle", "velocity"],
     },
-    transactions: {},
     systems: {
         renderSystem: {
-            create: () => () => { }
+            create: (world) => () => { }
         },
         updateSystem: {
-            create: () => () => { }
+            create: (world) => () => { }
         }
     }
 });
@@ -60,10 +59,9 @@ const aSchema = World.Schema.create({
     archetypes: {
         one: ["a", "b"]
     },
-    transactions: {},
     systems: {
         systemA: {
-            create: () => () => { }
+            create: (world) => () => { }
         }
     }
 });
@@ -79,10 +77,9 @@ const bSchema = World.Schema.create({
     archetypes: {
         two: ["x", "y"]
     },
-    transactions: {},
     systems: {
         systemB: {
-            create: () => () => { }
+            create: (world) => () => { }
         }
     }
 });
@@ -98,10 +95,9 @@ const cSchema = World.Schema.create({
     archetypes: {
         three: ["m", "n", "x"]
     },
-    transactions: {},
     systems: {
         systemC: {
-            create: () => () => { }
+            create: (world) => () => { }
         }
     }
 },
@@ -196,13 +192,12 @@ const baseSchemaWithSystems = World.Schema.create({
     resources: {
         time: { default: 0 }
     },
-    archetypes: {},
     transactions: {
         updateHealth: () => { }
     },
     systems: {
         healthSystem: {
-            create: () => () => { }
+            create: (world) => () => { }
         }
     }
 });
@@ -222,10 +217,10 @@ const extendedSchemaWithSystems = World.Schema.create({
     },
     systems: {
         movementSystem: {
-            create: () => () => { }
+            create: (world) => () => { }
         },
         collisionSystem: {
-            create: () => () => { }
+            create: (world) => () => { }
         }
     }
 },
@@ -322,29 +317,26 @@ const scheduleTestBaseSchema = World.Schema.create({
     components: {
         transform: { type: "number" }
     },
-    resources: {},
-    archetypes: {},
-    transactions: {},
     systems: {
         inputSystem: {
-            create: () => () => { }
+            create: (world) => () => { }
         },
         updateSystem: {
-            create: () => () => { },
+            create: (world) => () => { },
             // Valid: references system in same schema
             schedule: {
                 after: ["inputSystem"]
             }
         },
         physicsSystem: {
-            create: () => () => { },
+            create: (world) => () => { },
             // Valid: references multiple systems in same schema
             schedule: {
                 after: ["inputSystem", "updateSystem"]
             }
         },
         renderSystem: {
-            create: () => () => { },
+            create: (world) => () => { },
             // Valid: uses both before and after
             schedule: {
                 after: ["physicsSystem"],
@@ -352,7 +344,7 @@ const scheduleTestBaseSchema = World.Schema.create({
             }
         },
         debugSystem: {
-            create: () => () => { },
+            create: (world) => () => { },
             // Valid: references system using before
             schedule: {
                 after: []
@@ -379,16 +371,12 @@ type ValidScheduleSystemNames = "inputSystem" | "updateSystem" | "physicsSystem"
 // Runtime validation would be needed for strict enforcement.
 
 const invalidScheduleExample = World.Schema.create({
-    components: {},
-    resources: {},
-    archetypes: {},
-    transactions: {},
     systems: {
         systemA: {
-            create: () => () => { },
+            create: (world) => () => { },
         },
         systemB: {
-            create: () => () => { },
+            create: (world) => () => { },
             schedule: {
                 // This would ideally error but TypeScript infers "nonExistentSystem" as a valid name
                 // @ts-expect-error - Type error: "nonExistentSystem" is not assignable to "systemA"

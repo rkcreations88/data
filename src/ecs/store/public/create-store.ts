@@ -50,13 +50,13 @@ export function createStore<
         "resources" in schemaArg &&
         "archetypes" in schemaArg;
 
-    const normalizedSchema = (hasSchemaShape
+    const normalizedSchema: Store.Schema<CS, RS, A> = hasSchemaShape
         ? schemaArg
         : {
-            components: (schemaArg ?? {}) as CS,
-            resources: (arguments.length > 1 ? arguments[1] : {}) as RS,
-            archetypes: (arguments.length > 2 ? arguments[2] : {}) as A,
-        }) as Store.Schema<CS, RS, A>;
+            components: {} as CS,
+            resources: {} as RS,
+            archetypes: {} as A,
+        };
 
     type C = RequiredComponents & { [K in StringKeyof<CS>]: Schema.ToType<CS[K]> };
     type R = { [K in StringKeyof<RS>]: Schema.ToType<RS[K]> };
@@ -94,7 +94,7 @@ export function createStore<
         Include extends StringKeyof<C & OptionalComponents>
     >(
         include: readonly Include[] | ReadonlySet<string>,
-    options?: EntitySelectOptions<C & OptionalComponents, Pick<C & RequiredComponents & OptionalComponents, Include>>
+        options?: EntitySelectOptions<C & OptionalComponents, Pick<C & RequiredComponents & OptionalComponents, Include>>
     ): readonly Entity[] => {
         return selectEntities<C, Include>(core, include, options);
     }
@@ -102,8 +102,9 @@ export function createStore<
     const archetypes = {} as any;
 
     const extend = (schema: Store.Schema<any, any, any>) => {
+        const { components: schemaComponents = {}, resources: schemaResources = {}, archetypes: schemaArchetypes = {} } = schema;
         // components: existing must be identical if present
-        for (const [name, newComponentSchema] of Object.entries(schema.components)) {
+        for (const [name, newComponentSchema] of Object.entries(schemaComponents)) {
             if (name in componentAndResourceSchemas) {
                 if (componentAndResourceSchemas[name as keyof typeof componentAndResourceSchemas] !== newComponentSchema) {
                     throw new Error(`Component schema for "${name}" must be identical when extending.`);
@@ -117,7 +118,7 @@ export function createStore<
 
         // resources: existing must be identical if present
         const newResourceNames: string[] = [];
-        for (const [name, newResourceSchema] of Object.entries(schema.resources)) {
+        for (const [name, newResourceSchema] of Object.entries(schemaResources)) {
             if (name in resourceSchemas) {
                 if (resourceSchemas[name as keyof typeof resourceSchemas] !== newResourceSchema) {
                     throw new Error(`Resource schema for "${name}" must be identical when extending.`);
@@ -132,7 +133,7 @@ export function createStore<
         }
 
         // archetypes: existing must be identical if present
-        for (const [name, newComponents] of Object.entries(schema.archetypes)) {
+        for (const [name, newComponents] of Object.entries(schemaArchetypes)) {
             if (name in archetypeComponentNames) {
                 if (archetypeComponentNames[name as keyof typeof archetypeComponentNames] !== newComponents) {
                     throw new Error(`Archetype definition for "${name}" must be identical when extending.`);
