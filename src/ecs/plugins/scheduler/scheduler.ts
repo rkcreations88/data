@@ -20,38 +20,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-/**
- * Control interface for the scheduler plugin.
- * Manages the requestAnimationFrame loop that executes all registered systems.
- */
-export interface SchedulerControl {
-    /** Start the scheduler loop */
-    start(): void;
-    /** Stop the scheduler loop */
-    stop(): void;
-    /** Pause execution (RAF continues but systems don't run) */
-    pause(): void;
-    /** Resume execution */
-    resume(): void;
-    /** Execute one frame manually (useful for debugging) */
-    step(): Promise<void>;
-    /** Check if scheduler is running */
-    readonly isRunning: boolean;
-    /** Check if scheduler is paused */
-    readonly isPaused: boolean;
-    /** Get current FPS */
-    readonly fps: number;
-    /** Get frame count since start */
-    readonly frameCount: number;
-}
+import { Database } from "../../database/database.js";
 
-/**
- * Options for creating a scheduler plugin.
- */
-export interface SchedulerOptions {
-    /** Auto-start the scheduler (default: false) */
-    autoStart?: boolean;
-    /** Target FPS for metrics (doesn't limit actual FPS, just for display) */
-    targetFps?: number;
-}
+type SchedulerState = "running" | "paused" | "disposed";
+
+export const scheduler = Database.Plugin.create({
+    resources: {
+        schedulerState: { default: "running" as SchedulerState }
+    },
+    systems: {
+        schedulerSystem: {
+            create: (db) => {
+                // Execute one frame
+                const executeFrame = async () => {
+                    if (db.resources.schedulerState === "running") {
+                        // Execute all systems in order (excluding schedulerSystem itself)
+                        for (const tier of db.system.order) {
+                            // Execute tier in parallel
+                            await Promise.all(
+                                tier.map((name: string) => db.system.functions[name]())
+                            );
+                        }
+                    }
+
+                    if (db.resources.schedulerState !== "disposed") {
+                        requestAnimationFrame(executeFrame);
+                    }
+                };
+
+                executeFrame();
+
+                // Return a no-op system function (the real work happens in the RAF loop)
+                return () => {
+                    // No-op: The scheduler manages its own execution through RAF
+                };
+            }
+        }
+    }
+});
 

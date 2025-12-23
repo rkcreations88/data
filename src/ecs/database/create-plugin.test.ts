@@ -32,24 +32,24 @@ describe("Database.Plugin.create", () => {
                     particle: { type: "boolean" },
                 },
                 resources: {
-                    mousePosition: { type: "number", default: 0 },
-                    fooPosition: { type: "number", default: 0 },
+                    mousePosition: { default: 0 as number },
+                    fooPosition: { default: 0 as number },
                 },
                 archetypes: {
                     Particle: ["particle"],
                     DynamicParticle: ["particle", "velocity"],
+                },
+                systems: {
+                    updateSystem: {
+                        create: (db) => () => {
+                            db.store.archetypes.Particle.insert({ particle: true });
+                            db.archetypes.Particle.id.toString();
+                            // @ts-expect-error - foo does not exist
+                            db.archetypes.foo
+                        }
+                    }
                 }
             });
-
-            expect(plugin.components).toBeDefined();
-            expect("velocity" in plugin.components).toBe(true);
-            expect("particle" in plugin.components).toBe(true);
-            expect(plugin.resources).toBeDefined();
-            expect("mousePosition" in plugin.resources).toBe(true);
-            expect("fooPosition" in plugin.resources).toBe(true);
-            expect(plugin.archetypes).toBeDefined();
-            expect("Particle" in plugin.archetypes).toBe(true);
-            expect("DynamicParticle" in plugin.archetypes).toBe(true);
         });
 
         it("should infer db type correctly with single descriptor", () => {
@@ -70,6 +70,39 @@ describe("Database.Plugin.create", () => {
 
             expect(plugin).toBeDefined();
             expect(plugin.systems).toBeDefined();
+        });
+
+        it("should constrain archetype references at input", () => {
+            createPlugin({
+                components: {
+                    particle: { type: "boolean" },
+                },
+                archetypes: {
+                    Particle: ["particle"],
+                    // @ts-expect-error - DoesNotExist component does not exist
+                    DoesNotExist: ["particle234"],
+                },
+            });
+        });
+
+        it("should constrain archetype access in systems", () => {
+            createPlugin({
+                components: {
+                    particle: { type: "boolean" },
+                },
+                archetypes: {
+                    Particle: ["particle"],
+                },
+                systems: {
+                    testSystem: {
+                        create: (db) => () => {
+                            db.archetypes.Particle; // ✅ OK
+                            // @ts-expect-error - foo does not exist
+                            db.archetypes.foo;
+                        }
+                    }
+                }
+            });
         });
 
         it("should constrain schedule references to dependency system names", () => {

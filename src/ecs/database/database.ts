@@ -103,8 +103,8 @@ export namespace Database {
   export type Plugin<
     CS extends ComponentSchemas = any,
     RS extends ResourceSchemas = any,
-    A extends ArchetypeComponents<StringKeyof<CS>> = any,
-    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A> = any,
+    A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents>> = any,
+    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, any> = any,
     S extends string = any
   > = {
     readonly components?: CS;

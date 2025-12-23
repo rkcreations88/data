@@ -27,6 +27,7 @@ import type { ArchetypeComponents } from "../store/archetype-components.js";
 import type { ActionDeclarations, ToActionFunctions } from "../store/action-functions.js";
 import type { FromSchemas } from "../../schema/index.js";
 import type { StringKeyof, IntersectTuple } from "../../types/types.js";
+import type { OptionalComponents } from "../optional-components.js";
 
 type SystemFunction = () => void | Promise<void>;
 
@@ -57,6 +58,23 @@ export type PluginSchema<
 // Helper to extract system names from a plugin
 type ExtractSystemNames<P> = P extends Database.Plugin<any, any, any, any, infer S> ? S : never;
 
+// Helper type: Database for plugin creation with schema-based archetypes
+type PluginDatabase<
+    CS extends ComponentSchemas,
+    RS extends ResourceSchemas,
+    A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents>>,
+    TD extends ActionDeclarations<any, any, any>,
+    S extends string
+> = Database<
+    FromSchemas<RemoveIndexSignature<CS>>,
+    FromSchemas<RemoveIndexSignature<RS>>,
+    RemoveIndexSignature<{
+        readonly [K in keyof A as string extends K ? never : K]: A[K]
+    } & ArchetypeComponents<StringKeyof<FromSchemas<RemoveIndexSignature<CS>> & OptionalComponents>>>,
+    ToActionFunctions<TD>,
+    S
+>;
+
 // Helper to merge dependency plugins
 type MergeDependencies<D extends readonly Database.Plugin<any, any, any, any, any>[]> = {
     components: {} & IntersectTuple<{ [K in keyof D]: D[K] extends Database.Plugin<infer C, any, any, any, any> ? (C extends undefined ? {} : C) : never }>;
@@ -70,16 +88,10 @@ type MergeDependencies<D extends readonly Database.Plugin<any, any, any, any, an
 export function createPlugin<
     const CS extends ComponentSchemas,
     const RS extends ResourceSchemas,
-    const A extends ArchetypeComponents<any>,
+    const A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents>>,
     const TD extends ActionDeclarations<any, any, any>,
     const SYS extends { readonly [K in string]: {
-        readonly create: (db: Database<
-            FromSchemas<RemoveIndexSignature<CS>>,
-            FromSchemas<RemoveIndexSignature<RS>>,
-            A,
-            ToActionFunctions<TD>,
-            string
-        >) => SystemFunction;
+        readonly create: (db: PluginDatabase<CS, RS, A, TD, string>) => SystemFunction;
         readonly schedule?: {
             readonly before?: readonly Extract<keyof SYS, string>[];
             readonly after?: readonly Extract<keyof SYS, string>[];
@@ -100,14 +112,14 @@ export function createPlugin<
     const D extends readonly any[],
     const CS extends ComponentSchemas,
     const RS extends ResourceSchemas,
-    const A extends ArchetypeComponents<any>,
+    const A extends ArchetypeComponents<StringKeyof<CS & MergeDependencies<D>['components'] & OptionalComponents>>,
     const TD extends ActionDeclarations<any, any, any>,
     const SYS extends { readonly [K in string]: {
-        readonly create: (db: Database<
-            FromSchemas<RemoveIndexSignature<CS & MergeDependencies<D>['components']>>,
-            FromSchemas<RemoveIndexSignature<RS & MergeDependencies<D>['resources']>>,
-            A | MergeDependencies<D>['archetypes'],
-            ToActionFunctions<TD & MergeDependencies<D>['transactions']>,
+        readonly create: (db: PluginDatabase<
+            CS & MergeDependencies<D>['components'],
+            RS & MergeDependencies<D>['resources'],
+            A,
+            TD & MergeDependencies<D>['transactions'],
             MergeDependencies<D>['systemNames'] | string
         >) => SystemFunction;
         readonly schedule?: {
@@ -126,7 +138,7 @@ export function createPlugin<
     dependencies: D
 ): Database.Plugin.Intersect<[
     ...D,
-    Database.Plugin<CS, RS, A, TD, StringKeyof<SYS>>
+    Database.Plugin<CS & MergeDependencies<D>['components'], RS, A, TD, StringKeyof<SYS>>
 ]>;
 
 // Implementation
