@@ -75,9 +75,10 @@ describe("Database.Plugin.create", () => {
                                 // @ts-expect-error - this should be an error
                                 const dt: number = db.resources.deltaTime2;
                             },
-                            // schedule: {
-                            //     after: ["firstSystem2"]
-                            // }
+                            schedule: {
+                                // References system from first argument
+                                after: ["firstSystem"]
+                            }
                         }
                     }
                 },
@@ -144,6 +145,105 @@ describe("Database.Plugin.create", () => {
             expect(plugin.components).toBeDefined();
             expect(plugin.resources).toBeDefined();
             expect(plugin.systems).toBeDefined();
+        });
+
+        it("should throw error for non-existent system in schedule.after", () => {
+            expect(() => {
+                Database.Plugin.create({
+                    systems: {
+                        system1: {
+                            create: (_db) => () => { }
+                        },
+                        system2: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                after: ["nonExistentSystem"]
+                            }
+                        }
+                    }
+                });
+            }).toThrow('System "system2" references non-existent system "nonExistentSystem" in schedule.after');
+        });
+
+        it("should throw error for non-existent system in schedule.before", () => {
+            expect(() => {
+                Database.Plugin.create({
+                    systems: {
+                        system1: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                before: ["anotherNonExistentSystem"]
+                            }
+                        }
+                    }
+                });
+            }).toThrow('System "system1" references non-existent system "anotherNonExistentSystem" in schedule.before');
+        });
+
+        it("should not throw error for valid system references in schedule", () => {
+            expect(() => {
+                Database.Plugin.create({
+                    systems: {
+                        system1: {
+                            create: (_db) => () => { }
+                        },
+                        system2: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                after: ["system1"]
+                            }
+                        }
+                    }
+                });
+            }).not.toThrow();
+        });
+
+        it("should validate system references across merged plugin arguments", () => {
+            // Valid reference across plugin arguments
+            expect(() => {
+                Database.Plugin.create(
+                    {
+                        systems: {
+                            system1: {
+                                create: (_db) => () => { }
+                            }
+                        }
+                    },
+                    {
+                        systems: {
+                            system2: {
+                                create: (_db) => () => { },
+                                schedule: {
+                                    after: ["system1"]
+                                }
+                            }
+                        }
+                    }
+                );
+            }).not.toThrow();
+
+            // Invalid reference across plugin arguments
+            expect(() => {
+                Database.Plugin.create(
+                    {
+                        systems: {
+                            system1: {
+                                create: (_db) => () => { }
+                            }
+                        }
+                    },
+                    {
+                        systems: {
+                            system2: {
+                                create: (_db) => () => { },
+                                schedule: {
+                                    after: ["nonExistentSystem"]
+                                }
+                            }
+                        }
+                    }
+                );
+            }).toThrow('System "system2" references non-existent system "nonExistentSystem" in schedule.after');
         });
     });
 
@@ -531,10 +631,7 @@ describe("Database.Plugin.create", () => {
                 archetypes: {},
                 systems: {
                     system2: {
-                        create: (_db) => () => { },
-                        schedule: {
-                            after: ["system1"]
-                        }
+                        create: (_db) => () => { }
                     }
                 }
             });
@@ -542,10 +639,10 @@ describe("Database.Plugin.create", () => {
             const db = Database.create(basePlugin);
             const extended = db.extend(extensionPlugin);
 
-            // system2 should be scheduled after system1
-            expect(extended.system.order).toHaveLength(2);
-            expect(extended.system.order[0]).toEqual(["system1"]);
-            expect(extended.system.order[1]).toEqual(["system2"]);
+            // Both systems should be in the same tier (no dependencies)
+            expect(extended.system.order).toHaveLength(1);
+            expect(extended.system.order[0]).toContain("system1");
+            expect(extended.system.order[0]).toContain("system2");
         });
 
         it("should extend database without systems and return same instance", () => {

@@ -272,7 +272,7 @@ export function createPlugin<
 
 // Implementation
 export function createPlugin(...args: any[]): any {
-    return args.reduce((acc, curr) => ({
+    const result = args.reduce((acc, curr) => ({
         components: { ...acc.components, ...curr.components },
         resources: { ...acc.resources, ...curr.resources },
         archetypes: { ...acc.archetypes, ...curr.archetypes },
@@ -285,4 +285,29 @@ export function createPlugin(...args: any[]): any {
         transactions: {},
         systems: {},
     });
+
+    // Validate system schedule references
+    if (result.systems) {
+        const systemNames = new Set(Object.keys(result.systems));
+        for (const [systemName, systemDef] of Object.entries(result.systems)) {
+            const schedule = (systemDef as any)?.schedule;
+            if (schedule) {
+                const validateRefs = (refs: string[] | undefined, type: 'before' | 'after') => {
+                    if (refs) {
+                        for (const ref of refs) {
+                            if (!systemNames.has(ref)) {
+                                throw new Error(
+                                    `System "${systemName}" references non-existent system "${ref}" in schedule.${type}`
+                                );
+                            }
+                        }
+                    }
+                };
+                validateRefs(schedule.before, 'before');
+                validateRefs(schedule.after, 'after');
+            }
+        }
+    }
+
+    return result;
 }
