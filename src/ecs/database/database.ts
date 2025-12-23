@@ -45,6 +45,7 @@ import type {
   ActionFunctions,
   ToActionFunctions,
 } from "../store/action-functions.js";
+import { createPlugin as createPluginImpl } from "./create-plugin.js";
 
 type SystemFunction = () => void | Promise<void>;
 
@@ -126,46 +127,11 @@ export namespace Database {
         {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<infer C, any, any, any, any> ? (C extends undefined ? {} : C) : never }>,
         {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, infer R, any, any, any> ? (R extends undefined ? {} : R) : never }>,
         {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, infer A, any, any> ? (A extends undefined ? {} : A) : never }>,
-        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, any, infer TD, any> ? (TD extends undefined ? {} : TD) : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, any, infer TD, any> ? (TD extends undefined ? Record<never, never> : TD) : never }>,
         Extract<{ [K in keyof T]: T[K] extends Plugin<any, any, any, any, infer S> ? S : never }[number], string>
       >>
 
-    export function create<
-      const CS extends ComponentSchemas = {},
-      const RS extends ResourceSchemas = {},
-      const A extends ArchetypeComponents<StringKeyof<CS & Intersect<D>["components"]>> = {},
-      const TD extends ActionDeclarations<FromSchemas<CS & Intersect<D>["components"]>, FromSchemas<RS & Intersect<D>["resources"]>, A> = {},
-      const SYS extends { readonly [K in string]: {
-        readonly create: (db: Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, StringKeyof<SYS>>) => SystemFunction;
-        readonly schedule?: {
-          readonly before?: readonly string[];
-          readonly after?: readonly string[];
-        }
-      } } = {},
-      const D extends readonly Database.Plugin<any, any, any, any, any>[] = [],
-    >(
-      plugin: {
-        components?: CS;
-        resources?: RS;
-        archetypes?: A;
-        transactions?: TD;
-        systems?: SYS;
-      },
-      ...dependencies: D
-    ): Intersect<[Database.Plugin<CS, RS, A, TD, Extract<keyof SYS, string>>, ...D]> {
-      const { components = {}, resources = {}, archetypes = {}, transactions = {}, systems = {} } = plugin;
-      return dependencies.reduce((acc, curr) => {
-        return {
-          components: { ...acc.components, ...curr.components },
-          resources: { ...acc.resources, ...curr.resources },
-          archetypes: { ...acc.archetypes, ...curr.archetypes },
-          transactions: { ...acc.transactions, ...curr.transactions },
-          systems: { ...acc.systems, ...curr.systems },
-        }
-      },
-        { components, resources, archetypes, transactions, systems } as any
-      );
-    }
+    export const create = createPluginImpl;
   }
 
 }
@@ -214,14 +180,28 @@ type BasePlugin = Database.Plugin<
   never
 >;
 
-type ExtendedPluginResult = ReturnType<typeof Database.Plugin.create<
-  { velocity: { type: "number" } },
-  {},
-  { DynamicEntity: ["position", "velocity"], LivingEntity: ["position", "health"] },
-  {},
-  {},
-  [BasePlugin]
->>;
+// Test type inference with new overload pattern
+const testBasePlugin = Database.Plugin.create({
+  components: {
+    position: { type: "number" },
+    health: { type: "number" }
+  }
+});
+
+const testExtendedPlugin = Database.Plugin.create(
+  testBasePlugin,
+  {
+    components: {
+      velocity: { type: "number" }
+    },
+    archetypes: {
+      DynamicEntity: ["position", "velocity"],
+      LivingEntity: ["position", "health"]
+    }
+  }
+);
+
+type ExtendedPluginResult = typeof testExtendedPlugin;
 type Ignore = ExtendedPluginResult["components"]
 
 // TODO: Fix type test after World->Database merge

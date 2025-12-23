@@ -105,11 +105,11 @@ describe("Database.Plugin.create", () => {
                 }
             });
 
-            const extendedSchema = Database.Plugin.create({
+            const extendedSchema = Database.Plugin.create(baseSchema, {
                 components: {
                     velocity: { type: "number" }
                 }
-            }, baseSchema);
+            });
 
             expect(extendedSchema.components).toHaveProperty("position");
             expect(extendedSchema.components).toHaveProperty("velocity");
@@ -128,7 +128,7 @@ describe("Database.Plugin.create", () => {
                 }
             });
 
-            const emptyExtension = Database.Plugin.create({}, baseSchema);
+            const emptyExtension = Database.Plugin.create(baseSchema, {});
 
             expect(emptyExtension.components).toHaveProperty("transform");
             expect(emptyExtension.transactions).toHaveProperty("updateTransform");
@@ -149,9 +149,9 @@ describe("Database.Plugin.create", () => {
                 components: { c: { type: "number" } }
             });
 
-            const merged = Database.Plugin.create({
+            const merged = Database.Plugin.create(pluginA, pluginB, pluginC, {
                 components: { d: { type: "number" } }
-            }, pluginA, pluginB, pluginC);
+            });
 
             expect(merged.components).toHaveProperty("a");
             expect(merged.components).toHaveProperty("b");
@@ -167,11 +167,11 @@ describe("Database.Plugin.create", () => {
                 }
             });
 
-            const extendedSchema = Database.Plugin.create({
+            const extendedSchema = Database.Plugin.create(baseSchema, {
                 transactions: {
                     extendedAction: () => { }
                 }
-            }, baseSchema);
+            });
 
             expect(extendedSchema.transactions).toHaveProperty("baseAction");
             expect(extendedSchema.transactions).toHaveProperty("extendedAction");
@@ -188,12 +188,12 @@ describe("Database.Plugin.create", () => {
                 }
             });
 
-            const extendedSchema = Database.Plugin.create({
+            const extendedSchema = Database.Plugin.create(baseSchema, {
                 components: {
                     position: { type: "number" },
                     mass: { type: "number" }
                 }
-            }, baseSchema);
+            });
 
             // All components should be present
             expect(extendedSchema.components).toHaveProperty("position");
@@ -210,7 +210,7 @@ describe("Database.Plugin.create", () => {
                 }
             });
 
-            const extendedSchema = Database.Plugin.create({
+            const extendedSchema = Database.Plugin.create(baseSchema, {
                 components: {
                     velocity: { type: "number" }
                 },
@@ -218,7 +218,7 @@ describe("Database.Plugin.create", () => {
                     DynamicEntity: ["position", "velocity"],
                     LivingEntity: ["position", "health"]
                 }
-            }, baseSchema);
+            });
 
             expect(extendedSchema.archetypes).toHaveProperty("DynamicEntity");
             expect(extendedSchema.archetypes).toHaveProperty("LivingEntity");

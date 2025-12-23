@@ -96,7 +96,7 @@ describe("createSchedulerPlugin", () => {
         }) as any;
 
         const db = Database.create(
-            Database.Plugin.create({}, gamePlugin, createSchedulerPlugin()) as any
+            Database.Plugin.create(gamePlugin, createSchedulerPlugin(), {}) as any
         ) as any;
 
         await db.resources.scheduler.step();
@@ -142,7 +142,7 @@ describe("createSchedulerPlugin", () => {
         }) as any;
 
         const db = Database.create(
-            Database.Plugin.create({}, gamePlugin, createSchedulerPlugin()) as any
+            Database.Plugin.create(gamePlugin, createSchedulerPlugin(), {}) as any
         ) as any;
 
         await db.resources.scheduler.step();
@@ -181,7 +181,7 @@ describe("createSchedulerPlugin", () => {
         }) as any;
 
         const db = Database.create(
-            Database.Plugin.create({}, gamePlugin, createSchedulerPlugin()) as any
+            Database.Plugin.create(gamePlugin, createSchedulerPlugin(), {}) as any
         ) as any;
 
         await db.resources.scheduler.step();
@@ -208,7 +208,7 @@ describe("createSchedulerPlugin", () => {
 
         const plugin = createSchedulerPlugin();
         const db = Database.create(
-            Database.Plugin.create({}, gamePlugin, plugin)
+            Database.Plugin.create(gamePlugin, plugin, {})
         );
 
         await db.resources.scheduler.step();
@@ -250,7 +250,7 @@ describe("createSchedulerPlugin", () => {
         });
 
         const db = Database.create(
-            Database.Plugin.create({}, gamePlugin, createSchedulerPlugin()) as any
+            Database.Plugin.create(gamePlugin, createSchedulerPlugin(), {}) as any
         ) as any;
 
         await db.resources.scheduler.step();

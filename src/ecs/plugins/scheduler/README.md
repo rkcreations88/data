@@ -56,7 +56,7 @@ const GamePlugin = Database.Plugin.create({
 
 // Create database with scheduler
 const db = Database.create(
-  Database.Plugin.create({}, GamePlugin, createSchedulerPlugin())
+  Database.Plugin.create(GamePlugin, createSchedulerPlugin(), {})
 );
 
 // Start the loop
@@ -226,9 +226,10 @@ const GamePlugin = Database.Plugin.create({
 });
 
 const db = Database.create(
-  Database.Plugin.create({},
+  Database.Plugin.create(
     GamePlugin,
-    createSchedulerPlugin({ autoStart: true })
+    createSchedulerPlugin({ autoStart: true }),
+    {}
   )
 );
 
@@ -245,7 +246,7 @@ for (let i = 0; i < 100; i++) {
 
 ```typescript
 const db = Database.create(
-  Database.Plugin.create({}, GamePlugin, createSchedulerPlugin())
+  Database.Plugin.create(GamePlugin, createSchedulerPlugin(), {})
 );
 
 // Don't start automatically - step manually
@@ -259,9 +260,10 @@ document.getElementById('stepButton').addEventListener('click', async () => {
 
 ```typescript
 const db = Database.create(
-  Database.Plugin.create({},
+  Database.Plugin.create(
     GamePlugin,
-    createSchedulerPlugin({ autoStart: true })
+    createSchedulerPlugin({ autoStart: true }),
+    {}
   )
 );
 

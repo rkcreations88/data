@@ -38,7 +38,7 @@ import type { SchedulerControl, SchedulerOptions } from "./scheduler.js";
  * @example
  * ```typescript
  * const db = Database.create(
- *   Database.Plugin.create({}, MyGamePlugin, createSchedulerPlugin({ autoStart: true }))
+ *   Database.Plugin.create(MyGamePlugin, createSchedulerPlugin({ autoStart: true }), {})
  * );
  * 
  * // Control the scheduler
