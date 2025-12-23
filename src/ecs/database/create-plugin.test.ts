@@ -257,66 +257,7 @@ describe("Database.Plugin.create", () => {
     });
 
     describe("schedule validation", () => {
-        it("should throw error for non-existent system in schedule.after", () => {
-            expect(() => {
-                createPlugin({
-                    systems: {
-                        system1: {
-                            create: (_db) => () => { }
-                        },
-                        system2: {
-                            create: (_db) => () => { },
-                            schedule: {
-                                // @ts-expect-error - nonExistentSystem does not exist
-                                after: ["nonExistentSystem"]
-                            }
-                        }
-                    }
-                }, [
-                    createPlugin({
-                        systems: {
-                            system1: {
-                                create: (_db) => () => { }
-                            }
-                        }
-                    })
-                ]);
-            }).toThrow('System "system2" references non-existent system "nonExistentSystem" in schedule.after');
-        });
-
-        it("should have a type error when referencing systems without dependencies", () => {
-            expect(() => {
-                createPlugin({
-                    systems: {
-                        system1: {
-                            create: (_db) => () => { },
-                            schedule: {
-                                // @ts-expect-error - system2 does not exist
-                                after: ["system2"]
-                            }
-                        }
-                    }
-                });
-            }).toThrow();
-        });
-
-        it("should throw error for non-existent system in schedule.before", () => {
-            expect(() => {
-                createPlugin({
-                    systems: {
-                        system1: {
-                            create: (_db) => () => { },
-                            schedule: {
-                                // @ts-expect-error - anotherNonExistentSystem does not exist
-                                before: ["anotherNonExistentSystem"]
-                            }
-                        }
-                    }
-                });
-            }).toThrow('System "system1" references non-existent system "anotherNonExistentSystem" in schedule.before');
-        });
-
-        it("should not throw error for valid system references in schedule", () => {
+        it("should allow valid system references in schedule", () => {
             expect(() => {
                 createPlugin({
                     systems: {
@@ -395,33 +336,6 @@ describe("Database.Plugin.create", () => {
             }).not.toThrow();
         });
 
-        it("should still catch errors when using dependencies", () => {
-            const basePlugin = createPlugin({
-                systems: {
-                    realSystem: {
-                        create: (_db) => () => { }
-                    }
-                }
-            });
-
-            expect(() => {
-                createPlugin(
-                    {
-                        systems: {
-                            mySystem: {
-                                create: (_db) => () => { },
-                                schedule: {
-                                    // @ts-expect-error - Type error AND runtime error
-                                    after: ["nonExistentSystem"]
-                                }
-                            }
-                        }
-                    },
-                    [basePlugin]
-                );
-            }).toThrow('System "mySystem" references non-existent system "nonExistentSystem" in schedule.after');
-        });
-
         it("should constrain schedule references to dependency system names", () => {
             const basePlugin = createPlugin({
                 systems: {
@@ -452,24 +366,6 @@ describe("Database.Plugin.create", () => {
 
             expect(validPlugin).toBeDefined();
             expect(validPlugin.systems).toHaveProperty("renderSystem");
-
-            // ❌ INVALID: This should have BOTH compile-time AND runtime errors
-            expect(() => {
-                createPlugin(
-                    {
-                        systems: {
-                            renderSystem: {
-                                create: (_db) => () => { },
-                                schedule: {
-                                    // @ts-expect-error - "badSystemName" doesn't exist in dependencies (no 'as const' needed!)
-                                    after: ["badSystemName"]
-                                }
-                            }
-                        }
-                    },
-                    [basePlugin]
-                );
-            }).toThrow('System "renderSystem" references non-existent system "badSystemName" in schedule.after');
         });
     });
 

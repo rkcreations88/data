@@ -162,37 +162,12 @@ export function createPlugin(
     });
 
     // Merge descriptor on top of dependencies
-    const result = {
+    return {
         components: { ...mergedDeps.components, ...descriptor.components },
         resources: { ...mergedDeps.resources, ...descriptor.resources },
         archetypes: { ...mergedDeps.archetypes, ...descriptor.archetypes },
         transactions: { ...mergedDeps.transactions, ...descriptor.transactions },
         systems: { ...mergedDeps.systems, ...descriptor.systems },
-    };
-
-    // Validate system schedule references
-    if (result.systems) {
-        const systemNames = new Set(Object.keys(result.systems));
-        for (const [systemName, systemDef] of Object.entries(result.systems)) {
-            const schedule = (systemDef as any)?.schedule;
-            if (schedule) {
-                const validateRefs = (refs: string[] | undefined, type: 'before' | 'after') => {
-                    if (refs) {
-                        for (const ref of refs) {
-                            if (!systemNames.has(ref)) {
-                                throw new Error(
-                                    `System "${systemName}" references non-existent system "${ref}" in schedule.${type}`
-                                );
-                            }
-                        }
-                    }
-                };
-                validateRefs(schedule.before, 'before');
-                validateRefs(schedule.after, 'after');
-            }
-        }
-    }
-
-    return result as any;
+    } as any;
 }
 
