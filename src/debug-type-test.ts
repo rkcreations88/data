@@ -9,9 +9,9 @@ const bSchema = Database.Plugin.create({
     components: { x: { type: "number" } },
 });
 
-const cSchema = Database.Plugin.create(aSchema, bSchema, {
+const cSchema = Database.Plugin.create({
     components: { m: { type: "number" } },
-});
+}, [aSchema, bSchema]);
 
 // What is the actual type?
 type TX = typeof cSchema.transactions;

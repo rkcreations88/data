@@ -1,0 +1,386 @@
+/*MIT License
+
+© Copyright 2025 Adobe. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
+
+import { describe, it, expect } from "vitest";
+import { createPlugin } from "./create-plugin-v2.js";
+import { Database } from "./database.js";
+
+describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
+    describe("single descriptor (no dependencies)", () => {
+        it("should create plugin with components, resources, and archetypes", () => {
+            const plugin = createPlugin({
+                components: {
+                    velocity: { type: "number" },
+                    particle: { type: "boolean" },
+                },
+                resources: {
+                    mousePosition: { type: "number", default: 0 },
+                    fooPosition: { type: "number", default: 0 },
+                },
+                archetypes: {
+                    Particle: ["particle"],
+                    DynamicParticle: ["particle", "velocity"],
+                }
+            });
+
+            expect(plugin.components).toBeDefined();
+            expect("velocity" in plugin.components).toBe(true);
+            expect("particle" in plugin.components).toBe(true);
+            expect(plugin.resources).toBeDefined();
+            expect("mousePosition" in plugin.resources).toBe(true);
+            expect("fooPosition" in plugin.resources).toBe(true);
+            expect(plugin.archetypes).toBeDefined();
+            expect("Particle" in plugin.archetypes).toBe(true);
+            expect("DynamicParticle" in plugin.archetypes).toBe(true);
+        });
+
+        it("should infer db type correctly with single descriptor", () => {
+            const plugin = createPlugin({
+                resources: {
+                    time: { default: 0 as number },
+                },
+                systems: {
+                    physicsSystem: {
+                        create: (db) => () => {
+                            const time: number = db.resources.time;
+                            // @ts-expect-error - this should be an error
+                            const dt: number = db.resources.deltaTime2;
+                        }
+                    }
+                }
+            });
+
+            expect(plugin).toBeDefined();
+            expect(plugin.systems).toBeDefined();
+        });
+    });
+
+    describe("with dependencies", () => {
+        it("should merge components from dependencies", () => {
+            const basePlugin = createPlugin({
+                components: {
+                    position: { type: "number" },
+                    health: { type: "number" }
+                }
+            });
+
+            const extendedPlugin = createPlugin(
+                {
+                    components: {
+                        velocity: { type: "number" }
+                    }
+                },
+                [basePlugin]
+            );
+
+            expect("position" in extendedPlugin.components).toBe(true);
+            expect("health" in extendedPlugin.components).toBe(true);
+            expect("velocity" in extendedPlugin.components).toBe(true);
+        });
+
+        it("should merge resources from dependencies", () => {
+            const basePlugin = createPlugin({
+                resources: {
+                    time: { default: 0 },
+                    config: { default: "default" }
+                }
+            });
+
+            const extendedPlugin = createPlugin(
+                {
+                    resources: {
+                        delta: { default: 0 }
+                    }
+                },
+                [basePlugin]
+            );
+
+            expect("time" in extendedPlugin.resources).toBe(true);
+            expect("config" in extendedPlugin.resources).toBe(true);
+            expect("delta" in extendedPlugin.resources).toBe(true);
+        });
+
+        it("should merge systems from dependencies", () => {
+            const basePlugin = createPlugin({
+                systems: {
+                    inputSystem: {
+                        create: (_db) => () => { }
+                    }
+                }
+            });
+
+            const extendedPlugin = createPlugin(
+                {
+                    systems: {
+                        renderSystem: {
+                            create: (_db) => () => { }
+                        }
+                    }
+                },
+                [basePlugin]
+            );
+
+            expect("inputSystem" in extendedPlugin.systems!).toBe(true);
+            expect("renderSystem" in extendedPlugin.systems!).toBe(true);
+        });
+
+        it("should allow systems to access dependency resources", () => {
+            const basePlugin = createPlugin({
+                resources: {
+                    time: { default: 0 as number }
+                }
+            });
+
+            const extendedPlugin = createPlugin(
+                {
+                    systems: {
+                        mySystem: {
+                            create: (db) => () => {
+                                const time: number = db.resources.time;  // Should work!
+                                expect(typeof time).toBe("number");
+                            }
+                        }
+                    }
+                },
+                [basePlugin]
+            );
+
+            expect(extendedPlugin).toBeDefined();
+        });
+
+        it("should allow multiple dependencies", () => {
+            const plugin1 = createPlugin({
+                components: { a: { type: "number" } }
+            });
+
+            const plugin2 = createPlugin({
+                components: { b: { type: "string" } }
+            });
+
+            const plugin3 = createPlugin({
+                components: { c: { type: "boolean" } }
+            });
+
+            const merged = createPlugin(
+                {
+                    components: { d: { type: "number" } }
+                },
+                [plugin1, plugin2, plugin3]
+            );
+
+            expect("a" in merged.components).toBe(true);
+            expect("b" in merged.components).toBe(true);
+            expect("c" in merged.components).toBe(true);
+            expect("d" in merged.components).toBe(true);
+        });
+    });
+
+    describe("schedule validation", () => {
+        it("should throw error for non-existent system in schedule.after", () => {
+            expect(() => {
+                createPlugin({
+                    systems: {
+                        system1: {
+                            create: (_db) => () => { }
+                        },
+                        system2: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                after: ["nonExistentSystem"]
+                            }
+                        }
+                    }
+                });
+            }).toThrow('System "system2" references non-existent system "nonExistentSystem" in schedule.after');
+        });
+
+        it("should throw error for non-existent system in schedule.before", () => {
+            expect(() => {
+                createPlugin({
+                    systems: {
+                        system1: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                before: ["anotherNonExistentSystem"]
+                            }
+                        }
+                    }
+                });
+            }).toThrow('System "system1" references non-existent system "anotherNonExistentSystem" in schedule.before');
+        });
+
+        it("should not throw error for valid system references in schedule", () => {
+            expect(() => {
+                createPlugin({
+                    systems: {
+                        system1: {
+                            create: (_db) => () => { }
+                        },
+                        system2: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                after: ["system1"]
+                            }
+                        }
+                    }
+                });
+            }).not.toThrow();
+        });
+
+        it("should allow referencing dependency systems in schedule", () => {
+            const basePlugin = createPlugin({
+                systems: {
+                    inputSystem: {
+                        create: (_db) => () => { }
+                    }
+                }
+            });
+
+            expect(() => {
+                createPlugin(
+                    {
+                        systems: {
+                            renderSystem: {
+                                create: (_db) => () => { },
+                                schedule: {
+                                    after: ["inputSystem"]  // Reference from dependency!
+                                }
+                            }
+                        }
+                    },
+                    [basePlugin]
+                );
+            }).not.toThrow();
+        });
+
+        it("should validate across multiple dependencies", () => {
+            const plugin1 = createPlugin({
+                systems: {
+                    system1: {
+                        create: (_db) => () => { }
+                    }
+                }
+            });
+
+            const plugin2 = createPlugin({
+                systems: {
+                    system2: {
+                        create: (_db) => () => { }
+                    }
+                }
+            });
+
+            expect(() => {
+                createPlugin(
+                    {
+                        systems: {
+                            system3: {
+                                create: (_db) => () => { },
+                                schedule: {
+                                    after: ["system1", "system2"]  // Both from dependencies
+                                }
+                            }
+                        }
+                    },
+                    [plugin1, plugin2]
+                );
+            }).not.toThrow();
+        });
+
+        it("should still catch errors when using dependencies", () => {
+            const basePlugin = createPlugin({
+                systems: {
+                    realSystem: {
+                        create: (_db) => () => { }
+                    }
+                }
+            });
+
+            expect(() => {
+                createPlugin(
+                    {
+                        systems: {
+                            mySystem: {
+                                create: (_db) => () => { },
+                                schedule: {
+                                    after: ["nonExistentSystem"]
+                                }
+                            }
+                        }
+                    },
+                    [basePlugin]
+                );
+            }).toThrow('System "mySystem" references non-existent system "nonExistentSystem" in schedule.after');
+        });
+    });
+
+    describe("type inference edge cases", () => {
+        it("should block arbitrary property access on resources", () => {
+            const plugin = createPlugin({
+                resources: {
+                    time: { default: 0 as number }
+                },
+                systems: {
+                    testSystem: {
+                        create: (db) => () => {
+                            const time: number = db.resources.time;  // OK
+                            // @ts-expect-error - should error
+                            const invalid: number = db.resources.nonExistent;
+                        }
+                    }
+                }
+            });
+
+            expect(plugin).toBeDefined();
+        });
+
+        it("should block arbitrary property access with dependencies", () => {
+            const basePlugin = createPlugin({
+                resources: {
+                    time: { default: 0 as number }
+                }
+            });
+
+            const extendedPlugin = createPlugin(
+                {
+                    resources: {
+                        delta: { default: 0 as number }
+                    },
+                    systems: {
+                        testSystem: {
+                            create: (db) => () => {
+                                const time: number = db.resources.time;    // OK - from dependency
+                                const delta: number = db.resources.delta;   // OK - from descriptor
+                                // @ts-expect-error - should error
+                                const invalid: number = db.resources.nonExistent;
+                            }
+                        }
+                    }
+                },
+                [basePlugin]
+            );
+
+            expect(extendedPlugin).toBeDefined();
+        });
+    });
+});
+

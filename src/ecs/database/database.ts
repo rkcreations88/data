@@ -45,7 +45,7 @@ import type {
   ActionFunctions,
   ToActionFunctions,
 } from "../store/action-functions.js";
-import { createPlugin as createPluginImpl } from "./create-plugin.js";
+import { createPlugin as createPluginImpl } from "./create-plugin-v2.js";
 
 type SystemFunction = () => void | Promise<void>;
 
@@ -189,7 +189,6 @@ const testBasePlugin = Database.Plugin.create({
 });
 
 const testExtendedPlugin = Database.Plugin.create(
-  testBasePlugin,
   {
     components: {
       velocity: { type: "number" }
@@ -198,7 +197,8 @@ const testExtendedPlugin = Database.Plugin.create(
       DynamicEntity: ["position", "velocity"],
       LivingEntity: ["position", "health"]
     }
-  }
+  },
+  [testBasePlugin]
 );
 
 type ExtendedPluginResult = typeof testExtendedPlugin;
