@@ -27,6 +27,7 @@ import { Vec3 } from "../../math/index.js";
 describe("Database.Plugin.create", () => {
 
     describe("type inference", () => {
+
         it("should infer db type correctly with 1 args", () => {
             const plugin = Database.Plugin.create(
                 {
@@ -56,6 +57,15 @@ describe("Database.Plugin.create", () => {
                     resources: {
                         time: { default: 0 as number },
                     },
+                    systems: {
+                        firstSystem: {
+                            create: (db) => () => {
+                                const time: number = db.resources.time;
+                                // @ts-expect-error - this should be an error
+                                const dt: number = db.resources.deltaTime2;
+                            }
+                        }
+                    }
                 },
                 {
                     systems: {
@@ -64,7 +74,10 @@ describe("Database.Plugin.create", () => {
                                 const time: number = db.resources.time;
                                 // @ts-expect-error - this should be an error
                                 const dt: number = db.resources.deltaTime2;
-                            }
+                            },
+                            // schedule: {
+                            //     after: ["firstSystem2"]
+                            // }
                         }
                     }
                 },

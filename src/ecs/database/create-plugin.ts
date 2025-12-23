@@ -74,7 +74,10 @@ export function createPlugin<
     const RS1 extends ResourceSchemas,
     const A1 extends ArchetypeComponents<any>,
     const TD1 extends ActionDeclarations<any, any, any>,
-    const SYS1 extends SystemDeclarations,
+    const SYS1 extends { readonly [K in string]: {
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1>>, FromSchemas<RemoveIndexSignature<RS1>>, A1, ToActionFunctions<TD1>, string>) => SystemFunction;
+        readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    } },
     const CS2 extends ComponentSchemas,
     const RS2 extends ResourceSchemas,
     const A2 extends ArchetypeComponents<any>,
@@ -110,12 +113,18 @@ export function createPlugin<
     const RS1 extends ResourceSchemas,
     const A1 extends ArchetypeComponents<any>,
     const TD1 extends ActionDeclarations<any, any, any>,
-    const SYS1 extends SystemDeclarations,
+    const SYS1 extends { readonly [K in string]: {
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1>>, FromSchemas<RemoveIndexSignature<RS1>>, A1, ToActionFunctions<TD1>, string>) => SystemFunction;
+        readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    } },
     const CS2 extends ComponentSchemas,
     const RS2 extends ResourceSchemas,
     const A2 extends ArchetypeComponents<any>,
     const TD2 extends ActionDeclarations<any, any, any>,
-    const SYS2 extends SystemDeclarations,
+    const SYS2 extends { readonly [K in string]: {
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1 & CS2>>, FromSchemas<RemoveIndexSignature<RS1 & RS2>>, A1 | A2, ToActionFunctions<TD1 & TD2>, StringKeyof<SYS1 & SYS2>>) => SystemFunction;
+        readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    } },
     const CS3 extends ComponentSchemas,
     const RS3 extends ResourceSchemas,
     const A3 extends ArchetypeComponents<any>,
@@ -178,17 +187,26 @@ export function createPlugin<
     const RS1 extends ResourceSchemas,
     const A1 extends ArchetypeComponents<any>,
     const TD1 extends ActionDeclarations<any, any, any>,
-    const SYS1 extends SystemDeclarations,
+    const SYS1 extends { readonly [K in string]: {
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1>>, FromSchemas<RemoveIndexSignature<RS1>>, A1, ToActionFunctions<TD1>, string>) => SystemFunction;
+        readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    } },
     const CS2 extends ComponentSchemas,
     const RS2 extends ResourceSchemas,
     const A2 extends ArchetypeComponents<any>,
     const TD2 extends ActionDeclarations<any, any, any>,
-    const SYS2 extends SystemDeclarations,
+    const SYS2 extends { readonly [K in string]: {
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1 & CS2>>, FromSchemas<RemoveIndexSignature<RS1 & RS2>>, A1 | A2, ToActionFunctions<TD1 & TD2>, StringKeyof<SYS1 & SYS2>>) => SystemFunction;
+        readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    } },
     const CS3 extends ComponentSchemas,
     const RS3 extends ResourceSchemas,
     const A3 extends ArchetypeComponents<any>,
     const TD3 extends ActionDeclarations<any, any, any>,
-    const SYS3 extends SystemDeclarations,
+    const SYS3 extends { readonly [K in string]: {
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1 & CS2 & CS3>>, FromSchemas<RemoveIndexSignature<RS1 & RS2 & RS3>>, A1 | A2 | A3, ToActionFunctions<TD1 & TD2 & TD3>, StringKeyof<SYS1 & SYS2 & SYS3>>) => SystemFunction;
+        readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    } },
     const CS4 extends ComponentSchemas,
     const RS4 extends ResourceSchemas,
     const A4 extends ArchetypeComponents<any>,
