@@ -97,7 +97,7 @@ export function createPlugin<
 
 // Overload for with dependencies
 export function createPlugin<
-    const D extends readonly Database.Plugin<any, any, any, any, any>[],
+    const D extends readonly any[],
     const CS extends ComponentSchemas,
     const RS extends ResourceSchemas,
     const A extends ArchetypeComponents<any>,
@@ -111,8 +111,8 @@ export function createPlugin<
             MergeDependencies<D>['systemNames'] | string
         >) => SystemFunction;
         readonly schedule?: { 
-            readonly before?: readonly string[];
-            readonly after?: readonly string[];
+            readonly before?: readonly MergeDependencies<D>['systemNames'][];
+            readonly after?: readonly MergeDependencies<D>['systemNames'][];
         };
     } },
 >(

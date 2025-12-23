@@ -322,6 +322,7 @@ describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
                             mySystem: {
                                 create: (_db) => () => { },
                                 schedule: {
+                                    // @ts-expect-error - Type error AND runtime error
                                     after: ["nonExistentSystem"]
                                 }
                             }
@@ -330,6 +331,56 @@ describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
                     [basePlugin]
                 );
             }).toThrow('System "mySystem" references non-existent system "nonExistentSystem" in schedule.after');
+        });
+
+        it("should constrain schedule references to dependency system names", () => {
+            const basePlugin = createPlugin({
+                systems: {
+                    inputSystem: {
+                        create: (_db) => () => { }
+                    },
+                    physicsSystem: {
+                        create: (_db) => () => { }
+                    }
+                }
+            });
+
+            // ✅ VALID: referencing actual systems from dependencies (no 'as const' needed!)
+            const validPlugin = createPlugin(
+                {
+                    systems: {
+                        renderSystem: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                // TypeScript autocompletes: "inputSystem" | "physicsSystem"
+                                after: ["inputSystem", "physicsSystem"]
+                            }
+                        }
+                    }
+                },
+                [basePlugin]
+            );
+
+            expect(validPlugin).toBeDefined();
+            expect(validPlugin.systems).toHaveProperty("renderSystem");
+
+            // ❌ INVALID: This should have BOTH compile-time AND runtime errors
+            expect(() => {
+                createPlugin(
+                    {
+                        systems: {
+                            renderSystem: {
+                                create: (_db) => () => { },
+                                schedule: {
+                                    // @ts-expect-error - "badSystemName" doesn't exist in dependencies (no 'as const' needed!)
+                                    after: ["badSystemName"]
+                                }
+                            }
+                        }
+                    },
+                    [basePlugin]
+                );
+            }).toThrow('System "renderSystem" references non-existent system "badSystemName" in schedule.after');
         });
     });
 
