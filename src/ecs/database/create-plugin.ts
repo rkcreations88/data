@@ -80,9 +80,9 @@ export function createPlugin<
             ToActionFunctions<TD>,
             string
         >) => SystemFunction;
-        readonly schedule?: { 
-            readonly before?: readonly string[];
-            readonly after?: readonly string[];
+        readonly schedule?: {
+            readonly before?: readonly Extract<keyof SYS, string>[];
+            readonly after?: readonly Extract<keyof SYS, string>[];
         };
     } },
 >(
@@ -110,7 +110,7 @@ export function createPlugin<
             ToActionFunctions<TD & MergeDependencies<D>['transactions']>,
             MergeDependencies<D>['systemNames'] | string
         >) => SystemFunction;
-        readonly schedule?: { 
+        readonly schedule?: {
             readonly before?: readonly MergeDependencies<D>['systemNames'][];
             readonly after?: readonly MergeDependencies<D>['systemNames'][];
         };

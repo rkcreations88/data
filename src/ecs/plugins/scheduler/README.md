@@ -56,7 +56,7 @@ const GamePlugin = Database.Plugin.create({
 
 // Create database with scheduler
 const db = Database.create(
-  Database.Plugin.create(GamePlugin, createSchedulerPlugin(), {})
+  Database.Plugin.create({}, [GamePlugin, createSchedulerPlugin()])
 );
 
 // Start the loop
@@ -246,7 +246,7 @@ for (let i = 0; i < 100; i++) {
 
 ```typescript
 const db = Database.create(
-  Database.Plugin.create(GamePlugin, createSchedulerPlugin(), {})
+  Database.Plugin.create({}, [GamePlugin, createSchedulerPlugin()])
 );
 
 // Don't start automatically - step manually

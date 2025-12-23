@@ -21,10 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 import { describe, it, expect } from "vitest";
-import { createPlugin } from "./create-plugin-v2.js";
-import { Database } from "./database.js";
+import { createPlugin } from "./create-plugin.js";
 
-describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
+describe("Database.Plugin.create", () => {
     describe("single descriptor (no dependencies)", () => {
         it("should create plugin with components, resources, and archetypes", () => {
             const plugin = createPlugin({
@@ -68,6 +67,36 @@ describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
                     }
                 }
             });
+
+            expect(plugin).toBeDefined();
+            expect(plugin.systems).toBeDefined();
+        });
+
+        it("should constrain schedule references to dependency system names", () => {
+            const plugin = createPlugin(
+                {
+                    systems: {
+                        renderSystem: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                after: ["update"],
+                            }
+                        }
+                    }
+                },
+                [
+                    createPlugin({
+                        systems: {
+                            update: {
+                                create: (_db) => () => { }
+                            },
+                            render: {
+                                create: (_db) => () => { }
+                            }
+                        }
+                    })
+                ]
+            );
 
             expect(plugin).toBeDefined();
             expect(plugin.systems).toBeDefined();
@@ -205,12 +234,37 @@ describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
                         system2: {
                             create: (_db) => () => { },
                             schedule: {
+                                // @ts-expect-error - nonExistentSystem does not exist
                                 after: ["nonExistentSystem"]
                             }
                         }
                     }
-                });
+                }, [
+                    createPlugin({
+                        systems: {
+                            system1: {
+                                create: (_db) => () => { }
+                            }
+                        }
+                    })
+                ]);
             }).toThrow('System "system2" references non-existent system "nonExistentSystem" in schedule.after');
+        });
+
+        it("should have a type error when referencing systems without dependencies", () => {
+            expect(() => {
+                createPlugin({
+                    systems: {
+                        system1: {
+                            create: (_db) => () => { },
+                            schedule: {
+                                // @ts-expect-error - system2 does not exist
+                                after: ["system2"]
+                            }
+                        }
+                    }
+                });
+            }).toThrow();
         });
 
         it("should throw error for non-existent system in schedule.before", () => {
@@ -220,6 +274,7 @@ describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
                         system1: {
                             create: (_db) => () => { },
                             schedule: {
+                                // @ts-expect-error - anotherNonExistentSystem does not exist
                                 before: ["anotherNonExistentSystem"]
                             }
                         }
@@ -238,6 +293,7 @@ describe("Database.Plugin.create (v2 - descriptor + dependencies)", () => {
                         system2: {
                             create: (_db) => () => { },
                             schedule: {
+                                // @ts-expect-error - system1 does not exist
                                 after: ["system1"]
                             }
                         }
