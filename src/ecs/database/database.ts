@@ -161,7 +161,7 @@ export namespace Database {
      * // Plugin with dependencies
      * const GamePlugin = Database.Plugin.create({
      *   components: { score: { type: "number", default: 0 } }
-     * }, [PhysicsPlugin]);
+     * }, PhysicsPlugin);
      * ```
      */
     export function create<
@@ -170,7 +170,7 @@ export namespace Database {
       const A extends ArchetypeComponents<StringKeyof<CS & Intersect<D>["components"]>> = {},
       const TD extends ActionDeclarations<FromSchemas<CS & Intersect<D>["components"]>, FromSchemas<RS & Intersect<D>["resources"]>, A> = {},
       const SYS extends { readonly [K in string]: {
-        readonly create: (db: Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, Extract<keyof SYS, string>>) => SystemFunction;
+        readonly create: (db: Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, StringKeyof<SYS>>) => SystemFunction;
         readonly schedule?: {
           readonly before?: readonly string[];
           readonly after?: readonly string[];
@@ -185,10 +185,10 @@ export namespace Database {
         transactions: TD;
         systems: SYS;
       }>,
-      dependencies?: D
+      ...dependencies: D
     ): Intersect<[Database.Plugin<CS, RS, A, TD, Extract<keyof SYS, string>>, ...D]> {
       const { components = {}, resources = {}, archetypes = {}, transactions = {}, systems = {} } = plugin;
-      return (dependencies ?? []).reduce((acc, curr) => {
+      return dependencies.reduce((acc, curr) => {
         return {
           components: { ...acc.components, ...curr.components },
           resources: { ...acc.resources, ...curr.resources },
