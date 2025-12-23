@@ -78,7 +78,7 @@ const cSchema = Database.Plugin.create({
         three: ["m", "n", "x"]
     }
 },
-    [aSchema, bSchema]
+    aSchema, bSchema
 );
 
 // Type check: verify merged schema has all components from dependencies
@@ -156,7 +156,7 @@ const extendedSchemaWithTransactions = Database.Plugin.create({
         move: () => { }
     }
 },
-    [baseSchemaWithTransactions]
+    baseSchemaWithTransactions
 );
 
 // Type check: verify extended schema has components from base

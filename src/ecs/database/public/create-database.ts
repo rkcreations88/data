@@ -94,7 +94,13 @@ function createDatabaseFromPlugin<
     S extends string
 >(plugin: Database.Plugin<CS, RS, A, TD, S>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, S> {
     const systems = plugin.systems ?? ({} as any);
-    return createDatabase(Store.create(plugin), plugin.transactions, systems) as any;
+    const transactions = plugin.transactions ?? ({} as any);
+    const storeSchema: Store.Schema<CS, RS, A> = {
+        components: plugin.components ?? ({} as CS),
+        resources: plugin.resources ?? ({} as RS),
+        archetypes: plugin.archetypes ?? ({} as A),
+    };
+    return createDatabase(Store.create(storeSchema), transactions, systems) as any;
 }
 
 function createDatabaseFromStoreTransactionsAndSystems<
@@ -268,12 +274,15 @@ function createDatabaseFromStoreTransactionsAndSystems<
     ) => {
         // Delegate to reconcilingDatabase which handles store/transactionalStore extension
         reconcilingDatabase.extend(plugin);
+        
+        const pluginTransactions = plugin.transactions ?? {};
+        
         // Add transaction wrappers for the new transactions
-        addTransactionWrappers(plugin.transactions);
+        addTransactionWrappers(pluginTransactions);
 
         // Add unwrapped actions to store.actions
-        for (const name of Object.keys(plugin.transactions)) {
-            ((store as any).actions as any)[name] = plugin.transactions[name].bind(null, store);
+        for (const name of Object.keys(pluginTransactions)) {
+            ((store as any).actions as any)[name] = pluginTransactions[name].bind(null, store);
         }
 
         // If plugin has new systems, we need to recreate the database with merged systems
@@ -287,7 +296,7 @@ function createDatabaseFromStoreTransactionsAndSystems<
             // Create new database with merged systems
             return createDatabaseFromStoreTransactionsAndSystems(
                 store,
-                { ...transactionDeclarations, ...plugin.transactions } as any,
+                { ...transactionDeclarations, ...pluginTransactions } as any,
                 mergedSystemDeclarations
             ) as any;
         }

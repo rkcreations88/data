@@ -189,7 +189,9 @@ export function createReconcilingDatabase<
             // Extend the underlying observed database (which extends transactionalStore -> store)
             observedDatabase.extend(plugin);
             // Extend our transaction declarations
-            Object.assign(transactionDeclarationsRef, plugin.transactions);
+            if (plugin.transactions) {
+                Object.assign(transactionDeclarationsRef, plugin.transactions);
+            }
             return reconcilingDatabase as any;
         },
     };

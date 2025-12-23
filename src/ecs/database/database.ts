@@ -106,10 +106,10 @@ export namespace Database {
     TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A> = any,
     S extends string = any
   > = {
-    readonly components: CS;
-    readonly resources: RS;
-    readonly archetypes: A;
-    readonly transactions: TD;
+    readonly components?: CS;
+    readonly resources?: RS;
+    readonly archetypes?: A;
+    readonly transactions?: TD;
     readonly systems?: { readonly [K in S]: {
       readonly create: (db: Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, S>) => SystemFunction;
       readonly schedule?: {
@@ -122,48 +122,14 @@ export namespace Database {
   export namespace Plugin {
 
     export type Intersect<T extends readonly Plugin<any, any, any, any, any>[]> =
-      Database.Plugin<
-        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<infer C, infer R, infer A, infer TD, any> ? C : never }>,
-        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, infer R, any, any, any> ? R : never }>,
-        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, infer A, any, any> ? A : never }>,
-        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, any, infer TD, any> ? TD : never }>,
+      Required<Database.Plugin<
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<infer C, any, any, any, any> ? (C extends undefined ? {} : C) : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, infer R, any, any, any> ? (R extends undefined ? {} : R) : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, infer A, any, any> ? (A extends undefined ? {} : A) : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, any, infer TD, any> ? (TD extends undefined ? {} : TD) : never }>,
         Extract<{ [K in keyof T]: T[K] extends Plugin<any, any, any, any, infer S> ? S : never }[number], string>
-      >
+      >>
 
-    /**
-     * Creates a Database plugin with optional properties. All plugin properties
-     * (components, resources, archetypes, transactions, systems) are optional and default
-     * to empty objects when not provided.
-     * 
-     * @param plugin - Partial database plugin. Omit any properties you don't need.
-     * @param dependencies - Optional array of plugins to merge with. Properties from
-     *                       dependencies are merged with the plugin, with dependencies
-     *                       taking precedence for overlapping properties.
-     * @returns The merged plugin with all properties from the plugin and dependencies
-     * 
-     * @example
-     * ```typescript
-     * // Physics plugin with components and systems
-     * const PhysicsPlugin = Database.Plugin.create({
-     *   components: {
-     *     velocity: { type: "object", default: { x: 0, y: 0, z: 0 } }
-     *   },
-     *   systems: {
-     *     physicsSystem: {
-     *       create: (db) => () => {
-     *         const entities = db.select(["velocity"]);
-     *         // Update physics...
-     *       }
-     *     }
-     *   }
-     * });
-     * 
-     * // Plugin with dependencies
-     * const GamePlugin = Database.Plugin.create({
-     *   components: { score: { type: "number", default: 0 } }
-     * }, PhysicsPlugin);
-     * ```
-     */
     export function create<
       const CS extends ComponentSchemas = {},
       const RS extends ResourceSchemas = {},
@@ -178,13 +144,13 @@ export namespace Database {
       } } = {},
       const D extends readonly Database.Plugin<any, any, any, any, any>[] = [],
     >(
-      plugin: Partial<{
-        components: CS;
-        resources: RS;
-        archetypes: A;
-        transactions: TD;
-        systems: SYS;
-      }>,
+      plugin: {
+        components?: CS;
+        resources?: RS;
+        archetypes?: A;
+        transactions?: TD;
+        systems?: SYS;
+      },
       ...dependencies: D
     ): Intersect<[Database.Plugin<CS, RS, A, TD, Extract<keyof SYS, string>>, ...D]> {
       const { components = {}, resources = {}, archetypes = {}, transactions = {}, systems = {} } = plugin;

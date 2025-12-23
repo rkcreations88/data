@@ -314,7 +314,7 @@ describe("Database with systems", () => {
                     }
                 }
             }
-        }, [inputPlugin]);
+        }, inputPlugin);
 
         const db = Database.create(physicsPlugin);
 

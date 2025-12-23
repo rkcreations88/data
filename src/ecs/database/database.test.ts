@@ -109,7 +109,7 @@ describe("Database.Plugin.create", () => {
                 components: {
                     velocity: { type: "number" }
                 }
-            }, [baseSchema]);
+            }, baseSchema);
 
             expect(extendedSchema.components).toHaveProperty("position");
             expect(extendedSchema.components).toHaveProperty("velocity");
@@ -128,7 +128,7 @@ describe("Database.Plugin.create", () => {
                 }
             });
 
-            const emptyExtension = Database.Plugin.create({}, [baseSchema]);
+            const emptyExtension = Database.Plugin.create({}, baseSchema);
 
             expect(emptyExtension.components).toHaveProperty("transform");
             expect(emptyExtension.transactions).toHaveProperty("updateTransform");
@@ -151,7 +151,7 @@ describe("Database.Plugin.create", () => {
 
             const merged = Database.Plugin.create({
                 components: { d: { type: "number" } }
-            }, [pluginA, pluginB, pluginC]);
+            }, pluginA, pluginB, pluginC);
 
             expect(merged.components).toHaveProperty("a");
             expect(merged.components).toHaveProperty("b");
@@ -171,7 +171,7 @@ describe("Database.Plugin.create", () => {
                 transactions: {
                     extendedAction: () => { }
                 }
-            }, [baseSchema]);
+            }, baseSchema);
 
             expect(extendedSchema.transactions).toHaveProperty("baseAction");
             expect(extendedSchema.transactions).toHaveProperty("extendedAction");
@@ -193,7 +193,7 @@ describe("Database.Plugin.create", () => {
                     position: { type: "number" },
                     mass: { type: "number" }
                 }
-            }, [baseSchema]);
+            }, baseSchema);
 
             // All components should be present
             expect(extendedSchema.components).toHaveProperty("position");
@@ -218,7 +218,7 @@ describe("Database.Plugin.create", () => {
                     DynamicEntity: ["position", "velocity"],
                     LivingEntity: ["position", "health"]
                 }
-            }, [baseSchema]);
+            }, baseSchema);
 
             expect(extendedSchema.archetypes).toHaveProperty("DynamicEntity");
             expect(extendedSchema.archetypes).toHaveProperty("LivingEntity");
