@@ -25,36 +25,31 @@ import { Database } from "./database.js";
 import { Vec3 } from "../../math/index.js";
 
 describe("Database.Plugin.create", () => {
-    describe("basic plugin creation", () => {
-        it("should create plugin with components, resources, and archetypes", () => {
-            const plugin = Database.Plugin.create({
-                components: {
-                    velocity: { type: "number" },
-                    particle: { type: "boolean" },
-                },
-                resources: {
-                    mousePosition: { type: "number", default: 0 },
-                    fooPosition: { type: "number", default: 0 },
-                },
-                archetypes: {
-                    Particle: ["particle"],
-                    DynamicParticle: ["particle", "velocity"],
-                }
-            });
-
-            expect(plugin.components).toBeDefined();
-            expect("velocity" in plugin.components).toBe(true);
-            expect("particle" in plugin.components).toBe(true);
-            expect(plugin.resources).toBeDefined();
-            expect("mousePosition" in plugin.resources).toBe(true);
-            expect("fooPosition" in plugin.resources).toBe(true);
-            expect(plugin.archetypes).toBeDefined();
-            expect("Particle" in plugin.archetypes).toBe(true);
-            expect("DynamicParticle" in plugin.archetypes).toBe(true);
-        });
-    });
 
     describe("type inference", () => {
+        it("should infer db type correctly with 1 args", () => {
+            const plugin = Database.Plugin.create(
+                {
+                    resources: {
+                        time: { default: 0 as number },
+                    },
+                    systems: {
+                        physicsSystem: {
+                            create: (db) => () => {
+                                const time: number = db.resources.time;
+                                // @ts-expect-error - this should be an error
+                                const dt: number = db.resources.deltaTime2;
+                            },
+                        }
+                    }
+                },
+            );
+
+            expect(plugin).toBeDefined();
+            expect(plugin.components).toBeDefined();
+            expect(plugin.resources).toBeDefined();
+            expect(plugin.systems).toBeDefined();
+        });
         it("should infer db type correctly with 2 args", () => {
             const plugin = Database.Plugin.create(
                 {
@@ -67,7 +62,8 @@ describe("Database.Plugin.create", () => {
                         physicsSystem: {
                             create: (db) => () => {
                                 const time: number = db.resources.time;
-                                const dt: number = db.resources.deltaTime;
+                                // @ts-expect-error - this should be an error
+                                const dt: number = db.resources.deltaTime2;
                             }
                         }
                     }
@@ -93,6 +89,7 @@ describe("Database.Plugin.create", () => {
                         physicsSystem: {
                             create: (db) => () => {
                                 const time: number = db.resources.time;
+                                // @ts-expect-error - deltaTime is not defined in resources
                                 const dt: number = db.resources.deltaTime;
                             }
                         }
@@ -134,6 +131,35 @@ describe("Database.Plugin.create", () => {
             expect(plugin.components).toBeDefined();
             expect(plugin.resources).toBeDefined();
             expect(plugin.systems).toBeDefined();
+        });
+    });
+
+    describe("basic plugin creation", () => {
+        it("should create plugin with components, resources, and archetypes", () => {
+            const plugin = Database.Plugin.create({
+                components: {
+                    velocity: { type: "number" },
+                    particle: { type: "boolean" },
+                },
+                resources: {
+                    mousePosition: { type: "number", default: 0 },
+                    fooPosition: { type: "number", default: 0 },
+                },
+                archetypes: {
+                    Particle: ["particle"],
+                    DynamicParticle: ["particle", "velocity"],
+                }
+            });
+
+            expect(plugin.components).toBeDefined();
+            expect("velocity" in plugin.components).toBe(true);
+            expect("particle" in plugin.components).toBe(true);
+            expect(plugin.resources).toBeDefined();
+            expect("mousePosition" in plugin.resources).toBe(true);
+            expect("fooPosition" in plugin.resources).toBe(true);
+            expect(plugin.archetypes).toBeDefined();
+            expect("Particle" in plugin.archetypes).toBe(true);
+            expect("DynamicParticle" in plugin.archetypes).toBe(true);
         });
     });
 

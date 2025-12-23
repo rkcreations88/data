@@ -30,6 +30,11 @@ import type { StringKeyof } from "../../types/types.js";
 
 type SystemFunction = () => void | Promise<void>;
 
+// Helper type to remove index signatures and keep only known keys
+type RemoveIndexSignature<T> = {
+    [K in keyof T as string extends K ? never : number extends K ? never : symbol extends K ? never : K]: T[K]
+};
+
 export type SystemDeclarations = { readonly [K in string]: {
     readonly create: (db: Database<any, any, any, any, any>) => SystemFunction;
     readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
@@ -55,7 +60,10 @@ export function createPlugin<
     const RS1 extends ResourceSchemas,
     const A1 extends ArchetypeComponents<any>,
     const TD1 extends ActionDeclarations<any, any, any>,
-    const SYS1 extends SystemDeclarations,
+    const SYS1 extends { readonly [K in string]: {
+        readonly create: (db: Database<FromSchemas<CS1>, FromSchemas<RS1>, A1, ToActionFunctions<TD1>, string>) => SystemFunction;
+        readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    } },
 >(
     arg1: PluginSchema<CS1, RS1, A1, TD1, SYS1>
 ): Database.Plugin.Intersect<[Database.Plugin<CS1, RS1, A1, TD1, StringKeyof<SYS1>>]>;
@@ -72,7 +80,7 @@ export function createPlugin<
     const A2 extends ArchetypeComponents<any>,
     const TD2 extends ActionDeclarations<any, any, any>,
     const SYS2 extends { readonly [K in string]: {
-        readonly create: (db: Database<FromSchemas<CS1 & CS2>, FromSchemas<RS1 & RS2>, A1 | A2, ToActionFunctions<TD1 & TD2>, StringKeyof<SYS1 & SYS2>>) => SystemFunction;
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1 & CS2>>, FromSchemas<RemoveIndexSignature<RS1 & RS2>>, A1 | A2, ToActionFunctions<TD1 & TD2>, StringKeyof<SYS1 & SYS2>>) => SystemFunction;
         readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
     } },
 >(
@@ -113,7 +121,7 @@ export function createPlugin<
     const A3 extends ArchetypeComponents<any>,
     const TD3 extends ActionDeclarations<any, any, any>,
     const SYS3 extends { readonly [K in string]: {
-        readonly create: (db: Database<FromSchemas<CS1 & CS2 & CS3>, FromSchemas<RS1 & RS2 & RS3>, A1 | A2 | A3, ToActionFunctions<TD1 & TD2 & TD3>, StringKeyof<SYS1 & SYS2 & SYS3>>) => SystemFunction;
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1 & CS2 & CS3>>, FromSchemas<RemoveIndexSignature<RS1 & RS2 & RS3>>, A1 | A2 | A3, ToActionFunctions<TD1 & TD2 & TD3>, StringKeyof<SYS1 & SYS2 & SYS3>>) => SystemFunction;
         readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
     } },
 >(
@@ -186,7 +194,7 @@ export function createPlugin<
     const A4 extends ArchetypeComponents<any>,
     const TD4 extends ActionDeclarations<any, any, any>,
     const SYS4 extends { readonly [K in string]: {
-        readonly create: (db: Database<FromSchemas<CS1 & CS2 & CS3 & CS4>, FromSchemas<RS1 & RS2 & RS3 & RS4>, A1 | A2 | A3 | A4, ToActionFunctions<TD1 & TD2 & TD3 & TD4>, StringKeyof<SYS1 & SYS2 & SYS3 & SYS4>>) => SystemFunction;
+        readonly create: (db: Database<FromSchemas<RemoveIndexSignature<CS1 & CS2 & CS3 & CS4>>, FromSchemas<RemoveIndexSignature<RS1 & RS2 & RS3 & RS4>>, A1 | A2 | A3 | A4, ToActionFunctions<TD1 & TD2 & TD3 & TD4>, StringKeyof<SYS1 & SYS2 & SYS3 & SYS4>>) => SystemFunction;
         readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
     } },
 >(
