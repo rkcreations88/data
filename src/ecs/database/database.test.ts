@@ -180,18 +180,20 @@ describe("Database.Plugin.create", () => {
     });
 
     describe("edge cases", () => {
-        it("should merge schemas with dependencies taking precedence for overlapping properties", () => {
+        it("should merge schemas with dependencies - shared components must use same reference", () => {
+            const positionComponent = { type: "number" as const };
+            
             const baseSchema = Database.Plugin.create({
                 components: {
-                    position: { type: "number" },
-                    velocity: { type: "number" }
+                    position: positionComponent,
+                    velocity: { type: "number" as const }
                 }
             });
 
             const extendedSchema = Database.Plugin.create({
                 components: {
-                    position: { type: "number" },
-                    mass: { type: "number" }
+                    position: positionComponent, // Must use same reference
+                    mass: { type: "number" as const }
                 }
             }, [baseSchema]);
 

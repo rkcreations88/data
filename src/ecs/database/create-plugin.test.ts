@@ -418,5 +418,97 @@ describe("Database.Plugin.create", () => {
             expect(extendedPlugin).toBeDefined();
         });
     });
+
+    describe("identity validation", () => {
+        it("should throw error when merging different component definitions", () => {
+            const plugin1 = createPlugin({
+                components: {
+                    health: { type: "number" as const }
+                }
+            });
+
+            expect(() => {
+                createPlugin({
+                    components: {
+                        health: { type: "string" as const } // Different definition
+                    }
+                }, [plugin1]);
+            }).toThrow('Plugin merge conflict: components.health must be identical (===) across plugins');
+        });
+
+        it("should throw error when merging different resource definitions", () => {
+            const plugin1 = createPlugin({
+                resources: {
+                    score: { default: 0 }
+                }
+            });
+
+            expect(() => {
+                createPlugin({
+                    resources: {
+                        score: { default: 100 } // Different definition
+                    }
+                }, [plugin1]);
+            }).toThrow('Plugin merge conflict: resources.score must be identical (===) across plugins');
+        });
+
+        it("should throw error when merging different archetype definitions", () => {
+            const plugin1 = createPlugin({
+                components: {
+                    position: { type: "number" },
+                    velocity: { type: "number" }
+                },
+                archetypes: {
+                    Entity: ["position"]
+                }
+            });
+
+            expect(() => {
+                createPlugin({
+                    archetypes: {
+                        Entity: ["position", "velocity"] // Different definition
+                    }
+                }, [plugin1]);
+            }).toThrow('Plugin merge conflict: archetypes.Entity must be identical (===) across plugins');
+        });
+
+        it("should allow same component with identical reference", () => {
+            const sharedComponent = { type: "number" as const };
+            const plugin1 = createPlugin({
+                components: {
+                    health: sharedComponent
+                }
+            });
+
+            expect(() => {
+                createPlugin({
+                    components: {
+                        health: sharedComponent // Same reference - OK
+                    }
+                }, [plugin1]);
+            }).not.toThrow();
+        });
+
+        it("should allow overwriting systems", () => {
+            const plugin1 = createPlugin({
+                systems: {
+                    update: {
+                        create: () => () => { }
+                    }
+                }
+            });
+
+            // Should not throw - systems can be overwritten
+            expect(() => {
+                createPlugin({
+                    systems: {
+                        update: {
+                            create: () => () => { } // Different function - OK
+                        }
+                    }
+                }, [plugin1]);
+            }).not.toThrow();
+        });
+    });
 });
 

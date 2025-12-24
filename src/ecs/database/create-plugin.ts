@@ -36,12 +36,12 @@ type RemoveIndexSignature<T> = {
     [K in keyof T as string extends K ? never : number extends K ? never : symbol extends K ? never : K]: T[K]
 };
 
-export type SystemDeclarations = { readonly [K in string]: {
+type SystemDeclarations = { readonly [K in string]: {
     readonly create: (db: Database<any, any, any, any, any>) => SystemFunction;
     readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
 } };
 
-export type PluginSchema<
+type PluginSchema<
     CS extends ComponentSchemas = {},
     RS extends ResourceSchemas = {},
     A extends ArchetypeComponents<any> = {},
@@ -146,28 +146,35 @@ export function createPlugin(
     descriptor: any,
     dependencies?: any
 ): any {
+    const requireIdentity = new Set(['components', 'resources', 'archetypes']);
+    
+    const merge = (base: any, next: any) => 
+        Object.fromEntries(keys.map(key => {
+            const baseObj = base[key] ?? {};
+            const nextObj = next[key] ?? {};
+            
+            if (requireIdentity.has(key)) {
+                const merged = { ...baseObj };
+                for (const [k, v] of Object.entries(nextObj)) {
+                    if (k in baseObj && baseObj[k] !== v) {
+                        throw new Error(
+                            `Plugin merge conflict: ${key}.${k} must be identical (===) across plugins`
+                        );
+                    }
+                    merged[k] = v;
+                }
+                return [key, merged];
+            }
+            
+            return [key, { ...baseObj, ...nextObj }];
+        }));
+    
     // Merge dependencies first
-    const mergedDeps = (dependencies ?? []).reduce((acc: any, curr: any) => ({
-        components: { ...acc.components, ...curr.components },
-        resources: { ...acc.resources, ...curr.resources },
-        archetypes: { ...acc.archetypes, ...curr.archetypes },
-        transactions: { ...acc.transactions, ...curr.transactions },
-        systems: { ...acc.systems, ...curr.systems },
-    }), {
-        components: {},
-        resources: {},
-        archetypes: {},
-        transactions: {},
-        systems: {},
-    });
-
+    const mergedDeps = (dependencies ?? []).reduce(merge, emptyPlugin);
+    
     // Merge descriptor on top of dependencies
-    return {
-        components: { ...mergedDeps.components, ...descriptor.components },
-        resources: { ...mergedDeps.resources, ...descriptor.resources },
-        archetypes: { ...mergedDeps.archetypes, ...descriptor.archetypes },
-        transactions: { ...mergedDeps.transactions, ...descriptor.transactions },
-        systems: { ...mergedDeps.systems, ...descriptor.systems },
-    } as any;
+    return merge(mergedDeps, descriptor);
 }
+const keys = ['components', 'resources', 'archetypes', 'transactions', 'systems'] as const;
+const emptyPlugin: Required<PluginSchema> = { components: {}, resources: {}, archetypes: {}, transactions: {}, systems: {} };
 
