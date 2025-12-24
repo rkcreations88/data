@@ -45,7 +45,7 @@ import type {
   ActionFunctions,
   ToActionFunctions,
 } from "../store/action-functions.js";
-import { createPlugin as createPluginImpl } from "./create-plugin.js";
+import { createPlugin } from "./create-plugin.js";
 
 type SystemFunction = () => void | Promise<void>;
 
@@ -131,7 +131,7 @@ export namespace Database {
         Extract<{ [K in keyof T]: T[K] extends Plugin<any, any, any, any, infer S> ? S : never }[number], string>
       >>
 
-    export const create = createPluginImpl;
+    export const create = createPlugin;
   }
 
 }
