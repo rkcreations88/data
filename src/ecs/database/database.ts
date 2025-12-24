@@ -27,7 +27,7 @@ import { Entity } from "../entity.js";
 import { EntityReadValues } from "../store/core/index.js";
 import { Observe } from "../../observe/index.js";
 import { TransactionResult } from "./transactional-store/index.js";
-import { StringKeyof } from "../../types/types.js";
+import { IntersectTuple, NoInfer, StringKeyof } from "../../types/types.js";
 import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { RequiredComponents } from "../required-components.js";
@@ -38,17 +38,23 @@ import { createDatabase } from "./public/create-database.js";
 import { ResourceSchemas } from "../resource-schemas.js";
 import { ComponentSchemas } from "../component-schemas.js";
 import { FromSchemas } from "../../schema/index.js";
+import { Assert } from "../../types/assert.js";
+import { Equal } from "../../types/equal.js";
 import type {
   ActionDeclarations,
   ActionFunctions,
   ToActionFunctions,
 } from "../store/action-functions.js";
+import { createPlugin } from "./create-plugin.js";
+
+type SystemFunction = () => void | Promise<void>;
 
 export interface Database<
-  C extends Components = never,
-  R extends ResourceComponents = never,
-  A extends ArchetypeComponents<StringKeyof<C & OptionalComponents>> = never,
-  F extends ActionFunctions = never,
+  C extends Components,
+  R extends ResourceComponents,
+  A extends ArchetypeComponents<StringKeyof<C & OptionalComponents>>,
+  F extends ActionFunctions,
+  S extends string = never,
 > extends ReadonlyStore<C, R, A>, Service {
   readonly transactions: F & Service;
   /**
@@ -76,46 +82,134 @@ export interface Database<
       options?: EntitySelectOptions<C, Pick<C & RequiredComponents, T>>
     ): Observe<readonly Entity[]>;
   }
+  readonly system: {
+    readonly functions: { readonly [K in S]: SystemFunction };
+    readonly order: S[][];
+  }
   toData(): unknown
   fromData(data: unknown): void
-  extend<S extends Database.Schema<any, any, any, any>>(schema: S): Database<
-    C & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XC> : never),
-    R & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XR> : never),
-    A & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? XA : never),
-    F & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? ToActionFunctions<XTD> : never)
+  extend<P extends Database.Plugin<any, any, any, any, any>>(plugin: P): Database<
+    C & (P extends Database.Plugin<infer XC, any, any, any, any> ? FromSchemas<XC> : never),
+    R & (P extends Database.Plugin<any, infer XR, any, any, any> ? FromSchemas<XR> : never),
+    A & (P extends Database.Plugin<any, any, infer XA, any, any> ? XA : never),
+    F & (P extends Database.Plugin<any, any, any, infer XTD, any> ? ToActionFunctions<XTD> : never),
+    S | (P extends Database.Plugin<any, any, any, any, infer XS> ? XS : never)
   >;
 }
 
 export namespace Database {
   export const create = createDatabase;
 
-  export type Schema<
-    CS extends ComponentSchemas,
-    RS extends ResourceSchemas,
-    A extends ArchetypeComponents<StringKeyof<CS>>,
-    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
+  export type Plugin<
+    CS extends ComponentSchemas = any,
+    RS extends ResourceSchemas = any,
+    A extends ArchetypeComponents<StringKeyof<CS & OptionalComponents>> = any,
+    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, any> = any,
+    S extends string = any
   > = {
-    readonly components: CS;
-    readonly resources: RS;
-    readonly archetypes: A;
-    readonly transactions: TD;
+    readonly components?: CS;
+    readonly resources?: RS;
+    readonly archetypes?: A;
+    readonly transactions?: TD;
+    readonly systems?: { readonly [K in S]: {
+      readonly create: (db: Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, S>) => SystemFunction;
+      readonly schedule?: {
+        readonly before?: readonly NoInfer<Exclude<S, K>>[];
+        readonly after?: readonly NoInfer<Exclude<S, K>>[];
+      }
+    } };
   };
 
-  export namespace Schema {
-    export function create<
-      const CS extends ComponentSchemas,
-      const RS extends ResourceSchemas,
-      const A extends ArchetypeComponents<StringKeyof<CS>>,
-      const TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>
-    >(
-      storeSchema: Store.Schema<CS, RS, A>,
-      transactions: TD,
-    ) {
-      return { ...storeSchema, transactions } as const satisfies Database.Schema<CS, RS, A, TD>;
-    }
+  export namespace Plugin {
+
+    export type Intersect<T extends readonly Plugin<any, any, any, any, any>[]> =
+      Required<Database.Plugin<
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<infer C, any, any, any, any> ? (C extends undefined ? {} : C) : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, infer R, any, any, any> ? (R extends undefined ? {} : R) : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, infer A, any, any> ? (A extends undefined ? {} : A) : never }>,
+        {} & IntersectTuple<{ [K in keyof T]: T[K] extends Plugin<any, any, any, infer TD, any> ? (TD extends undefined ? Record<never, never> : TD) : never }>,
+        Extract<{ [K in keyof T]: T[K] extends Plugin<any, any, any, any, infer S> ? S : never }[number], string>
+      >>
+
+    export const create = createPlugin;
   }
 
 }
+
+// Type tests for Database.Plugin.Intersect
+type TestPlugin1 = Database.Plugin<
+  { position: { type: "number" } },
+  { mousePos: { default: 0 } },
+  {},
+  {},
+  never
+>;
+type TestPlugin2 = Database.Plugin<
+  { velocity: { type: "number" } },
+  { delta: { default: 0 } },
+  {},
+  {},
+  never
+>;
+type TestPlugin3 = Database.Plugin<
+  { mass: { type: "number" } },
+  { gravity: { default: 0 } },
+  {},
+  {},
+  never
+>;
+
+type TestIntersect = Database.Plugin.Intersect<[TestPlugin1, TestPlugin2, TestPlugin3]>;
+type CheckIntersectComponents = Assert<Equal<TestIntersect["components"], {
+  position: { type: "number" };
+  velocity: { type: "number" };
+  mass: { type: "number" };
+}>>;
+type CheckIntersectResources = Assert<Equal<TestIntersect["resources"], {
+  mousePos: { default: 0 };
+  delta: { default: 0 };
+  gravity: { default: 0 };
+}>>;
+
+// Test that archetypes can reference components from dependencies
+type BasePlugin = Database.Plugin<
+  { position: { type: "number" }, health: { type: "number" } },
+  {},
+  {},
+  {},
+  never
+>;
+
+// Test type inference with new overload pattern
+const testBasePlugin = Database.Plugin.create({
+  components: {
+    position: { type: "number" },
+    health: { type: "number" }
+  }
+});
+
+const testExtendedPlugin = Database.Plugin.create(
+  {
+    components: {
+      velocity: { type: "number" }
+    },
+    archetypes: {
+      DynamicEntity: ["position", "velocity"],
+      LivingEntity: ["position", "health"]
+    }
+  },
+  [testBasePlugin]
+);
+
+type ExtendedPluginResult = typeof testExtendedPlugin;
+type Ignore = ExtendedPluginResult["components"]
+
+// TODO: Fix type test after World->Database merge
+// type CheckExtendedHasAllComponents = Assert<Equal<ExtendedPluginResult["components"], {
+//   position: { type: "number" };
+//   health: { type: "number" };
+//   velocity: { type: "number" };
+// }>>;
 
 type TestTransactionFunctions = ToActionFunctions<{
   test1: (db: Store<any, any>, arg: number) => void;

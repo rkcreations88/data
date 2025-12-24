@@ -185,11 +185,13 @@ export function createReconcilingDatabase<
         },
         apply: applyEnvelope,
         cancel: cancelEntry,
-        extend: (schema: any) => {
+        extend: (plugin: any) => {
             // Extend the underlying observed database (which extends transactionalStore -> store)
-            observedDatabase.extend(schema);
+            observedDatabase.extend(plugin);
             // Extend our transaction declarations
-            Object.assign(transactionDeclarationsRef, schema.transactions);
+            if (plugin.transactions) {
+                Object.assign(transactionDeclarationsRef, plugin.transactions);
+            }
             return reconcilingDatabase as any;
         },
     };

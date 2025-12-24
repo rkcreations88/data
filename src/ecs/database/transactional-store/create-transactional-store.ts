@@ -253,8 +253,8 @@ export function createTransactionalStore<
         execute,
         transactionStore,
         // Override extend to sync wrapped archetypes after extending base store
-        extend: (schema: any) => {
-            store.extend(schema);
+        extend: (plugin: any) => {
+            store.extend(plugin);
             // Sync wrapped archetypes after extension
             for (const name in store.archetypes) {
                 if (!(name in wrappedArchetypesObject)) {

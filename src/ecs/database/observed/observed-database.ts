@@ -54,13 +54,13 @@ export interface ObservedDatabase<
     readonly toData: () => unknown;
     readonly fromData: (data: unknown) => void;
     readonly extend: <
-        S extends Database.Schema<any, any, any, any>
+        P extends Database.Plugin<any, any, any, any, any>
     >(
-        schema: S,
+        plugin: P,
     ) => ObservedDatabase<
-        C & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XC> : never),
-        R & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? FromSchemas<XR> : never),
-        A & (S extends Database.Schema<infer XC, infer XR, infer XA, infer XTD> ? XA : never)
+        C & (P extends Database.Plugin<infer XC, infer XR, infer XA, infer XTD, any> ? FromSchemas<XC> : never),
+        R & (P extends Database.Plugin<infer XC, infer XR, infer XA, infer XTD, any> ? FromSchemas<XR> : never),
+        A & (P extends Database.Plugin<infer XC, infer XR, infer XA, infer XTD, any> ? XA : never)
     >;
 }
 

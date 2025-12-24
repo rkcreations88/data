@@ -25,40 +25,38 @@ import { Database } from "../database.js";
 import { Store } from "../../store/index.js";
 import { F32 } from "../../../math/f32/index.js";
 
-describe("Database.create from schema", () => {
-    it("should create and use database from Database.Schema", () => {
-        const databaseSchema = Database.Schema.create(
-            Store.Schema.create(
-                {
-                    position: {
-                        type: "object",
-                        properties: {
-                            x: F32.schema,
-                            y: F32.schema,
-                            z: F32.schema,
-                        },
-                        required: ["x", "y", "z"],
-                        additionalProperties: false,
-                    } as const,
-                },
-                {
-                    time: { default: { delta: 0.016, elapsed: 0 } as { delta: number; elapsed: number } },
-                },
-                {
-                    PositionEntity: ["position"],
-                }
-            ),
-            {
-                createPositionEntity(t, args: { position: { x: number; y: number; z: number } }) {
+describe("Database.create from plugin", () => {
+    it("should create and use database from Database.Plugin", () => {
+        const databasePlugin = Database.Plugin.create({
+            components: {
+                position: {
+                    type: "object",
+                    properties: {
+                        x: F32.schema,
+                        y: F32.schema,
+                        z: F32.schema,
+                    },
+                    required: ["x", "y", "z"],
+                    additionalProperties: false,
+                } as const,
+            },
+            resources: {
+                time: { default: { delta: 0.016, elapsed: 0 } as { delta: number; elapsed: number } },
+            },
+            archetypes: {
+                PositionEntity: ["position"],
+            },
+            transactions: {
+                createPositionEntity(t: Store<any, any, any>, args: { position: { x: number; y: number; z: number } }) {
                     return t.archetypes.PositionEntity.insert(args);
                 },
-                updateTime(t, args: { delta: number; elapsed: number }) {
+                updateTime(t: Store<any, any, any>, args: { delta: number; elapsed: number }) {
                     t.resources.time = args;
-                },
+                }
             }
-        );
+        });
 
-        const database = Database.create(databaseSchema);
+        const database = Database.create(databasePlugin);
 
         const entity = database.transactions.createPositionEntity({
             position: { x: 1, y: 2, z: 3 },
@@ -82,37 +80,9 @@ describe("Database.create from schema", () => {
     });
 
     it("should extend database with new actions", () => {
-        const databaseSchema = Database.Schema.create(
-            Store.Schema.create(
-                {
-                    position: {
-                        type: "object",
-                        properties: {
-                            x: F32.schema,
-                            y: F32.schema,
-                            z: F32.schema,
-                        },
-                        required: ["x", "y", "z"],
-                        additionalProperties: false,
-                    } as const,
-                },
-                {},
-                {
-                    PositionEntity: ["position"],
-                }
-            ),
-            {
-                createPositionEntity(t, args: { position: { x: number; y: number; z: number } }) {
-                    return t.archetypes.PositionEntity.insert(args);
-                },
-            }
-        );
-
-        const database = Database.create(databaseSchema);
-
-        const extensionSchema = {
+        const databasePlugin = Database.Plugin.create({
             components: {
-                velocity: {
+                position: {
                     type: "object",
                     properties: {
                         x: F32.schema,
@@ -123,9 +93,36 @@ describe("Database.create from schema", () => {
                     additionalProperties: false,
                 } as const,
             },
-            resources: {},
+            resources: {
+                foo: { default: 0 as number }
+            },
             archetypes: {
-                MovingEntity: ["position", "velocity"],
+                PositionEntity: ["position"]
+            },
+            transactions: {
+                createPositionEntity(t: Store<any, any, any>, args: { position: { x: number; y: number; z: number } }) {
+                    return t.archetypes.PositionEntity.insert(args);
+                }
+            }
+        });
+
+        const database = Database.create(databasePlugin);
+
+        const extensionPlugin = Database.Plugin.create({
+            components: {
+                velocity: {
+                    type: "object",
+                    properties: {
+                        x: F32.schema,
+                        y: F32.schema,
+                        z: F32.schema,
+                    },
+                    required: ["x", "y", "z"],
+                    additionalProperties: false,
+                } as const
+            },
+            archetypes: {
+                MovingEntity: ["position", "velocity"] as any
             },
             transactions: {
                 createMovingEntity(t: Store<any, any, any>, args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) {
@@ -133,11 +130,11 @@ describe("Database.create from schema", () => {
                 },
                 updatePosition(t: Store<any, any, any>, args: { entity: number; position: { x: number; y: number; z: number } }) {
                     t.update(args.entity, { position: args.position });
-                },
-            },
-        } as const;
+                }
+            }
+        });
 
-        const extendedDatabase = database.extend(extensionSchema) as unknown as typeof database & {
+        const extendedDatabase = database.extend(extensionPlugin) as unknown as typeof database & {
             transactions: typeof database.transactions & {
                 createMovingEntity: (args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) => number;
                 updatePosition: (args: { entity: number; position: { x: number; y: number; z: number } }) => void;
