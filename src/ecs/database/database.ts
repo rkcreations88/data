@@ -113,9 +113,16 @@ export namespace Database {
     readonly transactions?: TD;
     readonly systems?: { readonly [K in S]: {
       readonly create: (db: Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, S>) => SystemFunction;
+      /**
+       * Scheduling constraints for system execution order.
+       * - `before`: Hard constraint - this system must run before the listed systems
+       * - `after`: Hard constraint - this system must run after the listed systems
+       * - `during`: Soft constraint - prefer to run in the same tier as the listed systems, if dependencies allow
+       */
       readonly schedule?: {
         readonly before?: readonly NoInfer<Exclude<S, K>>[];
         readonly after?: readonly NoInfer<Exclude<S, K>>[];
+        readonly during?: readonly NoInfer<Exclude<S, K>>[];
       }
     } };
   };
