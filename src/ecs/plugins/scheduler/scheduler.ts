@@ -20,11 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-import { Database } from "../../database/database.js";
+import { createPlugin } from "../../database/create-plugin.js";
 
 type SchedulerState = "running" | "paused" | "disposed";
 
-export const scheduler = Database.Plugin.create({
+export const scheduler = createPlugin({
     resources: {
         schedulerState: { default: "running" as SchedulerState }
     },
