@@ -32,7 +32,7 @@ export * from "./resource-schemas.js";
 export * from "./undo-redo-service/index.js";
 export * from "./persistence-service/index.js";
 export { applyOperations } from "./database/transactional-store/apply-operations.js";
-export * from "./plugins/index.js";
+export { scheduler } from "./plugins/index.js";
 
 // Export Entity type and namespace
 export { Entity } from "./entity.js";
