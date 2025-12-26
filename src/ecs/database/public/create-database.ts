@@ -64,7 +64,7 @@ export function createDatabase<
     transactionDeclarations: TD,
     systemDeclarations: { readonly [K in S]: {
         readonly create: (db: Database<C, R, A, ToActionFunctions<TD>, S>) => () => void | Promise<void>;
-        readonly schedule?: { readonly before?: readonly S[]; readonly after?: readonly S[] };
+        readonly schedule?: { readonly before?: readonly S[]; readonly after?: readonly S[]; readonly during?: readonly S[] };
     } },
 ): Database<C, R, A, ToActionFunctions<TD>, S>
 export function createDatabase(
@@ -114,7 +114,7 @@ function createDatabaseFromStoreTransactionsAndSystems<
     transactionDeclarations: TD,
     systemDeclarations: { readonly [K in S]: {
         readonly create: (db: Database<C, R, A, ToActionFunctions<TD>, S>) => () => void | Promise<void>;
-        readonly schedule?: { readonly before?: readonly S[]; readonly after?: readonly S[] };
+        readonly schedule?: { readonly before?: readonly S[]; readonly after?: readonly S[]; readonly during?: readonly S[] };
     } }
 ): Database<C, R, A, ToActionFunctions<TD>, S> {
     type T = ToActionFunctions<TD> & Service;

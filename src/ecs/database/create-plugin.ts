@@ -38,7 +38,7 @@ type RemoveIndexSignature<T> = {
 
 type SystemDeclarations = { readonly [K in string]: {
     readonly create: (db: Database<any, any, any, any, any>) => SystemFunction;
-    readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+    readonly schedule?: { readonly before?: readonly string[]; readonly after?: readonly string[]; readonly during?: readonly string[] };
 } };
 
 type PluginSchema<
@@ -95,6 +95,7 @@ export function createPlugin<
         readonly schedule?: {
             readonly before?: readonly Extract<keyof SYS, string>[];
             readonly after?: readonly Extract<keyof SYS, string>[];
+            readonly during?: readonly Extract<keyof SYS, string>[];
         };
     } },
 >(
@@ -125,6 +126,7 @@ export function createPlugin<
         readonly schedule?: {
             readonly before?: readonly MergeDependencies<D>['systemNames'][];
             readonly after?: readonly MergeDependencies<D>['systemNames'][];
+            readonly during?: readonly MergeDependencies<D>['systemNames'][];
         };
     } },
 >(

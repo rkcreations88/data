@@ -52,6 +52,7 @@ describe("Database.Plugin.create", () => {
             });
         });
 
+
         it("should infer db type correctly with single descriptor", () => {
             const plugin = createPlugin({
                 resources: {
@@ -113,6 +114,8 @@ describe("Database.Plugin.create", () => {
                             create: (_db) => () => { },
                             schedule: {
                                 after: ["update"],
+                                // @ts-expect-error - render2 does not exist
+                                before: ["render2"]
                             }
                         }
                     }
