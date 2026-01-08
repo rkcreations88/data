@@ -22,6 +22,7 @@ SOFTWARE.*/
 import { ResourceComponents } from "../../store/resource-components.js";
 import { Store } from "../../store/index.js";
 import { Database } from "../database.js";
+import type { ToTransactionFunctions, TransactionDeclarations } from "../../store/transaction-functions.js";
 import type { ToActionFunctions, ActionDeclarations } from "../../store/action-functions.js";
 import { StringKeyof } from "../../../types/types.js";
 import { isPromise } from "../../../internal/promise/is-promise.js";
@@ -41,47 +42,90 @@ export function createDatabase<
     CS extends ComponentSchemas,
     RS extends ResourceSchemas,
     A extends ArchetypeComponents<StringKeyof<CS>>,
-    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
-    S extends string
->(plugin: Database.Plugin<CS, RS, A, TD, S>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, S>
+    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
+    S extends string,
+    AD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S> = {}
+>(plugin: Database.Plugin<CS, RS, A, TD, S, AD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>>
+export function createDatabase(plugin: Database.Plugin<any, any, any, any, any, any>): any
 export function createDatabase<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
-    const TD extends ActionDeclarations<C, R, A>
+    const TD extends TransactionDeclarations<C, R, A>
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
-): Database<C, R, A, ToActionFunctions<TD>, never>
+): Database<C, R, A, ToTransactionFunctions<TD>, never, {}>
 export function createDatabase<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
-    const TD extends ActionDeclarations<C, R, A>,
+    const TD extends TransactionDeclarations<C, R, A>,
+    const AD extends ActionDeclarations<C, R, A, ToTransactionFunctions<TD>, never>
+>(
+    store: Store<C, R, A>,
+    transactionDeclarations: TD,
+    actionDeclarations: AD,
+): Database<C, R, A, ToTransactionFunctions<TD>, never, ToActionFunctions<AD>>
+export function createDatabase<
+    const C extends Components,
+    const R extends ResourceComponents,
+    const A extends ArchetypeComponents<StringKeyof<C>>,
+    const TD extends TransactionDeclarations<C, R, A>,
     const S extends string
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
     systemDeclarations: { readonly [K in S]: {
-        readonly create: (db: Database<C, R, A, ToActionFunctions<TD>, S>) => () => void | Promise<void>;
+        readonly create: (db: Database<C, R, A, ToTransactionFunctions<TD>, S, any>) => (() => void | Promise<void>) | void;
         readonly schedule?: { readonly before?: readonly S[]; readonly after?: readonly S[]; readonly during?: readonly S[] };
     } },
-): Database<C, R, A, ToActionFunctions<TD>, S>
+): Database<C, R, A, ToTransactionFunctions<TD>, S, {}>
+export function createDatabase<
+    const C extends Components,
+    const R extends ResourceComponents,
+    const A extends ArchetypeComponents<StringKeyof<C>>,
+    const TD extends TransactionDeclarations<C, R, A>,
+    const S extends string,
+    const AD extends ActionDeclarations<C, R, A, ToTransactionFunctions<TD>, S>
+>(
+    store: Store<C, R, A>,
+    transactionDeclarations: TD,
+    systemDeclarations: { readonly [K in S]: {
+        readonly create: (db: Database<C, R, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>>) => (() => void | Promise<void>) | void;
+        readonly schedule?: { readonly before?: readonly S[]; readonly after?: readonly S[]; readonly during?: readonly S[] };
+    } },
+    actionDeclarations: AD,
+): Database<C, R, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>>
 export function createDatabase(
-    storeOrPlugin?: Store<any, any, any> | Database.Plugin<any, any, any, any, any>,
+    storeOrPlugin?: Store<any, any, any> | Database.Plugin<any, any, any, any, any, any>,
     transactionDeclarations?: any,
-    systemDeclarations?: any,
+    systemDeclarationsOrActionDeclarations?: any,
+    actionDeclarations?: any,
 ): any {
     if (!storeOrPlugin) {
         return createDatabaseFromPlugin(Database.Plugin.create({}));
     }
-    if (systemDeclarations) {
-        return createDatabaseFromStoreTransactionsAndSystems(storeOrPlugin as any, transactionDeclarations, systemDeclarations);
+    // Check if it's a Plugin (has components, resources, archetypes, transactions, systems, or actions properties)
+    if (typeof storeOrPlugin === 'object' && 'components' in storeOrPlugin) {
+        return createDatabaseFromPlugin(storeOrPlugin as any);
+    }
+    // Check if systemDeclarationsOrActionDeclarations is systemDeclarations (has create property)
+    if (systemDeclarationsOrActionDeclarations && typeof systemDeclarationsOrActionDeclarations === 'object' && !Array.isArray(systemDeclarationsOrActionDeclarations)) {
+        const firstKey = Object.keys(systemDeclarationsOrActionDeclarations)[0];
+        if (firstKey && systemDeclarationsOrActionDeclarations[firstKey]?.create) {
+            // It's systemDeclarations
+            return createDatabaseFromStoreTransactionsAndSystems(storeOrPlugin as any, transactionDeclarations, systemDeclarationsOrActionDeclarations, actionDeclarations);
+        }
     }
     if (transactionDeclarations) {
+        // Check if systemDeclarationsOrActionDeclarations is actually actionDeclarations
+        if (systemDeclarationsOrActionDeclarations && !systemDeclarationsOrActionDeclarations[Object.keys(systemDeclarationsOrActionDeclarations)[0]]?.create) {
+            return createDatabaseFromStoreAndTransactions(storeOrPlugin as any, transactionDeclarations, systemDeclarationsOrActionDeclarations);
+        }
         return createDatabaseFromStoreAndTransactions(storeOrPlugin as any, transactionDeclarations);
     } else {
-        // It's a Plugin
+        // It's a Plugin (fallback)
         return createDatabaseFromPlugin(storeOrPlugin as any);
     }
 }
@@ -90,34 +134,38 @@ function createDatabaseFromPlugin<
     CS extends ComponentSchemas,
     RS extends ResourceSchemas,
     A extends ArchetypeComponents<StringKeyof<CS>>,
-    TD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
-    S extends string
->(plugin: Database.Plugin<CS, RS, A, TD, S>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToActionFunctions<TD>, S> {
+    TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A>,
+    S extends string,
+    AD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S> = {}
+>(plugin: Database.Plugin<CS, RS, A, TD, S, AD>): Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>> {
     const systems = plugin.systems ?? ({} as any);
     const transactions = plugin.transactions ?? ({} as any);
+    const actions = (plugin.actions ?? {}) as AD;
     const storeSchema: Store.Schema<CS, RS, A> = {
         components: plugin.components ?? ({} as CS),
         resources: plugin.resources ?? ({} as RS),
         archetypes: plugin.archetypes ?? ({} as A),
     };
-    return createDatabase(Store.create(storeSchema), transactions, systems) as any;
+    return createDatabase(Store.create(storeSchema), transactions, systems, actions as any) as any;
 }
 
 function createDatabaseFromStoreTransactionsAndSystems<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
-    const TD extends ActionDeclarations<C, R, A>,
-    const S extends string
+    const TD extends TransactionDeclarations<C, R, A>,
+    const S extends string,
+    const AD extends ActionDeclarations<C, R, A, ToTransactionFunctions<TD>, S> = {}
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
     systemDeclarations: { readonly [K in S]: {
-        readonly create: (db: Database<C, R, A, ToActionFunctions<TD>, S>) => () => void | Promise<void>;
+        readonly create: (db: Database<C, R, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>>) => (() => void | Promise<void>) | void;
         readonly schedule?: { readonly before?: readonly S[]; readonly after?: readonly S[]; readonly during?: readonly S[] };
-    } }
-): Database<C, R, A, ToActionFunctions<TD>, S> {
-    type T = ToActionFunctions<TD> & Service;
+    } },
+    actionDeclarations?: AD,
+): Database<C, R, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>> {
+    type T = ToTransactionFunctions<TD> & Service;
     type TransactionName = Extract<keyof TD, string>;
 
     const reconcilingDatabase = createReconcilingDatabase(store, transactionDeclarations);
@@ -227,15 +275,6 @@ function createDatabaseFromStoreTransactionsAndSystems<
         serviceName: "ecs-database-transactions-service",
     } satisfies Service as T;
 
-    // Create unwrapped actions that execute directly on the store
-    const actions = {} as T;
-    for (const name of Object.keys(transactionDeclarations)) {
-        (actions as any)[name] = transactionDeclarations[name].bind(null, store);
-    }
-
-    // Assign unwrapped actions to store
-    (store as any).actions = actions;
-
     const addTransactionWrappers = (transactionDecls: Record<string, any>) => {
         for (const name of Object.keys(transactionDecls)) {
             (transactions as any)[name] = createTransactionWrapper(name as any);
@@ -244,6 +283,21 @@ function createDatabaseFromStoreTransactionsAndSystems<
 
     addTransactionWrappers(transactionDeclarations);
 
+    // Create actions wrapper
+    type AF = ToActionFunctions<AD> & Service;
+    const actions = {
+        serviceName: "ecs-database-actions-service",
+    } satisfies Service as AF;
+
+    const addActionWrappers = (actionDecls: Record<string, any>, db: Database<C, R, A, T, S, AF>) => {
+        for (const name of Object.keys(actionDecls)) {
+            const actionDecl = actionDecls[name];
+            (actions as any)[name] = (args: unknown) => {
+                return actionDecl(db, args);
+            };
+        }
+    };
+
     // Calculate system execution order
     const systemOrder = calculateSystemOrder(systemDeclarations as any);
 
@@ -251,14 +305,20 @@ function createDatabaseFromStoreTransactionsAndSystems<
     const partialDatabase: any = {
         serviceName: "ecs-database-service",
         ...reconcilingDatabase,
-        store: store as Store<C, R, A> & { readonly actions: T },
+        store: store as Store<C, R, A>,
         transactions,
+        actions, // Set actions before adding wrappers
         system: {
             functions: {},  // Empty initially
             order: systemOrder
         },
         extend: undefined  // Will be set later
     };
+
+    // Initialize actions if provided
+    if (actionDeclarations) {
+        addActionWrappers(actionDeclarations, partialDatabase);
+    }
 
     // Instantiate system functions with partial database
     const systemFunctions: any = {};
@@ -268,7 +328,7 @@ function createDatabaseFromStoreTransactionsAndSystems<
     partialDatabase.system.functions = systemFunctions;
 
     const extend = <
-        P extends Database.Plugin<any, any, any, any, any>
+        P extends Database.Plugin<any, any, any, any, any, any>
     >(
         plugin: P,
     ) => {
@@ -276,14 +336,13 @@ function createDatabaseFromStoreTransactionsAndSystems<
         reconcilingDatabase.extend(plugin);
         
         const pluginTransactions = plugin.transactions ?? {};
+        const pluginActions = plugin.actions ?? {};
         
         // Add transaction wrappers for the new transactions
         addTransactionWrappers(pluginTransactions);
-
-        // Add unwrapped actions to store.actions
-        for (const name of Object.keys(pluginTransactions)) {
-            ((store as any).actions as any)[name] = pluginTransactions[name].bind(null, store);
-        }
+        
+        // Add action wrappers for the new actions
+        addActionWrappers(pluginActions, partialDatabase);
 
         // If plugin has new systems, we need to recreate the database with merged systems
         if (plugin.systems && Object.keys(plugin.systems).length > 0) {
@@ -293,11 +352,18 @@ function createDatabaseFromStoreTransactionsAndSystems<
                 ...plugin.systems
             } as any;
 
-            // Create new database with merged systems
+            // Merge action declarations
+            const mergedActionDeclarations = {
+                ...(actionDeclarations ?? {}),
+                ...pluginActions
+            } as any;
+
+            // Create new database with merged systems and actions
             return createDatabaseFromStoreTransactionsAndSystems(
                 store,
                 { ...transactionDeclarations, ...pluginTransactions } as any,
-                mergedSystemDeclarations
+                mergedSystemDeclarations,
+                Object.keys(mergedActionDeclarations).length > 0 ? mergedActionDeclarations : undefined
             ) as any;
         }
 
@@ -307,19 +373,21 @@ function createDatabaseFromStoreTransactionsAndSystems<
 
     partialDatabase.extend = extend;
 
-    return partialDatabase as Database<C, R, A, T, S> & { extend: typeof extend };
+    return partialDatabase as Database<C, R, A, T, S, AF> & { extend: typeof extend };
 }
 
 function createDatabaseFromStoreAndTransactions<
     const C extends Components,
     const R extends ResourceComponents,
     const A extends ArchetypeComponents<StringKeyof<C>>,
-    const TD extends ActionDeclarations<C, R, A>
+    const TD extends TransactionDeclarations<C, R, A>,
+    const AD extends ActionDeclarations<C, R, A, ToTransactionFunctions<TD>, never> = {}
 >(
     store: Store<C, R, A>,
     transactionDeclarations: TD,
-): Database<C, R, A, ToActionFunctions<TD>, never> {
-    type T = ToActionFunctions<TD> & Service;
+    actionDeclarations?: AD,
+): Database<C, R, A, ToTransactionFunctions<TD>, never, ToActionFunctions<AD>> {
+    type T = ToTransactionFunctions<TD> & Service;
     type TransactionName = Extract<keyof TD, string>;
 
     const reconcilingDatabase = createReconcilingDatabase(store, transactionDeclarations);
@@ -429,15 +497,6 @@ function createDatabaseFromStoreAndTransactions<
         serviceName: "ecs-database-transactions-service",
     } satisfies Service as T;
 
-    // Create unwrapped actions that execute directly on the store
-    const actions = {} as T;
-    for (const name of Object.keys(transactionDeclarations)) {
-        (actions as any)[name] = transactionDeclarations[name].bind(null, store);
-    }
-
-    // Assign unwrapped actions to store
-    (store as any).actions = actions;
-
     const addTransactionWrappers = (transactionDecls: Record<string, any>) => {
         for (const name of Object.keys(transactionDecls)) {
             (transactions as any)[name] = createTransactionWrapper(name as any);
@@ -446,8 +505,40 @@ function createDatabaseFromStoreAndTransactions<
 
     addTransactionWrappers(transactionDeclarations);
 
+    // Create actions wrapper
+    type AF = ToActionFunctions<AD> & Service;
+    const actions = {
+        serviceName: "ecs-database-actions-service",
+    } satisfies Service as AF;
+
+    const addActionWrappers = (actionDecls: Record<string, any>, db: Database<C, R, A, T, never, AF>) => {
+        for (const name of Object.keys(actionDecls)) {
+            const actionDecl = actionDecls[name];
+            (actions as any)[name] = (args: unknown) => {
+                return actionDecl(db, args);
+            };
+        }
+    };
+
+    // Create partial database for action initialization
+    const partialDatabaseForActions: any = {
+        serviceName: "ecs-database-service",
+        ...reconcilingDatabase,
+        store: store as Store<C, R, A>,
+        transactions,
+        actions, // Set actions before adding wrappers
+        system: {
+            functions: {} as any,
+            order: [] as never[][]
+        },
+    };
+
+    if (actionDeclarations) {
+        addActionWrappers(actionDeclarations, partialDatabaseForActions);
+    }
+
     const extend = <
-        S extends Database.Plugin<any, any, any, any, any>
+        S extends Database.Plugin<any, any, any, any, any, any>
     >(
         schema: S,
     ) => {
@@ -455,33 +546,22 @@ function createDatabaseFromStoreAndTransactions<
         reconcilingDatabase.extend(schema);
         // Add transaction wrappers for the new transactions
         addTransactionWrappers(schema.transactions);
+        
+        // Add action wrappers for the new actions
+        addActionWrappers(schema.actions ?? {}, partialDatabaseForActions);
 
-        // Add unwrapped actions to store.actions
-        for (const name of Object.keys(schema.transactions)) {
-            ((store as any).actions as any)[name] = schema.transactions[name].bind(null, store);
-        }
-
-        return database as unknown as Database<
-            C & (S extends Database.Plugin<infer XC, any, any, any, any> ? FromSchemas<XC> : never),
-            R & (S extends Database.Plugin<any, infer XR, any, any, any> ? FromSchemas<XR> : never),
-            A & (S extends Database.Plugin<any, any, infer XA, any, any> ? XA : never),
-            T & (S extends Database.Plugin<any, any, any, infer XTD, any> ? ToActionFunctions<XTD> : never),
-            never
+        return partialDatabaseForActions as unknown as Database<
+            C & (S extends Database.Plugin<infer XC, any, any, any, any, any> ? FromSchemas<XC> : never),
+            R & (S extends Database.Plugin<any, infer XR, any, any, any, any> ? FromSchemas<XR> : never),
+            A & (S extends Database.Plugin<any, any, infer XA, any, any, any> ? XA : never),
+            T & (S extends Database.Plugin<any, any, any, infer XTD, any, any> ? ToTransactionFunctions<XTD> : never),
+            never,
+            AF & (S extends Database.Plugin<any, any, any, any, any, infer XAD> ? ToActionFunctions<XAD> : never)
         >;
     };
 
-    const database = {
-        serviceName: "ecs-database-service",
-        ...reconcilingDatabase,
-        store: store as Store<C, R, A> & { readonly actions: T },
-        transactions,
-        system: {
-            functions: {} as any,
-            order: [] as never[][]
-        },
-        extend,
-    } as Database<C, R, A, T, never> & { extend: typeof extend };
+    partialDatabaseForActions.extend = extend;
 
-    return database;
+    return partialDatabaseForActions as Database<C, R, A, T, never, AF> & { extend: typeof extend };
 }
 

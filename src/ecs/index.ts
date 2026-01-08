@@ -33,12 +33,7 @@ export * from "./undo-redo-service/index.js";
 export * from "./persistence-service/index.js";
 export { applyOperations } from "./database/transactional-store/apply-operations.js";
 export { scheduler } from "./plugins/index.js";
-export * from "./store/action-functions.js";
+export * from "./store/transaction-functions.js";
 
 // Export Entity type and namespace
 export { Entity } from "./entity.js";
-
-// Re-export Schema and FromSchemas for type inference portability when using Database.Plugin.create()
-// This ensures TypeScript can properly name inferred types in exported constants
-// These types are used in Database.Plugin type definitions and need to be accessible for type inference
-export type { Schema, FromSchemas } from "../schema/index.js";

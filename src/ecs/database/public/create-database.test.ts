@@ -1029,228 +1029,218 @@ describe("createDatabase", () => {
 
     it("should return the same instance when extended", () => {
         const database = createTestDatabase();
-        const extended = database.extend({ components: {}, resources: {}, archetypes: {}, transactions: {} });
+        const extended = database.extend(Database.Plugin.create({}));
         expect(extended).toBe(database);
     });
+});
 
-    describe("database.store.actions (unwrapped actions)", () => {
-        it("should expose unwrapped actions on store that execute directly", () => {
-            const database = createTestDatabase();
+describe("database.transactions", () => {
+    it("should execute transactions directly", () => {
+        const database = createTestDatabase();
 
-            // Execute using unwrapped action
-            const entity = database.store.actions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 },
-            });
-
-            // Verify entity was created
-            expect(entity).toBeDefined();
-            const location = database.locate(entity);
-            expect(location).not.toBeNull();
-            expect(location?.archetype).toBe(database.archetypes.Position);
+        // Execute using transactions
+        const entity = database.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
         });
 
-        it("should not trigger observable notifications when using store.actions", async () => {
-            const database = createTestDatabase();
-            const transactionObserver = vi.fn();
-            const componentObserver = vi.fn();
-
-            // Subscribe to observables
-            const unsubscribeTransaction = database.observe.transactions(transactionObserver);
-            const unsubscribeComponent = database.observe.components.position(componentObserver);
-
-            // Execute using unwrapped action (should NOT notify)
-            database.store.actions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 },
-            });
-
-            // Wait for any potential async notifications
-            await Promise.resolve();
-
-            // Verify NO notifications were sent
-            expect(transactionObserver).not.toHaveBeenCalled();
-            expect(componentObserver).not.toHaveBeenCalled();
-
-            // Now use wrapped transaction to verify observers work
-            database.transactions.createPositionEntity({
-                position: { x: 4, y: 5, z: 6 },
-            });
-
-            await Promise.resolve();
-
-            // Verify notifications WERE sent for wrapped transaction
-            expect(transactionObserver).toHaveBeenCalledTimes(1);
-            expect(componentObserver).toHaveBeenCalledTimes(1);
-
-            unsubscribeTransaction();
-            unsubscribeComponent();
-        });
-
-        it("should not create undo entries when using store.actions", async () => {
-            const database = createTestDatabase();
-            
-            // Track transaction notifications to verify behavior
-            const transactionObserver = vi.fn();
-            const unsubscribe = database.observe.transactions(transactionObserver);
-
-            // Execute using unwrapped action
-            database.store.actions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 },
-            });
-
-            await Promise.resolve();
-
-            // Verify NO transaction notification (meaning no undo entry would be created)
-            expect(transactionObserver).not.toHaveBeenCalled();
-
-            // Execute using wrapped transaction
-            database.transactions.createPositionEntity({
-                position: { x: 4, y: 5, z: 6 },
-            });
-
-            await Promise.resolve();
-
-            // Verify transaction notification WAS sent (meaning undo entry would be created)
-            expect(transactionObserver).toHaveBeenCalledTimes(1);
-
-            unsubscribe();
-        });
-
-        it("should support all transaction types on store.actions", () => {
-            const database = createTestDatabase();
-
-            // Test entity creation
-            const entity = database.store.actions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 },
-            });
-            expect(entity).toBeDefined();
-            expect(database.locate(entity)).not.toBeNull();
-
-            // Test entity update
-            database.store.actions.updateEntity({
-                entity,
-                values: { position: { x: 10, y: 20, z: 30 } },
-            });
-            expect(database.locate(entity)).not.toBeNull();
-
-            // Test resource update
-            database.store.actions.updateTime({ delta: 0.033, elapsed: 1.5 });
-            expect(database.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
-
-            // Test entity deletion
-            database.store.actions.deleteEntity({ entity });
-            expect(database.locate(entity)).toBeNull();
-        });
-
-        it("should add new actions to store.actions when database is extended", () => {
-            const database = createTestDatabase();
-
-            // Verify original action exists
-            expect(database.store.actions.createPositionEntity).toBeDefined();
-
-            // Define extension with new transaction
-            const extensionSchema = {
-                components: {
-                    velocity: {
-                        type: "object",
-                        properties: {
-                            x: { type: "number", precision: 1, default: 0 },
-                            y: { type: "number", precision: 1, default: 0 },
-                            z: { type: "number", precision: 1, default: 0 },
-                        },
-                        required: ["x", "y", "z"] as const,
-                        additionalProperties: false,
-                    } as const,
-                },
-                resources: {},
-                archetypes: {
-                    Moving: ["position", "velocity"] as const,
-                },
-                transactions: {
-                    createMovingEntity(t: Store<any, any, any>, args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) {
-                        return t.archetypes.Moving.insert({
-                            position: args.position,
-                            velocity: args.velocity,
-                        });
-                    },
-                },
-            } as const;
-
-            // Extend database
-            const extendedDatabase = database.extend(extensionSchema) as unknown as typeof database & {
-                store: typeof database.store & {
-                    actions: typeof database.store.actions & {
-                        createMovingEntity: (args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) => number;
-                    };
-                };
-                transactions: typeof database.transactions & {
-                    createMovingEntity: (args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) => number;
-                };
-            };
-
-            // Verify new action exists on store.actions
-            expect(extendedDatabase.store.actions.createMovingEntity).toBeDefined();
-            expect(typeof extendedDatabase.store.actions.createMovingEntity).toBe("function");
-
-            // Verify new action exists on transactions
-            expect(extendedDatabase.transactions.createMovingEntity).toBeDefined();
-            expect(typeof extendedDatabase.transactions.createMovingEntity).toBe("function");
-
-            // Test that the new unwrapped action works
-            const entity = extendedDatabase.store.actions.createMovingEntity({
-                position: { x: 1, y: 2, z: 3 },
-                velocity: { x: 0.1, y: 0.2, z: 0.3 },
-            });
-
-            expect(entity).toBeDefined();
-            const location = extendedDatabase.locate(entity);
-            expect(location).not.toBeNull();
-            // Verify entity was created successfully
-            expect(typeof entity).toBe("number");
-        });
-
-        it("should execute store.actions synchronously and return values immediately", () => {
-            const database = createTestDatabase();
-
-            // Unwrapped action should return immediately (no promise)
-            const entity = database.store.actions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 },
-            });
-
-            // Should be a number, not a promise
-            expect(typeof entity).toBe("number");
-            expect(entity).toBeGreaterThan(0);
-
-            // Verify entity exists immediately
-            const location = database.locate(entity);
-            expect(location).not.toBeNull();
-        });
-
-        it("should have store.actions work independently from transactions", async () => {
-            const database = createTestDatabase();
-            const observer = vi.fn();
-            const unsubscribe = database.observe.transactions(observer);
-
-            // Create entity using store.actions (no notification)
-            const entity1 = database.store.actions.createPositionEntity({
-                position: { x: 1, y: 2, z: 3 },
-            });
-
-            // Create entity using transactions (with notification)
-            const entity2 = database.transactions.createPositionEntity({
-                position: { x: 4, y: 5, z: 6 },
-            });
-
-            await Promise.resolve();
-
-            // Only one notification (from transactions, not store.actions)
-            expect(observer).toHaveBeenCalledTimes(1);
-
-            // Both entities should exist
-            expect(database.locate(entity1)).not.toBeNull();
-            expect(database.locate(entity2)).not.toBeNull();
-
-            unsubscribe();
-        });
+        // Verify entity was created
+        expect(entity).toBeDefined();
+        const location = database.locate(entity);
+        expect(location).not.toBeNull();
+        expect(location?.archetype).toBe(database.archetypes.Position);
     });
 
+    it("should trigger observable notifications when using transactions", async () => {
+        const database = createTestDatabase();
+        const transactionObserver = vi.fn();
+        const componentObserver = vi.fn();
+
+        // Subscribe to observables
+        const unsubscribeTransaction = database.observe.transactions(transactionObserver);
+        const unsubscribeComponent = database.observe.components.position(componentObserver);
+
+        // Execute using transactions (should notify)
+        database.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        // Wait for any potential async notifications
+        await Promise.resolve();
+
+        // Verify notifications WERE sent
+        expect(transactionObserver).toHaveBeenCalledTimes(1);
+        expect(componentObserver).toHaveBeenCalledTimes(1);
+
+        // Execute another transaction
+        database.transactions.createPositionEntity({
+            position: { x: 4, y: 5, z: 6 },
+        });
+
+        await Promise.resolve();
+
+        // Verify notifications were sent again
+        expect(transactionObserver).toHaveBeenCalledTimes(2);
+        expect(componentObserver).toHaveBeenCalledTimes(2);
+
+        unsubscribeTransaction();
+        unsubscribeComponent();
+    });
+
+    it("should create undo entries when using transactions", async () => {
+        const database = createTestDatabase();
+
+        // Track transaction notifications to verify behavior
+        const transactionObserver = vi.fn();
+        const unsubscribe = database.observe.transactions(transactionObserver);
+
+        // Execute using transactions
+        database.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        await Promise.resolve();
+
+        // Verify transaction notification WAS sent (meaning undo entry would be created)
+        expect(transactionObserver).toHaveBeenCalledTimes(1);
+
+        // Execute another transaction
+        database.transactions.createPositionEntity({
+            position: { x: 4, y: 5, z: 6 },
+        });
+
+        await Promise.resolve();
+
+        // Verify transaction notification WAS sent again
+        expect(transactionObserver).toHaveBeenCalledTimes(2);
+
+        unsubscribe();
+    });
+
+    it("should support all transaction types on transactions", () => {
+        const database = createTestDatabase();
+
+        // Test entity creation
+        const entity = database.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+        expect(entity).toBeDefined();
+        expect(database.locate(entity)).not.toBeNull();
+
+        // Test entity update
+        database.transactions.updateEntity({
+            entity,
+            values: { position: { x: 10, y: 20, z: 30 } },
+        });
+        expect(database.locate(entity)).not.toBeNull();
+
+        // Test resource update
+        database.transactions.updateTime({ delta: 0.033, elapsed: 1.5 });
+        expect(database.resources.time).toEqual({ delta: 0.033, elapsed: 1.5 });
+
+        // Test entity deletion
+        database.transactions.deleteEntity({ entity });
+        expect(database.locate(entity)).toBeNull();
+    });
+
+    it("should add new actions to transactions when database is extended", () => {
+        const database = createTestDatabase();
+
+        // Verify original action exists
+        expect(database.transactions.createPositionEntity).toBeDefined();
+
+        // Define extension with new transaction
+        const extensionSchema = Database.Plugin.create({
+            components: {
+                position: positionSchema,
+                velocity: {
+                    type: "object",
+                    properties: {
+                        x: { type: "number", precision: 1, default: 0 },
+                        y: { type: "number", precision: 1, default: 0 },
+                        z: { type: "number", precision: 1, default: 0 },
+                    },
+                    required: ["x", "y", "z"],
+                    additionalProperties: false,
+                },
+            },
+            archetypes: {
+                Moving: ["position", "velocity"],
+            },
+            transactions: {
+                createMovingEntity(t, args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) {
+                    return t.archetypes.Moving.insert({
+                        position: args.position,
+                        velocity: args.velocity,
+                    });
+                },
+            },
+        });
+
+        // Extend database
+        const extendedDatabase = database.extend(extensionSchema) as unknown as typeof database & {
+            transactions: typeof database.transactions & {
+                createMovingEntity: (args: { position: { x: number; y: number; z: number }; velocity: { x: number; y: number; z: number } }) => number;
+            };
+        };
+
+        // Verify new transaction exists on transactions
+        expect(extendedDatabase.transactions.createMovingEntity).toBeDefined();
+        expect(typeof extendedDatabase.transactions.createMovingEntity).toBe("function");
+
+        // Test that the new transaction works
+        const entity = extendedDatabase.transactions.createMovingEntity({
+            position: { x: 1, y: 2, z: 3 },
+            velocity: { x: 0.1, y: 0.2, z: 0.3 },
+        });
+
+        expect(entity).toBeDefined();
+        const location = extendedDatabase.locate(entity);
+        expect(location).not.toBeNull();
+        // Verify entity was created successfully
+        expect(typeof entity).toBe("number");
+    });
+
+    it("should execute transactions synchronously and return values immediately", () => {
+        const database = createTestDatabase();
+
+        // Transaction should return immediately (no promise)
+        const entity = database.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        // Should be a number, not a promise
+        expect(typeof entity).toBe("number");
+        expect(entity).toBeGreaterThan(0);
+
+        // Verify entity exists immediately
+        const location = database.locate(entity);
+        expect(location).not.toBeNull();
+    });
+
+    it("should have transactions trigger notifications", async () => {
+        const database = createTestDatabase();
+        const observer = vi.fn();
+        const unsubscribe = database.observe.transactions(observer);
+
+        // Create entity using transactions (with notification)
+        const entity1 = database.transactions.createPositionEntity({
+            position: { x: 1, y: 2, z: 3 },
+        });
+
+        // Create entity using transactions (with notification)
+        const entity2 = database.transactions.createPositionEntity({
+            position: { x: 4, y: 5, z: 6 },
+        });
+
+        await Promise.resolve();
+
+        // Both transactions should trigger notifications
+        expect(observer).toHaveBeenCalledTimes(2);
+
+        // Both entities should exist
+        expect(database.locate(entity1)).not.toBeNull();
+        expect(database.locate(entity2)).not.toBeNull();
+
+        unsubscribe();
+    });
 });
