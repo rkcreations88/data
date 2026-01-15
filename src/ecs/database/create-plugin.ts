@@ -32,18 +32,18 @@ import { CombinePlugins, combinePlugins } from "./combine-plugins.js";
 
 type RemoveIndex<T> = Simplify<{
     [K in keyof T as
-      string extends K ? never :
-      number extends K ? never :
-      symbol extends K ? never :
-      K
+    string extends K ? never :
+    number extends K ? never :
+    symbol extends K ? never :
+    K
     ]: T[K]
-  }>;
+}>;
 
 function validatePropertyOrder(plugins: Record<string, unknown>): void {
     const expectedOrder = ['extends', 'components', 'resources', 'archetypes', 'transactions', 'actions', 'systems'];
     const actualKeys = Object.keys(plugins);
     const definedKeys = actualKeys.filter(key => key in plugins);
-    
+
     for (let i = 0; i < definedKeys.length; i++) {
         const key = definedKeys[i];
         const expectedIndex = expectedOrder.indexOf(key);
@@ -94,7 +94,7 @@ function validatePropertyOrder(plugins: Record<string, unknown>): void {
  * @throws Error if properties are not in the correct order
  */
 export function createPlugin<
-    const XP extends Database.Plugin<{},{},{},{},never,{}>,
+    const XP extends Database.Plugin<{}, {}, {}, {}, never, {}>,
     const CS extends ComponentSchemas,
     const RS extends ResourceSchemas,
     const A extends ArchetypeComponents<StringKeyof<RemoveIndex<CS> & XP['components']>>,
@@ -108,14 +108,16 @@ export function createPlugin<
         resources?: RS,
         archetypes?: A,
         transactions?: TD,
-        actions?: AD & { readonly [K: string]: (db: Database<
-            FromSchemas<RemoveIndex<CS> & XP['components']>,
-            FromSchemas<RemoveIndex<RS> & XP['resources']>,
-            RemoveIndex<A> & XP['archetypes'],
-            ToTransactionFunctions<RemoveIndex<TD> & XP['transactions']>,
-            string,
-            ToActionFunctions<XP['actions']>
-        >, input?: any) => any }
+        actions?: AD & {
+            readonly [K: string]: (db: Database<
+                FromSchemas<RemoveIndex<CS> & XP['components']>,
+                FromSchemas<RemoveIndex<RS> & XP['resources']>,
+                RemoveIndex<A> & XP['archetypes'],
+                ToTransactionFunctions<RemoveIndex<TD> & XP['transactions']>,
+                string,
+                ToActionFunctions<XP['actions']>
+            >, input?: any) => any
+        }
         systems?: { readonly [K in S]: {
             readonly create: (db: Database<
                 FromSchemas<RemoveIndex<CS> & XP['components']>,
@@ -130,7 +132,7 @@ export function createPlugin<
                 readonly after?: readonly NoInfer<Exclude<S | StringKeyof<XP['systems']>, K>>[];
                 readonly during?: readonly NoInfer<Exclude<S | StringKeyof<XP['systems']>, K>>[];
             }
-            }
+        }
         },
     },
 ): CombinePlugins<[XP, Database.Plugin<
@@ -140,8 +142,7 @@ export function createPlugin<
     RemoveIndex<TD>,
     S,
     AD & ActionDeclarations<FromSchemas<RemoveIndex<CS>>, FromSchemas<RemoveIndex<RS>>, RemoveIndex<A>, ToTransactionFunctions<RemoveIndex<TD>>, S>>
-]>
-{
+]> {
     validatePropertyOrder(plugins);
 
     // Normalize plugins descriptor to a plugin object in correct order
