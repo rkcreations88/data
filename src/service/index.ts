@@ -8,3 +8,5 @@ export {
     isErrorResult, isIntermediateResult, isSuccessResult,
     ErrorResultSchema, IntermediateResultSchema, SuccessResultSchema, ProgressiveResultSchema
 } from './progressive-result.js';
+
+export { type IsDataService } from './is-data-service.js';
