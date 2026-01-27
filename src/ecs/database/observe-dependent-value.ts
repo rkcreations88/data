@@ -12,7 +12,7 @@ export function observeDependentValue<
 >(db: D, compute: (store: D extends Database<infer C, infer R, infer A, any> ? ReadonlyStore<C, R, A> : never) => T): Observe<T> {
     return Observe.withLazy(() => {
         const resourcesUsed = determineResourcesUsed(db, compute);
-        
+
         // Create observables for only the resources that are actually used
         const resourceObservables = 
             resourcesUsed.map(resource => (db.observe.resources as any)[resource]);

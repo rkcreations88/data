@@ -1,6 +1,7 @@
 // © 2026 Adobe. MIT License. See /LICENSE for details.
 import { TypedArray } from "../internal/typed-array/index.js";
 import { Schema } from "../schema/index.js";
+import { typedBufferEquals } from "./typed-buffer-equals.js";
 
 export type TypedBufferType = "array" | "const" | "number" | "struct";
 
@@ -35,4 +36,13 @@ export abstract class TypedBuffer<T> implements ReadonlyTypedBuffer<T> {
     abstract set(index: number, value: T): void;
     abstract copy(): TypedBuffer<T>;
     abstract isDefault(index: number): boolean;
+
+    /**
+     * Checks if two TypedBuffer instances are deeply equal.
+     * @param a The first TypedBuffer.
+     * @param b The second TypedBuffer.
+     * @returns True if the buffers are deeply equal, false otherwise.
+     */
+    static equals = typedBufferEquals;
 }
+
