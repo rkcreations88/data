@@ -189,11 +189,11 @@ This subset enables better performance (through data-oriented design), easier te
 
 **Consumer Usage:**
 
-    import { <name> } from "../types/<name>/<name>.js";
+    import { MyType } from "../types/my-type/my-type.js";
 
-    type TypeRef = <name>;              // use the type
-    const value = <name>.create();      // use utility function (via export * as)
-    const bar = <name>.toBar(value);    // most utility functions take type as first argument
+    type TypeRef = MyType;              // use the type
+    const value = MyType.create();      // use utility function (via export * as)
+    const bar = MyType.toBar(value);    // most utility functions take type as first argument
 
 **Note**: The `export * as Name` pattern provides namespace-like organization without emitting runtime objects. This is different from TypeScript's `namespace` construct, which emits non-treeshakeable runtime objects and should never be used.
 
