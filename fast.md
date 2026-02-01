@@ -176,9 +176,10 @@ This subset enables better performance (through data-oriented design), easier te
 
 **Concrete layout:**
 
-    types/<name>/
-      <name>.ts # entrypoint: type + export * as <name> from public.ts
+    types/my-type/
+      my-type.ts # entrypoint: type + export * as <name> from public.ts
       public.ts # curated re-exports (public API)
+
       create.ts # one utility per file
       create.test.ts 
       to-bar.ts
