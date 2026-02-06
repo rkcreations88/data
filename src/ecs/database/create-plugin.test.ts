@@ -3,6 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { createPlugin } from "./create-plugin.js";
 import { Database } from "./database.js";
+import { Observe } from "../../observe/index.js";
 
 describe("Database.Plugin.create", () => {
     describe("property order validation", () => {
@@ -13,6 +14,13 @@ describe("Database.Plugin.create", () => {
                     extends: undefined, // extends should come first
                 });
             }).toThrow('Property "extends" must come before "components"');
+
+            expect(() => {
+                Database.Plugin.create({
+                    components: {},
+                    services: {}, // services should come before components
+                });
+            }).toThrow('Property "services" must come before "components"');
 
             expect(() => {
                 Database.Plugin.create({
@@ -27,15 +35,27 @@ describe("Database.Plugin.create", () => {
                     archetypes: {}, // archetypes should come before transactions
                 });
             }).toThrow('Property "archetypes" must come before "transactions"');
+
+            expect(() => {
+                Database.Plugin.create({
+                    components: {},
+                    resources: {},
+                    archetypes: {},
+                    transactions: {},
+                    computed: {}, // computed should come before transactions
+                });
+            }).toThrow('Property "computed" must come before "transactions"');
         });
 
         it("should accept properties in correct order", () => {
             expect(() => {
                 Database.Plugin.create({
                     extends: undefined,
+                    services: {},
                     components: {},
                     resources: {},
                     archetypes: {},
+                    computed: {},
                     transactions: {},
                     actions: {},
                     systems: {},
@@ -44,6 +64,7 @@ describe("Database.Plugin.create", () => {
 
             expect(() => {
                 Database.Plugin.create({
+                    services: {},
                     components: {},
                     resources: {},
                     archetypes: {},
@@ -52,6 +73,46 @@ describe("Database.Plugin.create", () => {
                     systems: {},
                 });
             }).not.toThrow();
+        });
+
+        it("should create plugin with computed (Observe factories) in correct order", async () => {
+            const plugin = createPlugin({
+                components: {},
+                resources: { n: { default: 10 as number } },
+                archetypes: {},
+                computed: {
+                    value: (_db) => Observe.fromConstant(42),
+                    doubleN: (db) => Observe.withMap(db.observe.resources.n, (value) => value * 2),
+                },
+                transactions: {},
+                actions: {},
+                systems: {},
+            });
+            expect(plugin.computed).toBeDefined();
+            expect(plugin.computed.value).toBeDefined();
+            // computed.value is a factory (db) => Observe<T>, not the Observe itself
+            expect(typeof plugin.computed.value).toBe("function");
+
+            const db = Database.create(plugin);
+            const value = await Observe.toPromise(db.computed.value);
+            expect(value).toBe(42);
+            const doubleN = await Observe.toPromise(db.computed.doubleN);
+            expect(doubleN).toBe(20);
+        });
+
+        it("should allow actions to access services from the same plugin", () => {
+            const authService = { token: 'test', isAuthenticated: true };
+            const plugin = Database.Plugin.create({
+                services: {
+                    auth: () => authService,
+                },
+                actions: {
+                    getAuth: (db) => db.services.auth,
+                },
+            });
+
+            expect(plugin.services.auth).toBeDefined();
+            expect(plugin.actions.getAuth).toBeDefined();
         });
     });
 

@@ -7,7 +7,7 @@ import { Store } from "../../store/index.js";
 import { Schema } from "../../../schema/index.js";
 import { Entity } from "../../entity.js";
 import { F32 } from "../../../math/f32/index.js";
-import { toPromise } from "../../../observe/to-promise.js";
+import { Observe } from "../../../observe/index.js";
 import { createUndoRedoService } from "../../undo-redo-service/create-undo-redo-service.js";
 import { applyOperations } from "../transactional-store/apply-operations.js";
 import { TransactionWriteOperation } from "../transactional-store/transactional-store.js";
@@ -42,22 +42,23 @@ const nameSchema = {
 } as const satisfies Schema;
 type Name = Schema.ToType<typeof nameSchema>;
 
-const createStoreConfig = () => {
-    const baseStore = Store.create({
-        components: { position: positionSchema, health: healthSchema, name: nameSchema },
-        resources: {
-            time: { default: { delta: 0.016, elapsed: 0 } },
-            generating: { type: "boolean", default: false }
-        },
-        archetypes: {
-            Position: ["position"],
-            Health: ["health"],
-            PositionHealth: ["position", "health"],
-            PositionName: ["position", "name"],
-            Full: ["position", "health", "name"],
-        }
-    });
+const storeSchema = {
+    components: { position: positionSchema, health: healthSchema, name: nameSchema },
+    resources: {
+        time: { default: { delta: 0.016, elapsed: 0 } as { delta: number; elapsed: number } },
+        generating: { type: "boolean" as const, default: false }
+    },
+    archetypes: {
+        Position: ["position"] as const,
+        Health: ["health"] as const,
+        PositionHealth: ["position", "health"] as const,
+        PositionName: ["position", "name"] as const,
+        Full: ["position", "health", "name"] as const,
+    }
+};
 
+const createStoreConfig = () => {
+    const baseStore = Store.create(storeSchema);
     type TestStore = typeof baseStore;
 
     const actions = {
@@ -109,12 +110,21 @@ const createStoreConfig = () => {
         }
     };
 
-    return { baseStore, actions };
+    return { baseStore, actions, storeSchema };
 };
 
+function createTestPlugin() {
+    const { actions, storeSchema } = createStoreConfig();
+    return Database.Plugin.create({
+        components: storeSchema.components,
+        resources: storeSchema.resources,
+        archetypes: storeSchema.archetypes,
+        transactions: actions,
+    });
+}
+
 function createTestDatabase() {
-    const { baseStore, actions } = createStoreConfig();
-    return Database.create(baseStore, actions);
+    return Database.create(createTestPlugin());
 }
 
 describe("createDatabase", () => {
@@ -896,7 +906,7 @@ describe("createDatabase", () => {
 
             const result = await promise;
             expect(result).toBe(-1);
-            const generating = await toPromise(store.observe.resources.generating);
+            const generating = await Observe.toPromise(store.observe.resources.generating);
             expect(generating).toBe(false);
         });
 
@@ -914,13 +924,18 @@ describe("createDatabase", () => {
             observer.mockClear();
 
             // Create a no-op transaction (doesn't modify anything)
-            const { baseStore, actions } = createStoreConfig();
-            const database = Database.create(baseStore, {
-                ...actions,
-                noOpTransaction(t, _args: {}) {
-                    // This transaction does nothing
-                }
-            });
+            const { actions, storeSchema } = createStoreConfig();
+            const database = Database.create(Database.Plugin.create({
+                components: storeSchema.components,
+                resources: storeSchema.resources,
+                archetypes: storeSchema.archetypes,
+                transactions: {
+                    ...actions,
+                    noOpTransaction(t: any, _args: {}) {
+                        // This transaction does nothing
+                    }
+                },
+            }));
 
             const positionObserver = vi.fn();
             const unsub = database.observe.components.position(positionObserver);
@@ -939,17 +954,22 @@ describe("createDatabase", () => {
             const store = createTestDatabase();
 
             // Create database with undo-redo service
-            const { baseStore, actions } = createStoreConfig();
-            const database = Database.create(baseStore, {
-                ...actions,
-                noOpTransaction(t, _args: {}) {
-                    t.undoable = { coalesce: false };
-                    // This transaction does nothing
+            const { actions, storeSchema } = createStoreConfig();
+            const database = Database.create(Database.Plugin.create({
+                components: storeSchema.components,
+                resources: storeSchema.resources,
+                archetypes: storeSchema.archetypes,
+                transactions: {
+                    ...actions,
+                    noOpTransaction(t, _args: {}) {
+                        t.undoable = { coalesce: false };
+                        // This transaction does nothing
+                    },
+                    applyOperations(t, operations: TransactionWriteOperation<any>[]) {
+                        applyOperations(t, operations);
+                    }
                 },
-                applyOperations(t, operations: TransactionWriteOperation<any>[]) {
-                    applyOperations(t, operations);
-                }
-            });
+            }));
 
             const undoRedo = createUndoRedoService(database);
 
@@ -957,7 +977,7 @@ describe("createDatabase", () => {
             database.transactions.noOpTransaction({});
 
             // Verify the undo stack is empty (need to await the observable)
-            const undoStack = await toPromise(undoRedo.undoStack);
+            const undoStack = await Observe.toPromise(undoRedo.undoStack);
             expect(undoStack).toHaveLength(0);
         });
 
@@ -978,31 +998,35 @@ describe("createDatabase", () => {
         });
 
         it("should detect true no-op when transaction reads but doesn't modify", async () => {
-            const { baseStore, actions } = createStoreConfig();
-            const database = Database.create(baseStore, {
-                ...actions,
-                readOnlyTransaction(t, args: { entity: number }) {
-                    t.undoable = { coalesce: false };
-                    // Just read the entity but don't modify it
-                    const current = t.read(args.entity);
-                    // Do nothing with the data - this is a true no-op
+            const { actions, storeSchema } = createStoreConfig();
+            const database = Database.create(Database.Plugin.create({
+                components: storeSchema.components,
+                resources: storeSchema.resources,
+                archetypes: storeSchema.archetypes,
+                transactions: {
+                    ...actions,
+                    readOnlyTransaction(t, args: { entity: number }) {
+                        t.undoable = { coalesce: false };
+                        const current = t.read(args.entity);
+                        void current;
+                    },
+                    applyOperations(t, operations: TransactionWriteOperation<any>[]) {
+                        applyOperations(t, operations);
+                    }
                 },
-                applyOperations(t, operations: TransactionWriteOperation<any>[]) {
-                    applyOperations(t, operations);
-                }
-            });
+            }));
 
             // Create an entity
             const entity = database.transactions.createPositionEntity({ position: { x: 1, y: 2, z: 3 } });
 
             const undoRedo = createUndoRedoService(database);
-            const initialStackLength = (await toPromise(undoRedo.undoStack)).length;
+            const initialStackLength = (await Observe.toPromise(undoRedo.undoStack)).length;
 
             // Execute read-only transaction (true no-op)
             database.transactions.readOnlyTransaction({ entity });
 
             // Verify no new undo entry was added
-            const finalStackLength = (await toPromise(undoRedo.undoStack)).length;
+            const finalStackLength = (await Observe.toPromise(undoRedo.undoStack)).length;
             expect(finalStackLength).toBe(initialStackLength);
         });
     });
@@ -1014,26 +1038,26 @@ describe("createDatabase", () => {
     });
 
     it("should return the same instance when extended with systems", () => {
-        // Create a database with initial systems
-        const { baseStore, actions } = createStoreConfig();
-        
+        const { actions, storeSchema } = createStoreConfig();
         const systemOneCalled = vi.fn();
-        const database = Database.create(baseStore, actions, {
-            systemOne: {
-                create: (db) => {
-                    return () => {
-                        systemOneCalled();
-                    };
+        const database = Database.create(Database.Plugin.create({
+            components: storeSchema.components,
+            resources: storeSchema.resources,
+            archetypes: storeSchema.archetypes,
+            transactions: actions,
+            systems: {
+                systemOne: {
+                    create: (_db) => () => systemOneCalled(),
                 }
-            }
-        });
+            },
+        }));
 
         // Extend with a plugin that includes a new system
         const systemTwoCalled = vi.fn();
         const extensionPlugin = Database.Plugin.create({
             systems: {
                 systemTwo: {
-                    create: (db) => {
+                    create: (_db) => {
                         return () => {
                             systemTwoCalled();
                         };
@@ -1043,13 +1067,292 @@ describe("createDatabase", () => {
         });
 
         const extended = database.extend(extensionPlugin);
-        
+
         // This should pass - same database instance
         expect(extended).toBe(database);
-        
+
         // Verify both systems are available and functional
         expect((extended.system as any).functions.systemOne).toBeDefined();
         expect((extended.system as any).functions.systemTwo).toBeDefined();
+    });
+
+    describe("services", () => {
+        it("should initialize services immediately when extending with a plugin", () => {
+            const database = createTestDatabase();
+
+            const authPlugin = Database.Plugin.create({
+                services: {
+                    auth: (_db) => ({ token: 'test-token', isAuthenticated: true }),
+                },
+            });
+
+            const extended = database.extend(authPlugin);
+
+            // Services should be immediately available
+            expect(extended.services.auth).toBeDefined();
+            expect(extended.services.auth.token).toBe('test-token');
+            expect(extended.services.auth.isAuthenticated).toBe(true);
+        });
+
+        it("should initialize services in correct order when extending with dependent services", () => {
+            const initializationOrder: string[] = [];
+
+            const database = createTestDatabase();
+
+            // Base plugin with a config service
+            const basePlugin = Database.Plugin.create({
+                services: {
+                    config: (_db) => {
+                        initializationOrder.push('config');
+                        return { apiUrl: 'https://api.example.com' };
+                    },
+                },
+            });
+
+            // Extended plugin with auth service that depends on config
+            const authPlugin = Database.Plugin.create({
+                extends: basePlugin,
+                services: {
+                    auth: (db) => {
+                        initializationOrder.push('auth');
+                        // Auth service depends on config service from base plugin
+                        const apiUrl = db.services.config.apiUrl;
+                        return { token: 'test-token', apiUrl };
+                    },
+                },
+            });
+
+            const extended = database.extend(authPlugin);
+
+            // Verify initialization order: base services first, then extended
+            expect(initializationOrder).toEqual(['config', 'auth']);
+
+            // Both services should be available
+            expect(extended.services.config).toBeDefined();
+            expect(extended.services.config.apiUrl).toBe('https://api.example.com');
+            expect(extended.services.auth).toBeDefined();
+            expect(extended.services.auth.token).toBe('test-token');
+            expect(extended.services.auth.apiUrl).toBe('https://api.example.com');
+        });
+
+        it("should initialize services in correct order with multiple levels of extension", () => {
+            const initializationOrder: string[] = [];
+
+            const database = createTestDatabase();
+
+            // Level 1: Environment service
+            const envPlugin = Database.Plugin.create({
+                services: {
+                    env: (_db) => {
+                        initializationOrder.push('env');
+                        return { isDev: true, apiBase: 'https://dev.api.example.com' };
+                    },
+                },
+            });
+
+            // Level 2: Config service depends on env
+            const configPlugin = Database.Plugin.create({
+                extends: envPlugin,
+                services: {
+                    config: (db) => {
+                        initializationOrder.push('config');
+                        return {
+                            apiUrl: `${db.services.env.apiBase}/v1`,
+                            debug: db.services.env.isDev,
+                        };
+                    },
+                },
+            });
+
+            // Level 3: Auth service depends on config
+            const authPlugin = Database.Plugin.create({
+                extends: configPlugin,
+                services: {
+                    auth: (db) => {
+                        initializationOrder.push('auth');
+                        return {
+                            token: 'test-token',
+                            endpoint: `${db.services.config.apiUrl}/auth`,
+                        };
+                    },
+                },
+            });
+
+            const extended = database.extend(authPlugin);
+
+            // Verify initialization order: env -> config -> auth
+            expect(initializationOrder).toEqual(['env', 'config', 'auth']);
+
+            // All services should be available with correct values
+            expect(extended.services.env.isDev).toBe(true);
+            expect(extended.services.config.apiUrl).toBe('https://dev.api.example.com/v1');
+            expect(extended.services.auth.endpoint).toBe('https://dev.api.example.com/v1/auth');
+        });
+
+        it("should make services available immediately after extend returns", () => {
+            const database = createTestDatabase();
+
+            const plugin = Database.Plugin.create({
+                services: {
+                    logger: (_db) => ({
+                        log: (msg: string) => console.log(msg),
+                        level: 'info',
+                    }),
+                    analytics: (_db) => ({
+                        track: (event: string) => { },
+                        userId: 'test-user',
+                    }),
+                },
+            });
+
+            const extended = database.extend(plugin);
+
+            expect(extended.services.logger).toBeDefined();
+            expect(extended.services.analytics).toBeDefined();
+        });
+    });
+
+    describe("computed", () => {
+        it("should initialize computed values when extending with a plugin", () => {
+            const database = createTestDatabase();
+
+            const plugin = Database.Plugin.create({
+                components: {},
+                resources: {},
+                archetypes: {},
+                computed: {
+                    count: (_db) => Observe.fromConstant(10),
+                    label: (_db) => Observe.fromConstant("test"),
+                },
+                transactions: {},
+                actions: {},
+                systems: {},
+            });
+
+            const extended = database.extend(plugin);
+
+            expect(extended.computed).toBeDefined();
+            expect(extended.computed.count).toBeDefined();
+            expect(extended.computed.label).toBeDefined();
+            expect(typeof extended.computed.count).toBe("function");
+            expect(typeof extended.computed.label).toBe("function");
+            const unsubCount = extended.computed.count((v) => expect(v).toBe(10));
+            const unsubLabel = extended.computed.label((v) => expect(v).toBe("test"));
+            unsubCount();
+            unsubLabel();
+        });
+
+        it("should initialize computed when creating database from plugin", () => {
+            const plugin = Database.Plugin.create({
+                components: { x: { type: "number" } },
+                resources: {},
+                archetypes: {},
+                computed: {
+                    sum: (_db) => Observe.fromConstant(100),
+                },
+                transactions: {},
+                actions: {},
+                systems: {},
+            });
+
+            const db = Database.create(plugin);
+
+            expect(db.computed).toBeDefined();
+            expect(db.computed.sum).toBeDefined();
+            let received: number | undefined;
+            const unsub = db.computed.sum((v) => { received = v; });
+            expect(received).toBe(100);
+            unsub();
+        });
+
+        it("should initialize computed in order when extending with base and extended plugin", () => {
+            const database = createTestDatabase();
+
+            const basePlugin = Database.Plugin.create({
+                components: {},
+                resources: {},
+                archetypes: {},
+                computed: {
+                    baseValue: (_db) => Observe.fromConstant(1),
+                },
+                transactions: {},
+                actions: {},
+                systems: {},
+            });
+
+            const extendedPlugin = Database.Plugin.create({
+                extends: basePlugin,
+                components: {},
+                resources: {},
+                archetypes: {},
+                computed: {
+                    derived: (_db) => Observe.fromConstant(2),
+                },
+                transactions: {},
+                actions: {},
+                systems: {},
+            });
+
+            const extended = database.extend(extendedPlugin);
+
+            expect(extended.computed.baseValue).toBeDefined();
+            expect(extended.computed.derived).toBeDefined();
+            extended.computed.baseValue((v) => expect(v).toBe(1));
+            extended.computed.derived((v) => expect(v).toBe(2));
+        });
+    });
+
+    describe("system create and assign", () => {
+        it("should create and assign each system once when creating database from plugin (no double create from create then extend)", () => {
+            let createCallCount = 0;
+            const plugin = Database.Plugin.create({
+                components: { x: { type: "number" } },
+                resources: {},
+                archetypes: {},
+                transactions: {},
+                actions: {},
+                systems: {
+                    init: {
+                        create: (_db) => {
+                            createCallCount += 1;
+                            return () => { /* scheduler runs this, not us */ };
+                        },
+                    },
+                },
+            });
+
+            const db = Database.create(plugin);
+
+            expect(createCallCount).toBe(1);
+            expect(typeof db.system.functions.init).toBe("function");
+        });
+
+        it("services are created and available before system create() runs", () => {
+            let serviceSeenInSystemCreate: unknown = undefined;
+            const plugin = Database.Plugin.create({
+                services: {
+                    config: (db) => ({ apiUrl: "https://api.example.com" }),
+                },
+                components: {},
+                resources: {},
+                archetypes: {},
+                transactions: {},
+                actions: {},
+                systems: {
+                    init: {
+                        create: (db) => {
+                            serviceSeenInSystemCreate = db.services.config;
+                            return () => { };
+                        },
+                    },
+                },
+            });
+
+            Database.create(plugin);
+
+            expect(serviceSeenInSystemCreate).toBeDefined();
+            expect((serviceSeenInSystemCreate as { apiUrl: string }).apiUrl).toBe("https://api.example.com");
+        });
     });
 });
 

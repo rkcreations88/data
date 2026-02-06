@@ -47,6 +47,38 @@ export type SystemDeclaration = {
 }
 export type SystemDeclarations<S extends string> = { readonly [K in S]: SystemDeclaration }
 
+/**
+ * Service factories map - functions that create services from the database.
+ */
+export type ServiceFactories<DB = any> = { readonly [K: string]: (db: DB) => unknown };
+
+/**
+ * Extracts service types from service factories.
+ */
+export type FromServiceFactories<SF> = {
+  [K in keyof SF]: SF[K] extends (db: any) => infer R ? R : never
+};
+
+/**
+ * Computed factories map - functions that create computed values from the database.
+ * Used on Database and Plugin for flexible typing (return type unknown).
+ */
+export type ComputedFactories<DB = any> = { readonly [K: string]: (db: DB) => unknown };
+
+/**
+ * Extracts computed value types from computed factories.
+ */
+export type FromComputedFactories<CF> = {
+  [K in keyof CF]: CF[K] extends (db: any) => infer R ? R : never
+};
+
+/**
+ * Computed factories for plugin descriptors. Constrains each factory to return
+ * something that extends Observe<unknown>, so plugins declare observable computed values.
+ * Use this in createPlugin; Database keeps ComputedFactories (unknown) for flexibility.
+ */
+export type PluginComputedFactories<DB = any> = { readonly [K: string]: (db: DB) => Observe<unknown> };
+
 export interface Database<
   C extends Components = {},
   R extends ResourceComponents = {},
@@ -54,9 +86,13 @@ export interface Database<
   F extends TransactionFunctions = {},
   S extends string = never,
   AF extends ActionFunctions = {},
+  SV = {},
+  CV = unknown,
 > extends ReadonlyStore<C, R, A>, Service {
   readonly transactions: F & Service;
-  readonly actions: AF & Service;  
+  readonly actions: AF & Service;
+  readonly services: SV;
+  readonly computed: CV;
   readonly observe: {
     readonly components: { readonly [K in StringKeyof<C>]: Observe<void> };
     readonly resources: { readonly [K in StringKeyof<R>]: Observe<R[K]> };
@@ -73,23 +109,26 @@ export interface Database<
     ): Observe<readonly Entity[]>;
   }
   readonly system: {
-    readonly functions: { readonly [K in S]: SystemFunction };
+    /** System create() return value, or null when create() returns void. Key is always present. */
+    readonly functions: { readonly [K in S]: SystemFunction | null };
     readonly order: S[][];
   }
   toData(): unknown
   fromData(data: unknown): void
-  extend<P extends Database.Plugin<any, any, any, any, any, any>>(plugin: P): Database<
-    C & (P extends Database.Plugin<infer XC, any, any, any, any, any> ? FromSchemas<XC> : never),
-    R & (P extends Database.Plugin<any, infer XR, any, any, any, any> ? FromSchemas<XR> : never),
-    A & (P extends Database.Plugin<any, any, infer XA, any, any, any> ? XA : never),
-    F & (P extends Database.Plugin<any, any, any, infer XTD, any, any> ? ToTransactionFunctions<XTD> : never),
-    S | (P extends Database.Plugin<any, any, any, any, infer XS, any> ? XS : never),
-    AF & (P extends Database.Plugin<any, any, any, any, any, infer XAD> ? ToActionFunctions<XAD> : never)
+  extend<P extends Database.Plugin<any, any, any, any, any, any, any, any>>(plugin: P): Database<
+    C & (P extends Database.Plugin<infer XC, any, any, any, any, any, any, any> ? FromSchemas<XC> : never),
+    R & (P extends Database.Plugin<any, infer XR, any, any, any, any, any, any> ? FromSchemas<XR> : never),
+    A & (P extends Database.Plugin<any, any, infer XA, any, any, any, any, any> ? XA : never),
+    F & (P extends Database.Plugin<any, any, any, infer XTD, any, any, any, any> ? ToTransactionFunctions<XTD> : never),
+    S | (P extends Database.Plugin<any, any, any, any, infer XS, any, any, any> ? XS : never),
+    AF & (P extends Database.Plugin<any, any, any, any, any, infer XAD, any, any> ? ToActionFunctions<XAD> : never),
+    SV & (P extends Database.Plugin<any, any, any, any, any, any, infer XSVF, any> ? FromServiceFactories<XSVF> : never),
+    CV & (P extends Database.Plugin<any, any, any, any, any, any, any, infer XCVF> ? FromComputedFactories<XCVF> : never)
   >;
 }
 
 export namespace Database {
-  export type FromPlugin<P extends Database.Plugin> = P extends Database.Plugin<infer CS, infer RS, infer A, infer TD, infer S, infer AD> ? Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>> : never;
+  export type FromPlugin<P extends Database.Plugin> = P extends Database.Plugin<infer CS, infer RS, infer A, infer TD, infer S, infer AD, infer SVF, infer CVF> ? Database<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S, ToActionFunctions<AD>, FromServiceFactories<SVF>, FromComputedFactories<CVF>> : never;
 
   export const create = createDatabase;
 
@@ -103,7 +142,9 @@ export namespace Database {
     A extends ArchetypeComponents<StringKeyof<CS>> = any,
     TD extends TransactionDeclarations<FromSchemas<CS>, FromSchemas<RS>, any> = any,
     S extends string = any,
-    AD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S> = any
+    AD extends ActionDeclarations<FromSchemas<CS>, FromSchemas<RS>, A, ToTransactionFunctions<TD>, S> = any,
+    SVF extends ServiceFactories = any,
+    CVF extends ComputedFactories = any
   > = {
     readonly components: CS;
     readonly resources: RS;
@@ -111,6 +152,8 @@ export namespace Database {
     readonly transactions: TD;
     readonly systems: SystemDeclarations<S>;
     readonly actions: AD;
+    readonly services: SVF;
+    readonly computed: CVF;
   };
 
   export namespace Plugin {
