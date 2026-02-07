@@ -1,0 +1,4 @@
+packages:
+  - 'packages/data'
+  - 'packages/data-lit'
+  - 'packages/data-lit-todo'
