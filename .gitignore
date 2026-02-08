@@ -42,5 +42,6 @@ build
 # Dumped source
 source.txt
 
-# Generated Docs
+# Generated Docs (typedoc output)
 docs/api
+packages/data/docs/api
