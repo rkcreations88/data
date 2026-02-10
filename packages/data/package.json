@@ -5,12 +5,16 @@
   "type": "module",
   "sideEffects": false,
   "private": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "pnpm copy && pnpm build-assembly && run-p build:*",
+    "build": "pnpm build-assembly && run-p build:*",
     "build:code": "tsc -b",
     "build:apidocs": "typedoc",
     "build-assembly": "run-p asbuild:release",
-    "copy": "mkdir -p dist && cp README.md dist && cp ../../LICENSE dist && sed '/\"publish-public\":/d;/\"link\":/d;/\"copy\":/d;/\"prepublish\":/d' package.json | sed 's|\\./dist/|\\./|g' > dist/package.json",
     "clean": "rm -rf dist build node_modules",
     "clean-cache": "rm -rf node_modules/.cache",
     "deploy-docs": "pnpm build && ./scripts/deploy-docs.sh",
@@ -23,10 +27,9 @@
     "lint": "pnpm eslint .",
     "lint-fix": "pnpm eslint . --fix",
     "debug": "vitest --inspect-brk --no-file-parallelism --test-timeout 1000000",
-    "link": "pnpm build && cd dist && ln -sf ../node_modules node_modules && pnpm link --global",
+    "link": "pnpm build && pnpm link --global",
     "pre-commit": "lint-staged",
-    "prepublish": "echo DO NOT PUBLISH FROM ROOT, use pnpm run publish-public instead. && exit 1",
-    "publish-public": "pnpm build && cd dist && pnpm publish --no-git-checks --access public",
+    "publish-public": "pnpm build && pnpm publish --no-git-checks --access public",
     "perftest": "node dist/perftest/index.js",
     "test": "pnpm exec playwright install chromium && vitest --run",
     "asbuild:debug": "asc assembly/index.ts -o dist/assembly/index.wasm --target debug --enable simd && echo built dist/assembly/index.wasm",
@@ -178,10 +181,6 @@
     "./equals-shallow": {
       "import": "./dist/equals-shallow.js",
       "types": "./dist/equals-shallow.d.ts"
-    },
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "import": "./dist/*.js"
     }
   }
 }
