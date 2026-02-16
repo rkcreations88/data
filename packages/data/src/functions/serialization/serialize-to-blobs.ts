@@ -4,8 +4,13 @@ import { serialize, deserialize } from "./serialize.js";
 export const serializeToBlobs = async <T>(data: T): Promise<{ json: Blob, binary: Blob }> => {
     const serialized = serialize(data);
     const binarySizes = serialized.binary.map((array) => array.byteLength);
+    const binaryBlobParts = serialized.binary.map((array) => {
+        const copied = new Uint8Array(array.byteLength);
+        copied.set(array);
+        return copied;
+    });
     const json = new Blob([JSON.stringify({ json: serialized.json, binarySizes })], { type: "application/json" });
-    const binary = new Blob(serialized.binary as BlobPart[], { type: "application/octet-stream" });
+    const binary = new Blob(binaryBlobParts as BlobPart[], { type: "application/octet-stream" });
     return { json, binary };
 }
 

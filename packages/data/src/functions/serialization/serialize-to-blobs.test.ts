@@ -117,4 +117,20 @@ describe("serializeToBlobs", () => {
         expect(blobs.binary.type).toBe("application/octet-stream");
         expect(blobs.json.size).toBeGreaterThan(0);
     });
+
+    it("should serialize shared-buffer-backed typed arrays", async () => {
+        if (typeof globalThis.SharedArrayBuffer === "undefined") {
+            return;
+        }
+
+        const shared = new SharedArrayBuffer(5);
+        const view = new Uint8Array(shared);
+        view.set([1, 2, 3, 4, 5]);
+
+        const data = { sharedView: view };
+        const blobs = await serializeToBlobs(data);
+        const result = await deserializeFromBlobs<typeof data>(blobs);
+
+        expect(result.sharedView).toEqual(view);
+    });
 }); 
