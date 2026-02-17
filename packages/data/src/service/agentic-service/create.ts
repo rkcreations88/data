@@ -120,7 +120,7 @@ export function create<const D extends Declarations>(config: {
         return (entry.execute as Function)(input);
     };
 
-    return { serviceName: "agentic-service", states, actions, execute };
+    return { serviceName: "agentic-service", states, actions, execute, description: Observe.fromConstant(config.description) };
 }
 
 /** Implementation map derived from interface: states → Observe, actions → execute fn */

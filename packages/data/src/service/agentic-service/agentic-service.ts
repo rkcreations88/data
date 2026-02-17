@@ -14,6 +14,7 @@ import type { State } from "./state.js";
  */
 export interface AgenticService extends Service {
 
+    description: Observe<string>;
     states: Observe<{ [key: string]: State }>
     actions: Observe<{ [key: string]: Action }>
     execute: (action: string, input: unknown) => Promise<void | ActionError>
