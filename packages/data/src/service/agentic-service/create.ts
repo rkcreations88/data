@@ -45,7 +45,7 @@ export function create<const D extends Declarations>(config: {
     interface: D;
     implementation: ImplementationFromDeclarations<D>;
     conditional?: ConditionalFromDeclarations<D>;
-}): AgenticService.AgenticService {
+}): AgenticService {
     const { interface: iface, implementation, conditional } = config;
     const alwaysEnabled = Observe.fromConstant(true);
 
