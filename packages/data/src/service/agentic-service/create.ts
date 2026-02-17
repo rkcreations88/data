@@ -34,19 +34,19 @@ function getActionSchema(entry: DeclarationEntry): Schema | false {
 }
 
 /**
- * Creates an AgenticService from a config with declaration, implementation, and optional conditional.
+ * Creates an AgenticService from a config with interface, implementation, and optional conditional.
  *
- * Declaration: flat map of states (have `type`) and actions (have `description`, optional `input`).
+ * Interface: flat map of states (have `type`) and actions (have `description`, optional `input`).
  * Implementation: same keys, states → Observe<...>, actions → (input?) => ...
  * Conditional: optional per-key Observe<boolean> for enablement.
  */
 export function create<const D extends Declarations>(config: {
     description: string;
-    declaration: D;
+    interface: D;
     implementation: ImplementationFromDeclarations<D>;
     conditional?: ConditionalFromDeclarations<D>;
 }): AgenticService.AgenticService {
-    const { declaration, implementation, conditional } = config;
+    const { interface: iface, implementation, conditional } = config;
     const alwaysEnabled = Observe.fromConstant(true);
 
     const stateKeys: string[] = [];
@@ -54,7 +54,7 @@ export function create<const D extends Declarations>(config: {
     const stateSchemas: Record<string, Schema> = {};
     const actionMeta: Record<string, { description: string; schema: Schema | false; execute: Function }> = {};
 
-    for (const [key, entry] of Object.entries(declaration)) {
+    for (const [key, entry] of Object.entries(iface)) {
         if (isStateDeclaration(entry)) {
             stateKeys.push(key);
             stateSchemas[key] = entry as Schema;
@@ -123,7 +123,7 @@ export function create<const D extends Declarations>(config: {
     return { serviceName: "agentic-service", states, actions, execute };
 }
 
-/** Implementation map derived from declaration: states → Observe, actions → execute fn */
+/** Implementation map derived from interface: states → Observe, actions → execute fn */
 export type ImplementationFromDeclarations<D extends Declarations> = {
     [K in keyof D]:
     D[K] extends { type: string }

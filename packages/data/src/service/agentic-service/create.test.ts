@@ -23,7 +23,7 @@ describe("AgenticService.create", () => {
 
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     currentHealth: { type: "number", description: "Health" },
                 },
                 implementation: {
@@ -38,7 +38,7 @@ describe("AgenticService.create", () => {
 
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     playerName: { type: "string", description: "Name" },
                 },
                 implementation: {
@@ -53,7 +53,7 @@ describe("AgenticService.create", () => {
 
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     currentHealth: { type: "number", description: "Health" },
                     playerName: { type: "string", description: "Name" },
                 },
@@ -67,7 +67,7 @@ describe("AgenticService.create", () => {
         it("should accept action with schema-typed input", () => {
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     setHealth: { description: "Set health", input: { type: "number" } },
                 },
                 implementation: {
@@ -79,7 +79,7 @@ describe("AgenticService.create", () => {
         it("should accept action with schema: false (void execute)", () => {
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     reset: { description: "Reset to defaults" },
                 },
                 implementation: {
@@ -91,7 +91,7 @@ describe("AgenticService.create", () => {
         it("should accept object schema with matching value type", () => {
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     stats: {
                         type: "object",
                         description: "Stats",
@@ -112,7 +112,7 @@ describe("AgenticService.create", () => {
         it("should accept action with object schema input", () => {
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     configure: {
                         description: "Configure",
                         input: {
@@ -135,7 +135,7 @@ describe("AgenticService.create", () => {
         it("should accept mixed actions with and without schemas", () => {
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal", input: { type: "number" } },
                     reset: { description: "Reset" },
                 },
@@ -149,7 +149,7 @@ describe("AgenticService.create", () => {
         it("should accept synchronous void-returning execute", () => {
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     sync: { description: "Sync" },
                     syncWithInput: { description: "Sync with input", input: { type: "number" } },
                 },
@@ -165,7 +165,7 @@ describe("AgenticService.create", () => {
 
             create({
                 description: "Test",
-                declaration: {
+                interface: {
                     health: { type: "number", description: "Health" },
                     heal: { description: "Heal", input: { type: "number" } },
                 },
@@ -181,7 +181,7 @@ describe("AgenticService.create", () => {
         it("should set serviceName for isService compatibility", () => {
             const service = create({
                 description: "Test",
-                declaration: {},
+                interface: {},
                 implementation: {},
             });
             expect(service.serviceName).toBe("agentic-service");
@@ -194,7 +194,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     health: { type: "number", description: "Health" },
                 },
                 implementation: {
@@ -210,7 +210,7 @@ describe("AgenticService.create", () => {
         it("should default action enabled to always true when omitted", async () => {
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
@@ -229,7 +229,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     currentHealth: { type: "number", description: "Health" },
                 },
                 implementation: {
@@ -248,7 +248,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     visible: { type: "number", description: "Visible" },
                     hidden: { type: "string", description: "Hidden" },
                 },
@@ -273,7 +273,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     health: { type: "number", description: "Health" },
                 },
                 implementation: {
@@ -299,7 +299,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     health: { type: "number", description: "Health" },
                 },
                 implementation: {
@@ -321,7 +321,7 @@ describe("AgenticService.create", () => {
         it("should emit enabled actions with bound execute", async () => {
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal player", input: { type: "number" } },
                 },
                 implementation: {
@@ -339,7 +339,7 @@ describe("AgenticService.create", () => {
         it("should omit disabled actions", async () => {
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     available: { description: "Available", input: { type: "number" } },
                     unavailable: { description: "Unavailable" },
                 },
@@ -363,7 +363,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
@@ -388,7 +388,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     setHealth: { description: "Set health", input: { type: "number" } },
                 },
                 implementation: {
@@ -406,7 +406,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     reset: { description: "Reset" },
                 },
                 implementation: {
@@ -423,7 +423,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     sync: { description: "Sync" },
                 },
                 implementation: {
@@ -438,7 +438,7 @@ describe("AgenticService.create", () => {
         it("should return error for unavailable action", async () => {
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
@@ -454,7 +454,7 @@ describe("AgenticService.create", () => {
         it("should return error for nonexistent action", async () => {
             const service = create({
                 description: "Test",
-                declaration: {},
+                interface: {},
                 implementation: {},
             });
 
@@ -465,7 +465,7 @@ describe("AgenticService.create", () => {
         it("should propagate ActionError from execute", async () => {
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     fail: { description: "Fail" },
                 },
                 implementation: {
@@ -483,7 +483,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
@@ -513,7 +513,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     health: { type: "number", description: "Health" },
                     name: { type: "string", description: "Name" },
                 },
@@ -549,7 +549,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal", input: { type: "number" } },
                     reset: { description: "Reset" },
                 },
@@ -585,7 +585,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     heal: { description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
@@ -603,7 +603,7 @@ describe("AgenticService.create", () => {
 
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     reset: { description: "Reset" },
                 },
                 implementation: {
@@ -619,7 +619,7 @@ describe("AgenticService.create", () => {
         it("should propagate ActionError from bound action execute", async () => {
             const service = create({
                 description: "Test",
-                declaration: {
+                interface: {
                     fail: { description: "Fail" },
                 },
                 implementation: {

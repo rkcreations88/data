@@ -1,6 +1,6 @@
 // © 2026 Adobe. MIT License. See /LICENSE for details.
 //
-// Compile-time type checks for createFromConfig API.
+// Compile-time type checks for create API.
 
 import { Observe } from "../../observe/index.js";
 import {
@@ -69,7 +69,7 @@ const iface = {
 
 create({
     description: "Player health and actions for agentic access",
-    declaration: iface,
+    interface: iface,
     implementation: {
         health: Observe.fromConstant(42),
         stats: Observe.fromConstant({ hp: 100, label: "ok" }),
@@ -89,7 +89,7 @@ create({
 
 create({
     description: "Player health and actions for agentic access",
-    declaration: iface,
+    interface: iface,
     implementation: {
         // @ts-expect-error - health state requires Observe<number>
         health: Observe.fromConstant("wrong"),
@@ -102,7 +102,7 @@ create({
 
 create({
     description: "Player health and actions for agentic access",
-    declaration: iface,
+    interface: iface,
     implementation: {
         health: Observe.fromConstant(100),
         stats: Observe.fromConstant({ hp: 100 }),
@@ -115,7 +115,7 @@ create({
 
 create({
     description: "Player health and actions for agentic access",
-    declaration: iface,
+    interface: iface,
     implementation: {
         health: Observe.fromConstant(100),
         stats: Observe.fromConstant({ hp: 100 }),
@@ -128,7 +128,7 @@ create({
 
 create({
     description: "Player health and actions for agentic access",
-    declaration: iface,
+    interface: iface,
     // @ts-expect-error - implementation must include every definition key
     implementation: {
         health: Observe.fromConstant(100),
@@ -140,7 +140,7 @@ create({
 
 create({
     description: "Player health and actions for agentic access",
-    declaration: iface,
+    interface: iface,
     implementation: {
         health: Observe.fromConstant(100),
         stats: Observe.fromConstant({ hp: 100 }),
