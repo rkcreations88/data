@@ -50,7 +50,7 @@ const base64ToUint8Array = (base64: string): Uint8Array => {
 /**
  * Compresses a Uint8Array using the deflate algorithm
  */
-const compressData = async (data: Uint8Array): Promise<Uint8Array> => {
+const compressData = async (data: Uint8Array): Promise<Uint8Array<ArrayBuffer>> => {
     const stream = new ReadableStream({
         start(controller) {
             controller.enqueue(data);
@@ -62,7 +62,7 @@ const compressData = async (data: Uint8Array): Promise<Uint8Array> => {
         new CompressionStream('deflate')
     );
     
-    const chunks: Uint8Array[] = [];
+    const chunks: Uint8Array<ArrayBuffer>[] = [];
     const reader = compressedStream.getReader();
     
     while (true) {
@@ -87,7 +87,7 @@ const compressData = async (data: Uint8Array): Promise<Uint8Array> => {
 /**
  * Decompresses a Uint8Array using the deflate algorithm
  */
-const decompressData = async (data: Uint8Array): Promise<Uint8Array> => {
+const decompressData = async (data: Uint8Array): Promise<Uint8Array<ArrayBuffer>> => {
     const stream = new ReadableStream({
         start(controller) {
             controller.enqueue(data);
@@ -99,7 +99,7 @@ const decompressData = async (data: Uint8Array): Promise<Uint8Array> => {
         new DecompressionStream('deflate')
     );
     
-    const chunks: Uint8Array[] = [];
+    const chunks: Uint8Array<ArrayBuffer>[] = [];
     const reader = decompressedStream.getReader();
     
     while (true) {

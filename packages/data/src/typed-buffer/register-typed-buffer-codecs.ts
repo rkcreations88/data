@@ -36,7 +36,7 @@ export function registerTypedBufferCodecs() {
                 throw e;
             }
         },
-        deserialize: ({ json, binary }: { json?: any, binary: Uint8Array[] }) => {
+        deserialize: ({ json, binary }: { json?: any, binary: Uint8Array<ArrayBuffer>[] }) => {
             const encoded = json as { type: TypedBufferType, schema: Schema, capacity: number, array?: any[] };
             const { type, schema, capacity, array } = encoded;
             if (type === "const") {
