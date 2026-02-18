@@ -14,9 +14,8 @@ export const serializeToBlobs = async <T>(data: T): Promise<{ json: Blob, binary
     const binarySizes = serialized.binary.map((array) => array.byteLength);
     const json = new Blob([JSON.stringify({ json: serialized.json, binarySizes })], { type: "application/json" });
     const binary = new Blob(normalizedBinary, { type: "application/octet-stream" });
-
     return { json, binary };
-};
+}
 
 export const deserializeFromBlobs = async <T>({ json, binary }: { json: Blob, binary: Blob }): Promise<T> => {
     const jsonText = await json.text();
