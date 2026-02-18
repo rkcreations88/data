@@ -19,8 +19,8 @@ export function registerTypedArrayCodecs() {
         registerCodec<any>({
             name: typedArrayConstructor.name,
             predicate: (data: any): data is any => data instanceof typedArrayConstructor,
-            serialize: (data: any) => ({ binary: [new Uint8Array(data.buffer, data.byteOffset, data.byteLength)] }),
-            deserialize: ({ binary }: { json?: Data, binary: Uint8Array[] }) => new (typedArrayConstructor as any)(binary[0].buffer, binary[0].byteOffset, binary[0].byteLength / typedArrayConstructor.BYTES_PER_ELEMENT),
+            serialize: (data: any) => ({ binary: [new Uint8Array(data.buffer as ArrayBuffer, data.byteOffset, data.byteLength)] }),
+            deserialize: ({ binary }: { json?: Data, binary: Uint8Array<ArrayBuffer>[] }) => new (typedArrayConstructor as any)(binary[0].buffer, binary[0].byteOffset, binary[0].byteLength / typedArrayConstructor.BYTES_PER_ELEMENT),
         });
     }
 }

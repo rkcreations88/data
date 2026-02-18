@@ -1,8 +1,8 @@
 // © 2026 Adobe. MIT License. See /LICENSE for details.
 import { findCodec, EncodedValue, getCodec, isEncodedValue } from "./codec.js";
 
-export function serialize<T>(data: T): { json: string, binary: Uint8Array[] } {
-    const allBinaries: Uint8Array[] = [];
+export function serialize<T>(data: T): { json: string, binary: Uint8Array<ArrayBuffer>[] } {
+    const allBinaries: Uint8Array<ArrayBuffer>[] = [];
     const json = JSON.stringify(data, (_key, value) => {
         const codec = findCodec(value);
         if (codec) {
@@ -18,7 +18,7 @@ export function serialize<T>(data: T): { json: string, binary: Uint8Array[] } {
     return { json, binary: allBinaries };
 }
 
-export function deserialize<T>(payload: { json: string, binary: Uint8Array[] }): T {
+export function deserialize<T>(payload: { json: string, binary: Uint8Array<ArrayBuffer>[] }): T {
     const data = JSON.parse(payload.json, (_key, value) => {
         if (isEncodedValue(value)) {
             const codec = getCodec(value.codec);

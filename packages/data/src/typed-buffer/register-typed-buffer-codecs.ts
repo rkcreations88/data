@@ -25,7 +25,7 @@ export function registerTypedBufferCodecs() {
                 }
                 else if (type === "number" || type === "struct") {
                     const typedArray = data.getTypedArray();
-                    return { json: { type, schema, capacity }, binary: [new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength)] };
+                    return { json: { type, schema, capacity }, binary: [new Uint8Array(typedArray.buffer as ArrayBuffer, typedArray.byteOffset, typedArray.byteLength)] };
                 }
                 else {
                     throw new Error(`Unknown type: ${type}`);
@@ -36,7 +36,7 @@ export function registerTypedBufferCodecs() {
                 throw e;
             }
         },
-        deserialize: ({ json, binary }: { json?: any, binary: Uint8Array[] }) => {
+        deserialize: ({ json, binary }: { json?: any, binary: Uint8Array<ArrayBuffer>[] }) => {
             const encoded = json as { type: TypedBufferType, schema: Schema, capacity: number, array?: any[] };
             const { type, schema, capacity, array } = encoded;
             if (type === "const") {
