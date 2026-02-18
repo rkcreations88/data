@@ -7,8 +7,8 @@ import { registerTypedArrayCodecs } from "./register-typed-array-codecs.js";
 type Codec<T> = {
     name: string;
     predicate: (data: any) => data is T;
-    serialize: (data: T) => { json?: any, binary?: Uint8Array[] };
-    deserialize: (props: { json?: any, binary: Uint8Array[] }) => T;
+    serialize: (data: T) => { json?: any, binary?: Uint8Array<ArrayBuffer>[] };
+    deserialize: (props: { json?: any, binary: Uint8Array<ArrayBuffer>[] }) => T;
 }
 const codecs: Record<string, Codec<any>> = {};
 

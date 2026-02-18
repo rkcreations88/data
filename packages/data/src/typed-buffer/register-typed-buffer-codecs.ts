@@ -25,7 +25,7 @@ export function registerTypedBufferCodecs() {
                 }
                 else if (type === "number" || type === "struct") {
                     const typedArray = data.getTypedArray();
-                    return { json: { type, schema, capacity }, binary: [new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength)] };
+                    return { json: { type, schema, capacity }, binary: [new Uint8Array(typedArray.buffer as ArrayBuffer, typedArray.byteOffset, typedArray.byteLength)] };
                 }
                 else {
                     throw new Error(`Unknown type: ${type}`);

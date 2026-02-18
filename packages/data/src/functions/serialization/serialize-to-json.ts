@@ -169,7 +169,7 @@ export const deserializeFromJSON = async <T>(jsonString: string): Promise<T> => 
     const combinedBinary = await decompressData(compressedBinary);
     
     // Split the combined binary back into chunks based on lengths
-    const binaryChunks: Uint8Array[] = [];
+    const binaryChunks: Uint8Array<ArrayBuffer>[] = [];
     let offset = 0;
     
     for (const length of parsed.lengths) {
