@@ -4,6 +4,10 @@
   "description": "Adobe data React bindings — hooks and context for ECS database",
   "type": "module",
   "private": false,
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "scripts": {
     "build": "cp ../../LICENSE . && tsc -b",
     "dev": "tsc -b -w",

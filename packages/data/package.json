@@ -5,6 +5,10 @@
   "type": "module",
   "sideEffects": false,
   "private": false,
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "files": [
     "dist",
     "README.md",
