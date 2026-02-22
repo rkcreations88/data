@@ -154,3 +154,22 @@ create({
         heal: Observe.fromConstant(1),
     },
 });
+
+// Links: fixed Record and Observe<AgenticServiceLinks> are accepted
+const linkTarget = create({
+    description: "Link target",
+    interface: {},
+    implementation: {},
+});
+create({
+    description: "With links record",
+    interface: {},
+    implementation: {},
+    links: { other: linkTarget },
+});
+create({
+    description: "With links observable",
+    interface: {},
+    implementation: {},
+    links: Observe.fromConstant({ other: linkTarget }),
+});

@@ -188,6 +188,93 @@ describe("AgenticService.create", () => {
         });
     });
 
+    describe("links", () => {
+        it("should expose links observable when links config is provided", () => {
+            const child = create({
+                description: "Child",
+                interface: {},
+                implementation: {},
+            });
+            const service = create({
+                description: "Parent",
+                interface: {},
+                implementation: {},
+                links: { child },
+            });
+            expect(service.links).toBeDefined();
+            const received: { [key: string]: unknown }[] = [];
+            service.links!((l) => received.push({ ...l }));
+            expect(received).toHaveLength(1);
+            expect(received[0]).toEqual({ child });
+        });
+
+        it("should omit links when links config is omitted", () => {
+            const service = create({
+                description: "Test",
+                interface: {},
+                implementation: {},
+            });
+            expect(service.links).toBeUndefined();
+        });
+
+        it("should support Observe<AgenticServiceLinks> for conditional links", () => {
+            const child = create({
+                description: "Child",
+                interface: {},
+                implementation: {},
+            });
+            const linksObs = Observe.fromConstant({ child });
+            const service = create({
+                description: "Parent",
+                interface: {},
+                implementation: {},
+                links: linksObs,
+            });
+            expect(service.links).toBeDefined();
+            const received: { [key: string]: unknown }[] = [];
+            service.links!((l) => received.push({ ...l }));
+            expect(received).toHaveLength(1);
+            expect(received[0]).toEqual({ child });
+        });
+
+        it("should pass through Observe so links update when observable emits", () => {
+            const child = create({
+                description: "Child",
+                interface: {},
+                implementation: {},
+            });
+            const [linksObs, setLinks] = Observe.createState<Record<string, ReturnType<typeof create>>>({ child });
+            const service = create({
+                description: "Parent",
+                interface: {},
+                implementation: {},
+                links: linksObs,
+            });
+            const received: { [key: string]: unknown }[] = [];
+            const unobserve = service.links!((l) => received.push({ ...l }));
+            expect(received).toHaveLength(1);
+            expect(received[0]).toEqual({ child });
+            setLinks({});
+            expect(received).toHaveLength(2);
+            expect(received[1]).toEqual({});
+            unobserve();
+        });
+
+        it("should support empty links record", () => {
+            const service = create({
+                description: "Test",
+                interface: {},
+                implementation: {},
+                links: {},
+            });
+            expect(service.links).toBeDefined();
+            const received: { [key: string]: unknown }[] = [];
+            service.links!((l) => received.push({ ...l }));
+            expect(received).toHaveLength(1);
+            expect(received[0]).toEqual({});
+        });
+    });
+
     describe("conditional defaults", () => {
         it("should default state enabled to always true when omitted", async () => {
             const db = createTestDb();

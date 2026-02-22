@@ -3,6 +3,7 @@
 import { Observe } from "../../observe/index.js";
 import { Schema } from "../../schema/index.js";
 import { AgenticService } from "./agentic-service.js";
+import type { AgenticServiceLinks } from "./agentic-service-links.js";
 
 /** State declaration: has top-level `type` (JSON Schema) + `description` */
 type StateDeclaration<S extends Schema & { type: string } = Schema & { type: string }> = S & {
@@ -45,8 +46,10 @@ export function create<const D extends Declarations>(config: {
     interface: D;
     implementation: ImplementationFromDeclarations<D>;
     conditional?: ConditionalFromDeclarations<D>;
+    /** Optional map of links to other agentic services; fixed Record or Observe for conditional links. */
+    links?: AgenticServiceLinks | Observe<AgenticServiceLinks>;
 }): AgenticService {
-    const { interface: iface, implementation, conditional } = config;
+    const { interface: iface, implementation, conditional, links: linksConfig } = config;
     const alwaysEnabled = Observe.fromConstant(true);
 
     const stateKeys: string[] = [];
@@ -120,20 +123,32 @@ export function create<const D extends Declarations>(config: {
         return (entry.execute as Function)(input);
     };
 
-    return { serviceName: "agentic-service", states, actions, execute, description: Observe.fromConstant(config.description) };
+    const links =
+        linksConfig !== undefined
+            ? typeof linksConfig === "function"
+                ? linksConfig
+                : Observe.fromConstant(linksConfig)
+            : undefined;
+    return {
+        serviceName: "agentic-service",
+        states,
+        actions,
+        execute,
+        ...(links !== undefined && { links }),
+    };
 }
 
 /** Implementation map derived from interface: states → Observe, actions → execute fn */
 export type ImplementationFromDeclarations<D extends Declarations> = {
     [K in keyof D]:
     D[K] extends { type: string }
-        ? Observe<Schema.ToType<D[K]>>
-        : D[K] extends { input: infer I extends Schema | false }
-            ? ExecuteFromSchema<I>
-            : ExecuteFromSchema<false>;
+    ? Observe<Schema.ToType<D[K]>>
+    : D[K] extends { input: infer I extends Schema | false }
+    ? ExecuteFromSchema<I>
+    : ExecuteFromSchema<false>;
 };
 
 type ExecuteFromSchema<S extends Schema | false> =
     S extends false
-        ? (() => Promise<void | AgenticService.ActionError> | void)
-        : ((input: Schema.ToType<S>) => Promise<void | AgenticService.ActionError> | void);
+    ? (() => Promise<void | AgenticService.ActionError> | void)
+    : ((input: Schema.ToType<S>) => Promise<void | AgenticService.ActionError> | void);
