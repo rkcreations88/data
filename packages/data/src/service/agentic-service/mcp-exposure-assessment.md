@@ -17,7 +17,7 @@
 | **states**    | `Observe<Record<string, State>>` — each entry has `schema` (JSON Schema–like) and `value`. Conditionally visible. |
 | **actions**   | `Observe<Record<string, Action>>` — each entry has `description`, `schema` (input), `execute`. Conditionally visible. |
 | **execute**   | `(action: string, input: unknown) => Promise<void \| ActionError>`. ActionError is a string. |
-| **links**     | Optional `Observe<AgenticServiceLinks>` — map of keys to other AgenticServices. |
+| **links**     | Optional `Observe<AgenticServiceLinks>` — map of keys to other AgenticServices. Declared in the unified interface (type `"link"`) and built from implementation + conditional, like states and actions. |
 
 State and action schemas use the project’s `Schema` type (see `schema.ts`), which is compatible with JSON Schema (type, description, properties, required, etc.), with minor extensions.
 

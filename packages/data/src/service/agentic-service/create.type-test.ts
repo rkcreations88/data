@@ -12,45 +12,44 @@ import type { Equal } from "../../types/equal.js";
 
 type _StateTypeCheck = Assert<Equal<
     ImplementationFromDeclarations<{
-        health: { type: "number"; description: "Health" };
+        health: { type: "state"; schema: { type: "number" }; description: "Health" };
     }>["health"],
     Observe<number>
 >>;
 
 type _ActionTypeCheck = Assert<Equal<
     ImplementationFromDeclarations<{
-        heal: { description: "Heal"; input: { type: "number" } };
+        heal: { type: "action"; description: "Heal"; input: { type: "number" } };
     }>["heal"],
     (input: number) => Promise<void | string> | void
 >>;
 
-type _VoidActionTypeCheck = Assert<Equal<
-    ImplementationFromDeclarations<{
-        reset: { description: "Reset" };
-    }>["reset"],
-    () => Promise<void | string> | void
->>;
-
 const iface = {
     health: {
-        type: "number",
+        type: "state",
+        schema: { type: "number" },
         description: "Current health points",
     },
     stats: {
-        type: "object",
-        description: "Current player stats",
-        properties: {
-            hp: { type: "number" },
-            label: { type: "string" },
+        type: "state",
+        schema: {
+            type: "object",
+            properties: {
+                hp: { type: "number" },
+                label: { type: "string" },
+            },
+            required: ["hp"],
+            additionalProperties: false,
         },
-        required: ["hp"],
-        additionalProperties: false,
+        description: "Current player stats",
     },
     heal: {
+        type: "action",
         description: "Increase health by amount",
         input: { type: "number" },
     },
     configure: {
+        type: "action",
         description: "Configure stats",
         input: {
             type: "object",
@@ -63,6 +62,7 @@ const iface = {
         },
     },
     reset: {
+        type: "action",
         description: "Reset values",
     },
 } as const;
@@ -121,8 +121,7 @@ create({
         stats: Observe.fromConstant({ hp: 100 }),
         heal: (input) => {},
         configure: (input) => {},
-        // @ts-expect-error - reset action has no input schema
-        reset: (input: number) => {},
+        reset: () => {},
     },
 });
 
@@ -155,21 +154,19 @@ create({
     },
 });
 
-// Links: fixed Record and Observe<AgenticServiceLinks> are accepted
+// Links: declared in interface, supplied in implementation
 const linkTarget = create({
     description: "Link target",
     interface: {},
     implementation: {},
 });
 create({
-    description: "With links record",
-    interface: {},
-    implementation: {},
-    links: { other: linkTarget },
+    description: "With link in interface",
+    interface: { other: { type: "link", description: "Other service" } },
+    implementation: { other: linkTarget },
 });
 create({
-    description: "With links observable",
-    interface: {},
-    implementation: {},
-    links: Observe.fromConstant({ other: linkTarget }),
+    description: "With link as Observe",
+    interface: { other: { type: "link" } },
+    implementation: { other: Observe.fromConstant(linkTarget) },
 });

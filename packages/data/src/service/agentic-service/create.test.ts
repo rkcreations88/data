@@ -24,7 +24,7 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    currentHealth: { type: "number", description: "Health" },
+                    currentHealth: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
                 implementation: {
                     currentHealth: db.observe.resources.health,
@@ -39,7 +39,7 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    playerName: { type: "string", description: "Name" },
+                    playerName: { type: "state", schema: { type: "string" }, description: "Name" },
                 },
                 implementation: {
                     playerName: db.observe.resources.name,
@@ -54,8 +54,8 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    currentHealth: { type: "number", description: "Health" },
-                    playerName: { type: "string", description: "Name" },
+                    currentHealth: { type: "state", schema: { type: "number" }, description: "Health" },
+                    playerName: { type: "state", schema: { type: "string" }, description: "Name" },
                 },
                 implementation: {
                     currentHealth: db.observe.resources.health,
@@ -68,7 +68,7 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    setHealth: { description: "Set health", input: { type: "number" } },
+                    setHealth: { type: "action", description: "Set health", input: { type: "number" } },
                 },
                 implementation: {
                     setHealth: async (_input: number) => {},
@@ -80,7 +80,7 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    reset: { description: "Reset to defaults" },
+                    reset: { type: "action", description: "Reset to defaults" },
                 },
                 implementation: {
                     reset: async () => {},
@@ -93,14 +93,17 @@ describe("AgenticService.create", () => {
                 description: "Test",
                 interface: {
                     stats: {
-                        type: "object",
-                        description: "Stats",
-                        properties: {
-                            hp: { type: "number" },
-                            label: { type: "string" },
+                        type: "state",
+                        schema: {
+                            type: "object",
+                            properties: {
+                                hp: { type: "number" },
+                                label: { type: "string" },
+                            },
+                            required: ["hp"],
+                            additionalProperties: false,
                         },
-                        required: ["hp"],
-                        additionalProperties: false,
+                        description: "Stats",
                     },
                 },
                 implementation: {
@@ -114,6 +117,7 @@ describe("AgenticService.create", () => {
                 description: "Test",
                 interface: {
                     configure: {
+                        type: "action",
                         description: "Configure",
                         input: {
                             type: "object",
@@ -136,8 +140,8 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal", input: { type: "number" } },
-                    reset: { description: "Reset" },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
+                    reset: { type: "action", description: "Reset" },
                 },
                 implementation: {
                     heal: async (_amount: number) => {},
@@ -150,8 +154,8 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    sync: { description: "Sync" },
-                    syncWithInput: { description: "Sync with input", input: { type: "number" } },
+                    sync: { type: "action", description: "Sync" },
+                    syncWithInput: { type: "action", description: "Sync with input", input: { type: "number" } },
                 },
                 implementation: {
                     sync: () => {},
@@ -166,8 +170,8 @@ describe("AgenticService.create", () => {
             create({
                 description: "Test",
                 interface: {
-                    health: { type: "number", description: "Health" },
-                    heal: { description: "Heal", input: { type: "number" } },
+                    health: { type: "state", schema: { type: "number" }, description: "Health" },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
                     health: db.observe.resources.health,
@@ -189,7 +193,7 @@ describe("AgenticService.create", () => {
     });
 
     describe("links", () => {
-        it("should expose links observable when links config is provided", () => {
+        it("should expose links observable when link is declared in interface", () => {
             const child = create({
                 description: "Child",
                 interface: {},
@@ -197,9 +201,8 @@ describe("AgenticService.create", () => {
             });
             const service = create({
                 description: "Parent",
-                interface: {},
-                implementation: {},
-                links: { child },
+                interface: { child: { type: "link", description: "Child service" } },
+                implementation: { child },
             });
             expect(service.links).toBeDefined();
             const received: { [key: string]: unknown }[] = [];
@@ -217,18 +220,16 @@ describe("AgenticService.create", () => {
             expect(service.links).toBeUndefined();
         });
 
-        it("should support Observe<AgenticServiceLinks> for conditional links", () => {
+        it("should support Observe<AgenticService> per link for dynamic link target", () => {
             const child = create({
                 description: "Child",
                 interface: {},
                 implementation: {},
             });
-            const linksObs = Observe.fromConstant({ child });
             const service = create({
                 description: "Parent",
-                interface: {},
-                implementation: {},
-                links: linksObs,
+                interface: { child: { type: "link" } },
+                implementation: { child: Observe.fromConstant(child) },
             });
             expect(service.links).toBeDefined();
             const received: { [key: string]: unknown }[] = [];
@@ -237,41 +238,32 @@ describe("AgenticService.create", () => {
             expect(received[0]).toEqual({ child });
         });
 
-        it("should pass through Observe so links update when observable emits", () => {
+        it("should omit link when conditional is false", () => {
             const child = create({
                 description: "Child",
                 interface: {},
                 implementation: {},
             });
-            const [linksObs, setLinks] = Observe.createState<Record<string, ReturnType<typeof create>>>({ child });
             const service = create({
                 description: "Parent",
-                interface: {},
-                implementation: {},
-                links: linksObs,
-            });
-            const received: { [key: string]: unknown }[] = [];
-            const unobserve = service.links!((l) => received.push({ ...l }));
-            expect(received).toHaveLength(1);
-            expect(received[0]).toEqual({ child });
-            setLinks({});
-            expect(received).toHaveLength(2);
-            expect(received[1]).toEqual({});
-            unobserve();
-        });
-
-        it("should support empty links record", () => {
-            const service = create({
-                description: "Test",
-                interface: {},
-                implementation: {},
-                links: {},
+                interface: { child: { type: "link" } },
+                implementation: { child },
+                conditional: { child: Observe.fromConstant(false) },
             });
             expect(service.links).toBeDefined();
             const received: { [key: string]: unknown }[] = [];
             service.links!((l) => received.push({ ...l }));
             expect(received).toHaveLength(1);
             expect(received[0]).toEqual({});
+        });
+
+        it("should have links undefined when no link keys in interface", () => {
+            const service = create({
+                description: "Test",
+                interface: {},
+                implementation: {},
+            });
+            expect(service.links).toBeUndefined();
         });
     });
 
@@ -282,7 +274,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    health: { type: "number", description: "Health" },
+                    health: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
                 implementation: {
                     health: db.observe.resources.health,
@@ -298,7 +290,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal", input: { type: "number" } },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
                     heal: async () => {},
@@ -317,7 +309,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    currentHealth: { type: "number", description: "Health" },
+                    currentHealth: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
                 implementation: {
                     currentHealth: db.observe.resources.health,
@@ -326,7 +318,7 @@ describe("AgenticService.create", () => {
 
             const states = await Observe.toPromise(service.states);
             expect(states).toHaveProperty("currentHealth");
-            expect(states.currentHealth.schema).toEqual({ type: "number", description: "Health" });
+            expect(states.currentHealth.schema).toEqual({ type: "number" });
             expect(states.currentHealth.value).toBe(100);
         });
 
@@ -336,8 +328,8 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    visible: { type: "number", description: "Visible" },
-                    hidden: { type: "string", description: "Hidden" },
+                    visible: { type: "state", schema: { type: "number" }, description: "Visible" },
+                    hidden: { type: "state", schema: { type: "string" }, description: "Hidden" },
                 },
                 implementation: {
                     visible: db.observe.resources.health,
@@ -361,7 +353,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    health: { type: "number", description: "Health" },
+                    health: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
                 implementation: {
                     health: db.observe.resources.health,
@@ -387,7 +379,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    health: { type: "number", description: "Health" },
+                    health: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
                 implementation: {
                     health: healthObserve,
@@ -409,7 +401,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal player", input: { type: "number" } },
+                    heal: { type: "action", description: "Heal player", input: { type: "number" } },
                 },
                 implementation: {
                     heal: async (_amount: number) => {},
@@ -427,8 +419,8 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    available: { description: "Available", input: { type: "number" } },
-                    unavailable: { description: "Unavailable" },
+                    available: { type: "action", description: "Available", input: { type: "number" } },
+                    unavailable: { type: "action", description: "Unavailable" },
                 },
                 implementation: {
                     available: async () => {},
@@ -451,7 +443,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal", input: { type: "number" } },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
                     heal: async () => {},
@@ -476,7 +468,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    setHealth: { description: "Set health", input: { type: "number" } },
+                    setHealth: { type: "action", description: "Set health", input: { type: "number" } },
                 },
                 implementation: {
                     setHealth: async (input: number) => { received = input; },
@@ -494,7 +486,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    reset: { description: "Reset" },
+                    reset: { type: "action", description: "Reset" },
                 },
                 implementation: {
                     reset: async () => { called = true; },
@@ -511,7 +503,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    sync: { description: "Sync" },
+                    sync: { type: "action", description: "Sync" },
                 },
                 implementation: {
                     sync: () => { called = true; },
@@ -526,7 +518,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal", input: { type: "number" } },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
                     heal: async () => {},
@@ -553,7 +545,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    fail: { description: "Fail" },
+                    fail: { type: "action", description: "Fail" },
                 },
                 implementation: {
                     fail: async () => "something went wrong",
@@ -571,7 +563,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal", input: { type: "number" } },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
                     heal: async () => { called = true; },
@@ -601,8 +593,8 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    health: { type: "number", description: "Health" },
-                    name: { type: "string", description: "Name" },
+                    health: { type: "state", schema: { type: "number" }, description: "Health" },
+                    name: { type: "state", schema: { type: "string" }, description: "Name" },
                 },
                 implementation: {
                     health: db.observe.resources.health,
@@ -637,8 +629,8 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal", input: { type: "number" } },
-                    reset: { description: "Reset" },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
+                    reset: { type: "action", description: "Reset" },
                 },
                 implementation: {
                     heal: async () => {},
@@ -673,7 +665,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    heal: { description: "Heal", input: { type: "number" } },
+                    heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
                 implementation: {
                     heal: async (input: number) => { received = input; },
@@ -691,7 +683,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    reset: { description: "Reset" },
+                    reset: { type: "action", description: "Reset" },
                 },
                 implementation: {
                     reset: async () => { called = true; },
@@ -707,7 +699,7 @@ describe("AgenticService.create", () => {
             const service = create({
                 description: "Test",
                 interface: {
-                    fail: { description: "Fail" },
+                    fail: { type: "action", description: "Fail" },
                 },
                 implementation: {
                     fail: async () => "bound error",
