@@ -34,8 +34,6 @@ custom-elements.json
 *.sln
 *.sw?
 
-.npmrc
-
 *.tsbuildinfo
 
 # Local testing ssl certificates
