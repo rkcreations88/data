@@ -257,6 +257,31 @@ describe("AgenticService.create", () => {
             expect(received[0]).toEqual({});
         });
 
+        it("should update links when conditional changes", () => {
+            const child = create({
+                description: "Child",
+                interface: {},
+                implementation: {},
+            });
+            const [enabledObs, setEnabled] = Observe.createState(true);
+            const service = create({
+                description: "Parent",
+                interface: { child: { type: "link" } },
+                implementation: { child },
+                conditional: { child: enabledObs },
+            });
+            const received: { [key: string]: unknown }[] = [];
+            service.links!((l) => received.push({ ...l }));
+            expect(received).toHaveLength(1);
+            expect(received[0]).toEqual({ child });
+            setEnabled(false);
+            expect(received).toHaveLength(2);
+            expect(received[1]).toEqual({});
+            setEnabled(true);
+            expect(received).toHaveLength(3);
+            expect(received[2]).toEqual({ child });
+        });
+
         it("should have links undefined when no link keys in interface", () => {
             const service = create({
                 description: "Test",
