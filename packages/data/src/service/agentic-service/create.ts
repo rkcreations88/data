@@ -46,7 +46,6 @@ function getActionSchema(entry: ActionDeclaration<Schema | false | undefined>): 
  * Conditional: optional per-key Observe<boolean> for enablement (applies to states, actions, and links).
  */
 export function create<const D extends Declarations>(config: {
-    description: string;
     interface: D;
     implementation: ImplementationFromDeclarations<D>;
     conditional?: ConditionalFromDeclarations<D>;

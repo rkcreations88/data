@@ -68,7 +68,6 @@ const iface = {
 } as const;
 
 create({
-    description: "Player health and actions for agentic access",
     interface: iface,
     implementation: {
         health: Observe.fromConstant(42),
@@ -88,7 +87,6 @@ create({
 });
 
 create({
-    description: "Player health and actions for agentic access",
     interface: iface,
     implementation: {
         // @ts-expect-error - health state requires Observe<number>
@@ -101,7 +99,6 @@ create({
 });
 
 create({
-    description: "Player health and actions for agentic access",
     interface: iface,
     implementation: {
         health: Observe.fromConstant(100),
@@ -114,7 +111,6 @@ create({
 });
 
 create({
-    description: "Player health and actions for agentic access",
     interface: iface,
     implementation: {
         health: Observe.fromConstant(100),
@@ -126,7 +122,6 @@ create({
 });
 
 create({
-    description: "Player health and actions for agentic access",
     interface: iface,
     // @ts-expect-error - implementation must include every definition key
     implementation: {
@@ -138,7 +133,6 @@ create({
 });
 
 create({
-    description: "Player health and actions for agentic access",
     interface: iface,
     implementation: {
         health: Observe.fromConstant(100),
@@ -156,17 +150,14 @@ create({
 
 // Links: declared in interface, supplied in implementation
 const linkTarget = create({
-    description: "Link target",
     interface: {},
     implementation: {},
 });
 create({
-    description: "With link in interface",
     interface: { other: { type: "link", description: "Other service" } },
     implementation: { other: linkTarget },
 });
 create({
-    description: "With link as Observe",
     interface: { other: { type: "link" } },
     implementation: { other: Observe.fromConstant(linkTarget) },
 });

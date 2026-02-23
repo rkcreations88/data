@@ -22,7 +22,6 @@ describe("AgenticService.create", () => {
             const db = createTestDb();
 
             create({
-                description: "Test",
                 interface: {
                     currentHealth: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
@@ -37,7 +36,6 @@ describe("AgenticService.create", () => {
             const db = createTestDb();
 
             create({
-                description: "Test",
                 interface: {
                     playerName: { type: "state", schema: { type: "string" }, description: "Name" },
                 },
@@ -52,7 +50,6 @@ describe("AgenticService.create", () => {
             const db = createTestDb();
 
             create({
-                description: "Test",
                 interface: {
                     currentHealth: { type: "state", schema: { type: "number" }, description: "Health" },
                     playerName: { type: "state", schema: { type: "string" }, description: "Name" },
@@ -66,7 +63,6 @@ describe("AgenticService.create", () => {
 
         it("should accept action with schema-typed input", () => {
             create({
-                description: "Test",
                 interface: {
                     setHealth: { type: "action", description: "Set health", input: { type: "number" } },
                 },
@@ -78,7 +74,6 @@ describe("AgenticService.create", () => {
 
         it("should accept action with schema: false (void execute)", () => {
             create({
-                description: "Test",
                 interface: {
                     reset: { type: "action", description: "Reset to defaults" },
                 },
@@ -90,7 +85,6 @@ describe("AgenticService.create", () => {
 
         it("should accept object schema with matching value type", () => {
             create({
-                description: "Test",
                 interface: {
                     stats: {
                         type: "state",
@@ -114,7 +108,6 @@ describe("AgenticService.create", () => {
 
         it("should accept action with object schema input", () => {
             create({
-                description: "Test",
                 interface: {
                     configure: {
                         type: "action",
@@ -138,7 +131,6 @@ describe("AgenticService.create", () => {
 
         it("should accept mixed actions with and without schemas", () => {
             create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
                     reset: { type: "action", description: "Reset" },
@@ -152,7 +144,6 @@ describe("AgenticService.create", () => {
 
         it("should accept synchronous void-returning execute", () => {
             create({
-                description: "Test",
                 interface: {
                     sync: { type: "action", description: "Sync" },
                     syncWithInput: { type: "action", description: "Sync with input", input: { type: "number" } },
@@ -168,7 +159,6 @@ describe("AgenticService.create", () => {
             const db = createTestDb();
 
             create({
-                description: "Test",
                 interface: {
                     health: { type: "state", schema: { type: "number" }, description: "Health" },
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
@@ -184,7 +174,6 @@ describe("AgenticService.create", () => {
     describe("serviceName", () => {
         it("should set serviceName for isService compatibility", () => {
             const service = create({
-                description: "Test",
                 interface: {},
                 implementation: {},
             });
@@ -195,12 +184,10 @@ describe("AgenticService.create", () => {
     describe("links", () => {
         it("should expose links observable when link is declared in interface", () => {
             const child = create({
-                description: "Child",
                 interface: {},
                 implementation: {},
             });
             const service = create({
-                description: "Parent",
                 interface: { child: { type: "link", description: "Child service" } },
                 implementation: { child },
             });
@@ -213,7 +200,6 @@ describe("AgenticService.create", () => {
 
         it("should omit links when links config is omitted", () => {
             const service = create({
-                description: "Test",
                 interface: {},
                 implementation: {},
             });
@@ -222,12 +208,10 @@ describe("AgenticService.create", () => {
 
         it("should support Observe<AgenticService> per link for dynamic link target", () => {
             const child = create({
-                description: "Child",
                 interface: {},
                 implementation: {},
             });
             const service = create({
-                description: "Parent",
                 interface: { child: { type: "link" } },
                 implementation: { child: Observe.fromConstant(child) },
             });
@@ -240,12 +224,10 @@ describe("AgenticService.create", () => {
 
         it("should omit link when conditional is false", () => {
             const child = create({
-                description: "Child",
                 interface: {},
                 implementation: {},
             });
             const service = create({
-                description: "Parent",
                 interface: { child: { type: "link" } },
                 implementation: { child },
                 conditional: { child: Observe.fromConstant(false) },
@@ -259,13 +241,11 @@ describe("AgenticService.create", () => {
 
         it("should update links when conditional changes", () => {
             const child = create({
-                description: "Child",
                 interface: {},
                 implementation: {},
             });
             const [enabledObs, setEnabled] = Observe.createState(true);
             const service = create({
-                description: "Parent",
                 interface: { child: { type: "link" } },
                 implementation: { child },
                 conditional: { child: enabledObs },
@@ -284,7 +264,6 @@ describe("AgenticService.create", () => {
 
         it("should have links undefined when no link keys in interface", () => {
             const service = create({
-                description: "Test",
                 interface: {},
                 implementation: {},
             });
@@ -297,7 +276,6 @@ describe("AgenticService.create", () => {
             const db = createTestDb();
 
             const service = create({
-                description: "Test",
                 interface: {
                     health: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
@@ -313,7 +291,6 @@ describe("AgenticService.create", () => {
 
         it("should default action enabled to always true when omitted", async () => {
             const service = create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
@@ -332,7 +309,6 @@ describe("AgenticService.create", () => {
             const db = createTestDb();
 
             const service = create({
-                description: "Test",
                 interface: {
                     currentHealth: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
@@ -351,7 +327,6 @@ describe("AgenticService.create", () => {
             const db = createTestDb();
 
             const service = create({
-                description: "Test",
                 interface: {
                     visible: { type: "state", schema: { type: "number" }, description: "Visible" },
                     hidden: { type: "state", schema: { type: "string" }, description: "Hidden" },
@@ -376,7 +351,6 @@ describe("AgenticService.create", () => {
             const [enabledObserve, setEnabled] = Observe.createState(true);
 
             const service = create({
-                description: "Test",
                 interface: {
                     health: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
@@ -402,7 +376,6 @@ describe("AgenticService.create", () => {
             const [healthObserve, setHealth] = Observe.createState(100);
 
             const service = create({
-                description: "Test",
                 interface: {
                     health: { type: "state", schema: { type: "number" }, description: "Health" },
                 },
@@ -424,7 +397,6 @@ describe("AgenticService.create", () => {
     describe("actions observable", () => {
         it("should emit enabled actions with bound execute", async () => {
             const service = create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal player", input: { type: "number" } },
                 },
@@ -442,7 +414,6 @@ describe("AgenticService.create", () => {
 
         it("should omit disabled actions", async () => {
             const service = create({
-                description: "Test",
                 interface: {
                     available: { type: "action", description: "Available", input: { type: "number" } },
                     unavailable: { type: "action", description: "Unavailable" },
@@ -466,7 +437,6 @@ describe("AgenticService.create", () => {
             const [enabledObserve, setEnabled] = Observe.createState(true);
 
             const service = create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
@@ -491,7 +461,6 @@ describe("AgenticService.create", () => {
             let received: number | undefined;
 
             const service = create({
-                description: "Test",
                 interface: {
                     setHealth: { type: "action", description: "Set health", input: { type: "number" } },
                 },
@@ -509,7 +478,6 @@ describe("AgenticService.create", () => {
             let called = false;
 
             const service = create({
-                description: "Test",
                 interface: {
                     reset: { type: "action", description: "Reset" },
                 },
@@ -526,7 +494,6 @@ describe("AgenticService.create", () => {
             let called = false;
 
             const service = create({
-                description: "Test",
                 interface: {
                     sync: { type: "action", description: "Sync" },
                 },
@@ -541,7 +508,6 @@ describe("AgenticService.create", () => {
 
         it("should return error for unavailable action", async () => {
             const service = create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
@@ -557,7 +523,6 @@ describe("AgenticService.create", () => {
 
         it("should return error for nonexistent action", async () => {
             const service = create({
-                description: "Test",
                 interface: {},
                 implementation: {},
             });
@@ -568,7 +533,6 @@ describe("AgenticService.create", () => {
 
         it("should propagate ActionError from execute", async () => {
             const service = create({
-                description: "Test",
                 interface: {
                     fail: { type: "action", description: "Fail" },
                 },
@@ -586,7 +550,6 @@ describe("AgenticService.create", () => {
             let called = false;
 
             const service = create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
@@ -616,7 +579,6 @@ describe("AgenticService.create", () => {
             const [enableB, setEnableB] = Observe.createState(true);
 
             const service = create({
-                description: "Test",
                 interface: {
                     health: { type: "state", schema: { type: "number" }, description: "Health" },
                     name: { type: "state", schema: { type: "string" }, description: "Name" },
@@ -652,7 +614,6 @@ describe("AgenticService.create", () => {
             const [enableReset, setEnableReset] = Observe.createState(true);
 
             const service = create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
                     reset: { type: "action", description: "Reset" },
@@ -688,7 +649,6 @@ describe("AgenticService.create", () => {
             let received: number | undefined;
 
             const service = create({
-                description: "Test",
                 interface: {
                     heal: { type: "action", description: "Heal", input: { type: "number" } },
                 },
@@ -706,7 +666,6 @@ describe("AgenticService.create", () => {
             let called = false;
 
             const service = create({
-                description: "Test",
                 interface: {
                     reset: { type: "action", description: "Reset" },
                 },
@@ -722,7 +681,6 @@ describe("AgenticService.create", () => {
 
         it("should propagate ActionError from bound action execute", async () => {
             const service = create({
-                description: "Test",
                 interface: {
                     fail: { type: "action", description: "Fail" },
                 },
