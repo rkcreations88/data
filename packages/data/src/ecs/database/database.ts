@@ -12,7 +12,7 @@ import { Components } from "../store/components.js";
 import { ArchetypeComponents } from "../store/archetype-components.js";
 import { RequiredComponents } from "../required-components.js";
 import { EntitySelectOptions } from "../store/entity-select-options.js";
-import { Service } from "../../service/service.js";
+import type { Service } from "../../service/index.js";
 import { createDatabase } from "./public/create-database.js";
 import { observeSelectDeep as _observeSelectDeep } from "./public/observe-select-deep.js";
 import { ResourceSchemas } from "../resource-schemas.js";
@@ -74,11 +74,17 @@ export type FromComputedFactories<CF> = {
 };
 
 /**
+ * Valid return type for a plugin computed factory.
+ * Either a direct Observe<T> or a function with any args that returns Observe<T>.
+ */
+export type PluginComputedValue = Observe<unknown> | ((...args: any[]) => Observe<unknown>);
+
+/**
  * Computed factories for plugin descriptors. Constrains each factory to return
- * something that extends Observe<unknown>, so plugins declare observable computed values.
+ * a PluginComputedValue (direct observable or function returning observable).
  * Use this in createPlugin; Database keeps ComputedFactories (unknown) for flexibility.
  */
-export type PluginComputedFactories<DB = any> = { readonly [K: string]: (db: DB) => Observe<unknown> };
+export type PluginComputedFactories<DB = any> = { readonly [K: string]: (db: DB) => PluginComputedValue };
 
 export interface Database<
   C extends Components = {},

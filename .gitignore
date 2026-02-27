@@ -1,3 +1,7 @@
+ai
+AGENTS.md
+
+
 # Logs
 logs
 *.log
@@ -29,8 +33,6 @@ custom-elements.json
 *.njsproj
 *.sln
 *.sw?
-
-.npmrc
 
 *.tsbuildinfo
 

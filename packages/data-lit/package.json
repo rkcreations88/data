@@ -1,9 +1,13 @@
 {
   "name": "@adobe/data-lit",
-  "version": "0.9.22",
+  "version": "0.9.32",
   "description": "Adobe data Lit bindings - hooks, elements, decorators",
   "type": "module",
   "private": false,
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "scripts": {
     "build": "cp ../../LICENSE . && tsc -b",
     "dev": "tsc -b -w",
