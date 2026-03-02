@@ -1,6 +1,6 @@
 {
   "name": "@adobe/data",
-  "version": "0.9.32",
+  "version": "0.9.33",
   "description": "Adobe data oriented programming library",
   "type": "module",
   "sideEffects": false,
@@ -84,6 +84,7 @@
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
+    "hash-wasm": "^4.12.0",
     "jsonpath": "^1.1.1"
   },
   "typesVersions": {

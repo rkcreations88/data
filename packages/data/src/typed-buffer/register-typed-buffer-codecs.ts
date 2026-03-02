@@ -1,5 +1,6 @@
 // © 2026 Adobe. MIT License. See /LICENSE for details.
 
+import { toArrayBufferBacked } from "../internal/array-buffer-like/index.js";
 import { copyViewBytes } from "../functions/copy-view-bytes.js";
 import { registerCodec } from "../functions/serialization/codec.js";
 import { Schema } from "../schema/index.js";
@@ -25,9 +26,8 @@ export function registerTypedBufferCodecs() {
                 }
                 else if (type === "number" || type === "struct") {
                     const typedArray = data.getTypedArray();
-                    const view = new Uint8Array(typedArray.buffer as ArrayBuffer, typedArray.byteOffset, typedArray.byteLength);
-                    const binary = typeof SharedArrayBuffer !== "undefined" && typedArray.buffer instanceof SharedArrayBuffer ? view.slice() : view;
-                    return { json: { type, schema, capacity }, binary: [binary] };
+                    const view = new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength);
+                    return { json: { type, schema, capacity }, binary: [toArrayBufferBacked(view)] };
                 }
                 else {
                     throw new Error(`Unknown type: ${type}`);
@@ -38,7 +38,7 @@ export function registerTypedBufferCodecs() {
                 throw e;
             }
         },
-        deserialize: ({ json, binary }: { json?: any, binary: Uint8Array<ArrayBuffer>[] }) => {
+        deserialize: ({ json, binary }: { json?: any, binary: Uint8Array[] }) => {
             const encoded = json as { type: TypedBufferType, schema: Schema, capacity: number, array?: any[] };
             const { type, schema, capacity, array } = encoded;
             if (type === "const") {
